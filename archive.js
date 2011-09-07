@@ -21,13 +21,27 @@ bitjs.archive.UnarchiveEvent = function(type) {
   this.type = type;
 };
 
+/**
+ * The UnarchiveEvent types.
+ */
 bitjs.archive.UnarchiveEvent.Type = {
-  START: 'bitjs.archive.UnarchiveEvent.START',
-  PROGRESS: 'bitjs.archive.UnarchiveEvent.PROGRESS',
-  EXTRACTION: 'bitjs.archive.UnarchiveEvent.EXTRACTION',
-  FINISH: 'bitjs.archive.UnarchiveEvent.FINISH',
-  ERROR: 'bitjs.archive.UnarchiveEvent.ERROR'
+  START: 'start',
+  PROGRESS: 'progress',
+  EXTRACT: 'extract',
+  FINISH: 'finish',
+  ERROR: 'error'
 };
+
+/**
+ * All extracted files returned by an Unarchiver will implement
+ * the following interface:
+ *
+ * interface UnarchivedFile {
+ *   string filename
+ *   TypedArray filedata  
+ * }
+ *
+ */
 
 /**
  * Base abstract class for all Unarchivers.
@@ -36,40 +50,56 @@ bitjs.archive.UnarchiveEvent.Type = {
  */
 bitjs.archive.Unarchiver = function(arrayBuffer) {
   /**
+   * The ArrayBuffer object.
    * @type {ArrayBuffer}
+   * @protected
    */
-  this.ab_ = arrayBuffer;
+  this.ab = arrayBuffer;
 
   /**
    * A map from event type to an array of listeners.
    * @type {Map.<string, Array>}
    */
-  this.listeners_ = {
-    bitjs.archive.UnarchiveEvent.Type.START: [],
-    bitjs.archive.UnarchiveEvent.Type.PROGRESS: [],
-    bitjs.archive.UnarchiveEvent.Type.EXTRACTION: [],
-    bitjs.archive.UnarchiveEvent.Type.FINISH: [],
-    bitjs.archive.UnarchiveEvent.Type.ERROR: []
-  };
+  this.listeners_ = {};
+  for (var type in bitjs.archive.UnarchiveEvent.Type) {
+    this.listeners_[bitjs.archive.UnarchiveEvent.Type[type]] = [];
+  }
 };
 
 /**
+ * Adds an event listener for UnarchiveEvents.
  *
+ * @param {string} Event type.
+ * @param {EventListener|function} An event listener or handler function.
  */
-bitjs.archive.Unarchiver.prototype.addEventListener = function() {
+bitjs.archive.Unarchiver.prototype.addEventListener = function(type, listener) {
+  if (type in this.listeners_) {
+    if (this.listeners_[type].indexOf(listener) == -1) {
+      this.listeners_[type].push(listener);
+    }
+  }
 };
 
 /**
+ * Removes an event listener.
  *
+ * @param {string} Event type.
+ * @param {EventListener|function} An event listener or handler function.
  */
-bitjs.archive.Unarchiver.prototype.removeEventListener = function() {
+bitjs.archive.Unarchiver.prototype.removeEventListener = function(type, listener) {
+  if (type in this.listeners_) {
+    var index = this.listeners_[type].indexOf(listener);
+    if (index != -1) {
+      this.listeners_[type].splice(index, 1);
+    }
+  }
 };
 
 /**
  * Abstract method - do not call directly.
  */
-bitjs.archive.Unarchiver.prototype.unarchive = function() {
-  throw "Error!  Abstract method unarchive() in bitjs.archive.Unarchiver called";
+bitjs.archive.Unarchiver.prototype.run = function() {
+  throw "Error! Abstract method bitjs.archive.Unarchiver.run() called.";
 };
 
 })();
