@@ -5,7 +5,7 @@
  *
  * Licensed under the MIT License
  *
- * Copyright(c) 2011 Jeff Schiller
+ * Copyright(c) 2011 Google Inc.
  */
 
 var bitjs = bitjs || {};
@@ -13,12 +13,71 @@ bitjs.archive = bitjs.archive || {};
 
 (function() {
 
+// ===========================================================================
+// Stolen from Closure because it's the best way to do Java-like inheritance.
+bitjs.base = function(me, opt_methodName, var_args) {
+  var caller = arguments.callee.caller;
+  if (caller.superClass_) {
+    // This is a constructor. Call the superclass constructor.
+    return caller.superClass_.constructor.apply(
+        me, Array.prototype.slice.call(arguments, 1));
+  }
+
+  var args = Array.prototype.slice.call(arguments, 2);
+  var foundCaller = false;
+  for (var ctor = me.constructor;
+       ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
+    if (ctor.prototype[opt_methodName] === caller) {
+      foundCaller = true;
+    } else if (foundCaller) {
+      return ctor.prototype[opt_methodName].apply(me, args);
+    }
+  }
+
+  // If we did not find the caller in the prototype chain,
+  // then one of two things happened:
+  // 1) The caller is an instance method.
+  // 2) This method was not called by the right caller.
+  if (me[opt_methodName] === caller) {
+    return me.constructor.prototype[opt_methodName].apply(me, args);
+  } else {
+    throw Error(
+        'goog.base called from a method of one name ' +
+        'to a method of a different name');
+  }
+};
+bitjs.inherits = function(childCtor, parentCtor) {
+  /** @constructor */
+  function tempCtor() {};
+  tempCtor.prototype = parentCtor.prototype;
+  childCtor.superClass_ = parentCtor.prototype;
+  childCtor.prototype = new tempCtor();
+  childCtor.prototype.constructor = childCtor;
+};
+// ===========================================================================
+
 /**
+ * An unarchive event.
+ *
  * @param {string} type The event type.
  * @constructor
  */
 bitjs.archive.UnarchiveEvent = function(type) {
-  this.type = type;
+  /**
+   * The event type.
+   * @type {string}
+   * @private
+   */
+  this.type_ = type;
+};
+
+/**
+ * Returns the event type.
+ *
+ * @return {string} the event type.
+ */
+bitjs.archive.UnarchiveEvent.prototype.getType = function() {
+  return this.type_;
 };
 
 /**
@@ -44,9 +103,10 @@ bitjs.archive.UnarchiveEvent.Type = {
  */
 
 /**
- * Base abstract class for all Unarchivers.
+ * Base class for all Unarchivers.
  *
  * @param {ArrayBuffer} arrayBuffer The Array Buffer.
+ * @constructor
  */
 bitjs.archive.Unarchiver = function(arrayBuffer) {
   /**
@@ -67,10 +127,26 @@ bitjs.archive.Unarchiver = function(arrayBuffer) {
 };
 
 /**
+ * Private web worker initialized during start().
+ * @type {Worker}
+ * @private
+ */
+bitjs.archive.Unarchiver.prototype.worker_ = null;
+
+/**
+ * This method must be overridden by the subclass to return the script filename.
+ * @return {string} The script filename.
+ * @protected.
+ */
+bitjs.archive.Unarchiver.prototype.getScriptFileName = function() {
+  throw "Subclasses of AbstractUnarchiver must overload getScriptFileName()";
+};
+
+/**
  * Adds an event listener for UnarchiveEvents.
  *
  * @param {string} Event type.
- * @param {EventListener|function} An event listener or handler function.
+ * @param {function} An event handler function.
  */
 bitjs.archive.Unarchiver.prototype.addEventListener = function(type, listener) {
   if (type in this.listeners_) {
@@ -96,10 +172,53 @@ bitjs.archive.Unarchiver.prototype.removeEventListener = function(type, listener
 };
 
 /**
- * Abstract method - do not call directly.
+ * Receive an event and pass it to the listener functions.
+ *
+ * @param {bitjs.archive.UnarchiveEvent} e
+ * @private
  */
-bitjs.archive.Unarchiver.prototype.run = function() {
-  throw "Error! Abstract method bitjs.archive.Unarchiver.run() called.";
+bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
+  if (e instanceof bitjs.archive.UnarchiveEvent) {
+    var listeners = this.listeners_[e.getType()];
+    if (listeners instanceof Array) {
+      listeners.forEach(function (listener) { listener(e) });
+    }
+  } else {
+    console.log(e);
+  }
 };
+
+/**
+ * Starts the unarchive in a separate Web Worker thread and returns immediately.
+ */
+ bitjs.archive.Unarchiver.prototype.start = function() {
+  var scriptFileName = this.getScriptFileName();
+  if (scriptFileName) {
+    this.worker_ = new Worker(scriptFileName);
+
+    this.worker_.onerror = function(e) {
+      alert("Worker error: " + e.message);
+      throw e;
+    };
+
+    this.worker_.onmessage = function(e) {
+      alert("Worker onmessage: " + e);
+    };
+
+    this.worker_.postMessage({file: this.ab});
+  }
+}
+
+/**
+ * Unzipper
+ * @extends {bitjs.archive.Unarchiver}
+ * @constructor
+ */
+bitjs.archive.Unzipper = function(arrayBuffer) {
+  bitjs.base(this, arrayBuffer);
+};
+bitjs.inherits(bitjs.archive.Unzipper, bitjs.archive.Unarchiver);
+bitjs.archive.Unzipper.prototype.getScriptFileName = function() { return "unzip.js" };
+
 
 })();
