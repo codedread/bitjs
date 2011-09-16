@@ -10,6 +10,12 @@
 
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('binary.js');
+importScripts('archive.js');
+
+// Helper function.
+var info = function(str) {
+  postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+};
 
 // Removes all characters from the first zero-byte in the string onwards.
 var readCleanString = function(bstr, numBytes) {
@@ -56,14 +62,14 @@ var TarLocalFile = function(bstream, bDebug) {
   this.fileData = null;
 
   if (this.debug) {
-    postMessage("Untarring file '" + this.filename + "'");
-    postMessage("  size = " + this.size);
-    postMessage("  typeflag = " + this.typeflag);
+    info("Untarring file '" + this.filename + "'");
+    info("  size = " + this.size);
+    info("  typeflag = " + this.typeflag);
   }
 
   // A regular file.
   if (this.typeflag == 0) {
-  	postMessage("  This is a regular file.");
+  	info("  This is a regular file.");
   	var sizeInBytes = parseInt(this.size);
   	this.fileData = new Uint8Array(bstream.bytes.buffer, bstream.ptr, this.size);
     if (this.name.length > 0 && this.size > 0 && this.fileData && this.fileData.buffer) {
@@ -80,7 +86,7 @@ var TarLocalFile = function(bstream, bDebug) {
   	}
   } else if (this.typeflag == 5) {
   	if (this.debug) {
-  	  postMessage("  This is a directory.")
+  	  info("  This is a directory.")
   	}
   }
 };
@@ -89,6 +95,7 @@ var TarLocalFile = function(bstream, bDebug) {
 // returns null on error
 // returns an array of DecompressedFile objects on success
 var untar = function(arrayBuffer, bDebug) {
+  postMessage(new bitjs.archive.UnarchiveStartEvent());
   var bstream = new bitjs.io.ByteStream(arrayBuffer);
   var localFiles = [];
 
@@ -134,7 +141,7 @@ var untar = function(arrayBuffer, bDebug) {
   // now do the shipping of each file
   for (var i = 0; i < localFiles.length; ++i) {
     var localfile = localFiles[i];
-    postMessage("Sending file '" + localfile.filename + "' up");
+    info("Sending file '" + localfile.filename + "' up");
 
     // update progress
     progress.currentFilename = localfile.filename;

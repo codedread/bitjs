@@ -65,19 +65,10 @@ bitjs.inherits = function(childCtor, parentCtor) {
 bitjs.archive.UnarchiveEvent = function(type) {
   /**
    * The event type.
+   *
    * @type {string}
-   * @private
    */
-  this.type_ = type;
-};
-
-/**
- * Returns the event type.
- *
- * @return {string} the event type.
- */
-bitjs.archive.UnarchiveEvent.prototype.getType = function() {
-  return this.type_;
+  this.type = type;
 };
 
 /**
@@ -88,8 +79,46 @@ bitjs.archive.UnarchiveEvent.Type = {
   PROGRESS: 'progress',
   EXTRACT: 'extract',
   FINISH: 'finish',
+  INFO: 'info',
   ERROR: 'error'
 };
+
+/**
+ * Useful for passing info up to the client (for debugging).
+ *
+ * @param {string} msg The info message.
+ */
+bitjs.archive.UnarchiveInfoEvent = function(msg) {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.INFO);
+
+  /**
+   * The information message.
+   *
+   * @type {string}
+   */
+  this.msg = msg;
+};
+bitjs.inherits(bitjs.archive.UnarchiveInfoEvent, bitjs.archive.UnarchiveEvent);
+
+/**
+ * Start event.
+ *
+ * @param {string} msg The info message.
+ */
+bitjs.archive.UnarchiveStartEvent = function() {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.START);
+};
+bitjs.inherits(bitjs.archive.UnarchiveStartEvent, bitjs.archive.UnarchiveEvent);
+
+/**
+ * Finish event.
+ *
+ * @param {string} msg The info message.
+ */
+bitjs.archive.UnarchiveFinishEvent = function() {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.FINISH);
+};
+bitjs.inherits(bitjs.archive.UnarchiveFinishEvent, bitjs.archive.UnarchiveEvent);
 
 /**
  * All extracted files returned by an Unarchiver will implement
@@ -139,7 +168,7 @@ bitjs.archive.Unarchiver.prototype.worker_ = null;
  * @protected.
  */
 bitjs.archive.Unarchiver.prototype.getScriptFileName = function() {
-  throw "Subclasses of AbstractUnarchiver must overload getScriptFileName()";
+  throw 'Subclasses of AbstractUnarchiver must overload getScriptFileName()';
 };
 
 /**
@@ -179,7 +208,7 @@ bitjs.archive.Unarchiver.prototype.removeEventListener = function(type, listener
  */
 bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
   if (e instanceof bitjs.archive.UnarchiveEvent) {
-    var listeners = this.listeners_[e.getType()];
+    var listeners = this.listeners_[e.type];
     if (listeners instanceof Array) {
       listeners.forEach(function (listener) { listener(e) });
     }
@@ -192,17 +221,23 @@ bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
  * Starts the unarchive in a separate Web Worker thread and returns immediately.
  */
  bitjs.archive.Unarchiver.prototype.start = function() {
+  var me = this;
   var scriptFileName = this.getScriptFileName();
   if (scriptFileName) {
     this.worker_ = new Worker(scriptFileName);
 
     this.worker_.onerror = function(e) {
-      alert("Worker error: " + e.message);
+      console.log('Worker error: message = ' + e.message);
       throw e;
     };
 
     this.worker_.onmessage = function(e) {
-      alert("Worker onmessage: " + e);
+      if (e instanceof bitjs.archive.UnarchiveEvent) {
+        me.handleWorkerEvent_(e.data);
+      } else if (typeof e.data == 'string') {
+        // Just log any strings the workers pump our way.
+        console.log(e.data);
+      }
     };
 
     this.worker_.postMessage({file: this.ab});
@@ -218,7 +253,7 @@ bitjs.archive.Unzipper = function(arrayBuffer) {
   bitjs.base(this, arrayBuffer);
 };
 bitjs.inherits(bitjs.archive.Unzipper, bitjs.archive.Unarchiver);
-bitjs.archive.Unzipper.prototype.getScriptFileName = function() { return "unzip.js" };
+bitjs.archive.Unzipper.prototype.getScriptFileName = function() { return 'unzip.js' };
 
 
 })();

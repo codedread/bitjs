@@ -48,6 +48,7 @@
 // unit tests
 //  testAddRemoveEventListeners();
 //  testAbstractUnarchiveThrows();
+//  var uz = new bitjs.archive.Unzipper(null);
 
   document.body.querySelector("#filechooser").addEventListener("change",
       function(evt) {
@@ -58,12 +59,14 @@
           var fr = new FileReader();
           fr.onload = function() {
             var ua = new bitjs.archive.Unzipper(fr.result);
+            ua.addEventListener(bitjs.archive.UnarchiveEvent.Type.INFO, function(e) {
+              console.log("handler: " + e.msg);
+            })
             ua.start();
           };
           fr.readAsArrayBuffer(blob);
         }
       }, false);
 
-  var uz = new bitjs.archive.Unzipper(null);
 </script>
 </html>

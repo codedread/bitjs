@@ -12,7 +12,13 @@
 
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('binary.js');
- 
+importScripts('archive.js');
+
+// Helper function.
+var info = function(str) {
+  postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+};
+
 var zLocalFileHeaderSignature = 0x04034b50;
 var zArchiveExtraDataSignature = 0x08064b50;
 var zCentralFileHeaderSignature = 0x02014b50;
@@ -46,25 +52,25 @@ var ZipLocalFile = function(bstream, bDebug) {
 	}
 	
 	if (this.debug) {
-		postMessage("Zip Local File Header:");
-		postMessage(" version=" + this.version);
-		postMessage(" general purpose=" + this.generalPurpose);
-		postMessage(" compression method=" + this.compressionMethod);
-		postMessage(" last mod file time=" + this.lastModFileTime);
-		postMessage(" last mod file date=" + this.lastModFileDate);
-		postMessage(" crc32=" + this.crc32);
-		postMessage(" compressed size=" + this.compressedSize);
-		postMessage(" uncompressed size=" + this.uncompressedSize);
-		postMessage(" file name length=" + this.fileNameLength);
-		postMessage(" extra field length=" + this.extraFieldLength);
-		postMessage(" filename = '" + this.filename + "'");
+		info(new bitjs.archive.UnarchiveInfoEvent("Zip Local File Header:"));
+		info(" version=" + this.version);
+		info(" general purpose=" + this.generalPurpose);
+		info(" compression method=" + this.compressionMethod);
+		info(" last mod file time=" + this.lastModFileTime);
+		info(" last mod file date=" + this.lastModFileDate);
+		info(" crc32=" + this.crc32);
+		info(" compressed size=" + this.compressedSize);
+		info(" uncompressed size=" + this.uncompressedSize);
+		info(" file name length=" + this.fileNameLength);
+		info(" extra field length=" + this.extraFieldLength);
+		info(" filename = '" + this.filename + "'");
 	}
 	
 	this.extraField = null;
 	if (this.extraFieldLength > 0) {
 		this.extraField = bstream.readString(this.extraFieldLength);
 		if (this.debug) {
-		  postMessage(" extra field=" + this.extraField);
+		  info(" extra field=" + this.extraField);
 		}
 	}
 	
@@ -93,7 +99,7 @@ ZipLocalFile.prototype.unzip = function() {
 		// Zip Version 1.0, no compression (store only)
 		if (this.compressionMethod == 0 ) {
 			if (this.debug)
-				postMessage("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+				info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
 			progress.currentFileBytesUnzipped = this.compressedSize;
 			progress.totalBytesUnzipped += this.compressedSize;
 			this.isValid = true;
@@ -101,12 +107,12 @@ ZipLocalFile.prototype.unzip = function() {
 		// version == 20, compression method == 8 (DEFLATE)
 		else if (this.compressionMethod == 8) {
 			if (this.debug)
-				postMessage("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+				info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
 			this.fileData = inflate(this.fileData, this.uncompressedSize);
 			this.isValid = true;
 		}
 		else {
-			postMessage("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
+			info("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
 			this.isValid = false;
 			this.fileData = null;
 		}
@@ -122,6 +128,8 @@ ZipLocalFile.prototype.unzip = function() {
 // returns null on error
 // returns an array of DecompressedFile objects on success
 var unzip = function(arrayBuffer, bDebug) {
+	postMessage(new bitjs.archive.UnarchiveStartEvent());
+	
 	var bstream = new bitjs.io.ByteStream(arrayBuffer);
 	// detect local file header signature or return null
 	if (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
@@ -162,7 +170,7 @@ var unzip = function(arrayBuffer, bDebug) {
 		// archive extra data record
 		if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
 			if (gDebug) {
-				postMessage(" Found an Archive Extra Data Signature");
+				info(" Found an Archive Extra Data Signature");
 			}
 			// skipping this record for now
 			bstream.readNumber(4);
@@ -174,7 +182,7 @@ var unzip = function(arrayBuffer, bDebug) {
 		// TODO: handle the rest of the structures (Zip64 stuff)
 		if (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
 			if (gDebug) {
-				postMessage(" Found a Central File Header");
+				info(" Found a Central File Header");
 			}
 			// read all file headers
 			while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
@@ -205,7 +213,7 @@ var unzip = function(arrayBuffer, bDebug) {
 		// digital signature
 		if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
 			if (gDebug) {
-				postMessage(" Found a Digital Signature");
+				info(" Found a Digital Signature");
 			}
 			bstream.readNumber(4);
 			var sizeOfSignature = bstream.readNumber(2);
