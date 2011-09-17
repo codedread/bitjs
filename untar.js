@@ -12,9 +12,28 @@
 importScripts('binary.js');
 importScripts('archive.js');
 
-// Helper function.
+// Progress variables.
+var currentFilename = "";
+var currentFileNumber = 0;
+var currentBytesUnarchivedInFile = 0;
+var currentBytesUnarchived = 0;
+var totalUncompressedBytesInArchive = 0;
+var totalFilesInArchive = 0;
+
+// Helper functions.
 var info = function(str) {
   postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+};
+var err = function(str) {
+  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+};
+var postProgress = function() {
+  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+      currentFilename,
+      currentBytesUnarchivedInFile,
+      currentBytesUnarchived,
+      totalUncompressedBytesInArchive,
+      totalFilesInArchive));
 };
 
 // Removes all characters from the first zero-byte in the string onwards.
@@ -25,8 +44,7 @@ var readCleanString = function(bstr, numBytes) {
 };
 
 // takes a ByteStream and parses out the local file information
-var TarLocalFile = function(bstream, bDebug) {
-  this.debug = bDebug || false;
+var TarLocalFile = function(bstream) {
   this.isValid = false;
 
   // Read in the header block
@@ -61,11 +79,9 @@ var TarLocalFile = function(bstream, bDebug) {
   this.filename = this.name;
   this.fileData = null;
 
-  if (this.debug) {
-    info("Untarring file '" + this.filename + "'");
-    info("  size = " + this.size);
-    info("  typeflag = " + this.typeflag);
-  }
+  info("Untarring file '" + this.filename + "'");
+  info("  size = " + this.size);
+  info("  typeflag = " + this.typeflag);
 
   // A regular file.
   if (this.typeflag == 0) {
@@ -85,23 +101,28 @@ var TarLocalFile = function(bstream, bDebug) {
       bstream.readBytes(remaining);
   	}
   } else if (this.typeflag == 5) {
-  	if (this.debug) {
-  	  info("  This is a directory.")
-  	}
+  	 info("  This is a directory.")
   }
 };
 
 // Takes an ArrayBuffer of a tar file in
 // returns null on error
 // returns an array of DecompressedFile objects on success
-var untar = function(arrayBuffer, bDebug) {
+var untar = function(arrayBuffer) {
+  currentFilename = "";
+  currentFileNumber = 0;
+  currentBytesUnarchivedInFile = 0;
+  currentBytesUnarchived = 0;
+  totalUncompressedBytesInArchive = 0;
+  totalFilesInArchive = 0;
+
   postMessage(new bitjs.archive.UnarchiveStartEvent());
   var bstream = new bitjs.io.ByteStream(arrayBuffer);
   var localFiles = [];
 
   // While we don't encounter an empty block, keep making TarLocalFiles.
   while (bstream.peekNumber(4) != 0) {
-  	var oneLocalFile = new TarLocalFile(bstream, bDebug);
+  	var oneLocalFile = new TarLocalFile(bstream);
   	if (oneLocalFile && oneLocalFile.isValid) {
       localFiles.push(oneLocalFile);
       progress.totalNumFilesInZip++;
@@ -158,11 +179,13 @@ var untar = function(arrayBuffer, bDebug) {
   progress.isDone = true;
   postMessage(progress);
 
+  postMessage(new bitjs.archive.UnarchiveFinishEvent());
+
   return progress;
 };
 
 // event.data.file has the ArrayBuffer.
 onmessage = function(event) {
   var ab = event.data.file;
-  untar(ab, true);
+  untar(ab);
 };

@@ -101,6 +101,23 @@ bitjs.archive.UnarchiveInfoEvent = function(msg) {
 bitjs.inherits(bitjs.archive.UnarchiveInfoEvent, bitjs.archive.UnarchiveEvent);
 
 /**
+ * An unrecoverable error has occured.
+ *
+ * @param {string} msg The error message.
+ */
+bitjs.archive.UnarchiveErrorEvent = function(msg) {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.ERROR);
+
+  /**
+   * The information message.
+   *
+   * @type {string}
+   */
+  this.msg = msg;
+};
+bitjs.inherits(bitjs.archive.UnarchiveErrorEvent, bitjs.archive.UnarchiveEvent);
+
+/**
  * Start event.
  *
  * @param {string} msg The info message.
@@ -121,6 +138,27 @@ bitjs.archive.UnarchiveFinishEvent = function() {
 bitjs.inherits(bitjs.archive.UnarchiveFinishEvent, bitjs.archive.UnarchiveEvent);
 
 /**
+ * Progress event.
+ */
+bitjs.archive.UnarchiveProgressEvent = function(
+    currentFilename,
+    currentFileNumber,
+    currentBytesUnarchivedInFile,
+    currentBytesUnarchived,
+    totalUncompressedBytesInArchive,
+    totalFilesInArchive) {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.PROGRESS);
+
+  this.currentFilename = currentFilename;
+  this.currentFileNumber = currentFileNumber;
+  this.currentBytesUnarchivedInFile = currentBytesUnarchivedInFile;
+  this.totalFilesInArchive = totalFilesInArchive;
+  this.currentBytesUnarchived = currentBytesUnarchived;
+  this.totalUncompressedBytesInArchive = totalUncompressedBytesInArchive;
+};
+bitjs.inherits(bitjs.archive.UnarchiveProgressEvent, bitjs.archive.UnarchiveEvent);
+
+/**
  * All extracted files returned by an Unarchiver will implement
  * the following interface:
  *
@@ -130,6 +168,20 @@ bitjs.inherits(bitjs.archive.UnarchiveFinishEvent, bitjs.archive.UnarchiveEvent)
  * }
  *
  */
+
+/**
+ * Extract event.
+ */
+bitjs.archive.UnarchiveExtractEvent = function(unarchivedFile) {
+  bitjs.base(this, bitjs.archive.UnarchiveEvent.Type.EXTRACT);
+
+  /**
+   * @type {UnarchivedFile}
+   */
+  this.unarchivedFile = unarchivedFile;
+};
+bitjs.inherits(bitjs.archive.UnarchiveExtractEvent, bitjs.archive.UnarchiveEvent);
+
 
 /**
  * Base class for all Unarchivers.
@@ -232,12 +284,14 @@ bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
     };
 
     this.worker_.onmessage = function(e) {
-      if (e instanceof bitjs.archive.UnarchiveEvent) {
-        me.handleWorkerEvent_(e.data);
-      } else if (typeof e.data == 'string') {
+      if (typeof e.data == 'string') {
         // Just log any strings the workers pump our way.
         console.log(e.data);
-      }
+      } else {
+        // Assume that it is an UnarchiveEvent.  Some browsers preserve the 'type'
+        // so that instanceof UnarchiveEvent returns true, but others do not.
+        me.handleWorkerEvent_(e.data);
+      } 
     };
 
     this.worker_.postMessage({file: this.ab});

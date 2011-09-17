@@ -14,9 +14,29 @@
 importScripts('binary.js');
 importScripts('archive.js');
 
-// Helper function.
+// Progress variables.
+var currentFilename = "";
+var currentFileNumber = 0;
+var currentBytesUnarchivedInFile = 0;
+var currentBytesUnarchived = 0;
+var totalUncompressedBytesInArchive = 0;
+var totalFilesInArchive = 0;
+
+// Helper functions.
 var info = function(str) {
   postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+};
+var err = function(str) {
+  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+};
+var postProgress = function() {
+  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+      currentFilename,
+      currentFileNumber,
+      currentBytesUnarchivedInFile,
+      currentBytesUnarchived,
+      totalUncompressedBytesInArchive,
+      totalFilesInArchive));
 };
 
 var zLocalFileHeaderSignature = 0x04034b50;
@@ -27,14 +47,12 @@ var zEndOfCentralDirSignature = 0x06064b50;
 var zEndOfCentralDirLocatorSignature = 0x07064b50;
 
 // takes a ByteStream and parses out the local file information
-var ZipLocalFile = function(bstream, bDebug) {
+var ZipLocalFile = function(bstream) {
 	if (typeof bstream != typeof {} || !bstream.readNumber || typeof bstream.readNumber != typeof function(){}) {
 		return null;
 	}
 	
 	bstream.readNumber(4); // swallow signature
-	this.debug = bDebug||false;
-	this.isValid = false;
 	this.version = bstream.readNumber(2);
 	this.generalPurpose = bstream.readNumber(2);
 	this.compressionMethod = bstream.readNumber(2);
@@ -51,27 +69,23 @@ var ZipLocalFile = function(bstream, bDebug) {
 		this.filename = bstream.readString(this.fileNameLength);
 	}
 	
-	if (this.debug) {
-		info(new bitjs.archive.UnarchiveInfoEvent("Zip Local File Header:"));
-		info(" version=" + this.version);
-		info(" general purpose=" + this.generalPurpose);
-		info(" compression method=" + this.compressionMethod);
-		info(" last mod file time=" + this.lastModFileTime);
-		info(" last mod file date=" + this.lastModFileDate);
-		info(" crc32=" + this.crc32);
-		info(" compressed size=" + this.compressedSize);
-		info(" uncompressed size=" + this.uncompressedSize);
-		info(" file name length=" + this.fileNameLength);
-		info(" extra field length=" + this.extraFieldLength);
-		info(" filename = '" + this.filename + "'");
-	}
+	info("Zip Local File Header:");
+	info(" version=" + this.version);
+	info(" general purpose=" + this.generalPurpose);
+	info(" compression method=" + this.compressionMethod);
+	info(" last mod file time=" + this.lastModFileTime);
+	info(" last mod file date=" + this.lastModFileDate);
+	info(" crc32=" + this.crc32);
+	info(" compressed size=" + this.compressedSize);
+	info(" uncompressed size=" + this.uncompressedSize);
+	info(" file name length=" + this.fileNameLength);
+	info(" extra field length=" + this.extraFieldLength);
+	info(" filename = '" + this.filename + "'");
 	
 	this.extraField = null;
 	if (this.extraFieldLength > 0) {
 		this.extraField = bstream.readString(this.extraFieldLength);
-		if (this.debug) {
-		  info(" extra field=" + this.extraField);
-		}
+		 info(" extra field=" + this.extraField);
 	}
 	
 	// read in the compressed data
@@ -94,57 +108,53 @@ var ZipLocalFile = function(bstream, bDebug) {
 
 // determine what kind of compressed data we have and decompress
 ZipLocalFile.prototype.unzip = function() {
-    
 
-		// Zip Version 1.0, no compression (store only)
-		if (this.compressionMethod == 0 ) {
-			if (this.debug)
-				info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
-			progress.currentFileBytesUnzipped = this.compressedSize;
-			progress.totalBytesUnzipped += this.compressedSize;
-			this.isValid = true;
-		}
-		// version == 20, compression method == 8 (DEFLATE)
-		else if (this.compressionMethod == 8) {
-			if (this.debug)
-				info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
-			this.fileData = inflate(this.fileData, this.uncompressedSize);
-			this.isValid = true;
-		}
-		else {
-			info("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
-			this.isValid = false;
-			this.fileData = null;
-		}
-		
-		if (this.isValid) {
-			this.imageString = createURLFromArray(this.fileData);
-			this.fileData = null;
-		}
+  // Zip Version 1.0, no compression (store only)
+  if (this.compressionMethod == 0 ) {
+    info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+    currentBytesUnarchivedInFile = this.compressedSize;
+    currentBytesUnarchived += this.compressedSize;
+  }
+  // version == 20, compression method == 8 (DEFLATE)
+  else if (this.compressionMethod == 8) {
+    info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+    this.fileData = inflate(this.fileData, this.uncompressedSize);
+  }
+  else {
+    err("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
+    this.fileData = null;
+  }
 };
 
 
 // Takes an ArrayBuffer of a zip file in
 // returns null on error
 // returns an array of DecompressedFile objects on success
-var unzip = function(arrayBuffer, bDebug) {
-	postMessage(new bitjs.archive.UnarchiveStartEvent());
-	
-	var bstream = new bitjs.io.ByteStream(arrayBuffer);
-	// detect local file header signature or return null
-	if (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
+var unzip = function(arrayBuffer) {
+  postMessage(new bitjs.archive.UnarchiveStartEvent());
+
+  currentFilename = "";
+  currentFileNumber = 0;
+  currentBytesUnarchivedInFile = 0;
+  currentBytesUnarchived = 0;
+  totalUncompressedBytesInArchive = 0;
+  totalFilesInArchive = 0;
+  currentBytesUnarchived = 0;
+
+  var bstream = new bitjs.io.ByteStream(arrayBuffer);
+  // detect local file header signature or return null
+  if (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
 		var localFiles = [];
 		// loop until we don't see any more local files
 		while (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
-			var oneLocalFile = new ZipLocalFile(bstream, bDebug);
+			var oneLocalFile = new ZipLocalFile(bstream);
 			// this should strip out directories/folders
 			if (oneLocalFile && oneLocalFile.uncompressedSize > 0 && oneLocalFile.fileData) {
 				localFiles.push(oneLocalFile);
-				progress.totalNumFilesInZip++;
-				progress.totalSizeInBytes += oneLocalFile.uncompressedSize;
+				totalUncompressedBytesInArchive += oneLocalFile.uncompressedSize;
 			}
 		}
-		progress.totalNumFilesInZip = localFiles.length;
+		totalFilesInArchive = localFiles.length;
 		
 		// got all local files, now sort them
 		localFiles.sort(function(a,b) {
@@ -169,9 +179,8 @@ var unzip = function(arrayBuffer, bDebug) {
 
 		// archive extra data record
 		if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
-			if (gDebug) {
-				info(" Found an Archive Extra Data Signature");
-			}
+			info(" Found an Archive Extra Data Signature");
+
 			// skipping this record for now
 			bstream.readNumber(4);
 			var archiveExtraFieldLength = bstream.readNumber(4);
@@ -181,9 +190,8 @@ var unzip = function(arrayBuffer, bDebug) {
 		// central directory structure
 		// TODO: handle the rest of the structures (Zip64 stuff)
 		if (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
-			if (gDebug) {
-				info(" Found a Central File Header");
-			}
+			info(" Found a Central File Header");
+
 			// read all file headers
 			while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
 				bstream.readNumber(4); // signature
@@ -212,19 +220,16 @@ var unzip = function(arrayBuffer, bDebug) {
 		
 		// digital signature
 		if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
-			if (gDebug) {
-				info(" Found a Digital Signature");
-			}
+			info(" Found a Digital Signature");
+
 			bstream.readNumber(4);
 			var sizeOfSignature = bstream.readNumber(2);
 			bstream.readString(sizeOfSignature); // digital signature data
 		}
 		
-		progress.isValid = true;
-		
 		// report # files and total length
 		if (localFiles.length > 0) {
-			postMessage(progress);
+			postProgress();
 		}
 		
 		// now do the unzipping of each file
@@ -232,23 +237,21 @@ var unzip = function(arrayBuffer, bDebug) {
 			var localfile = localFiles[i];
 			
 			// update progress 
-			progress.currentFilename = localfile.filename;
-			progress.currentFileBytesUnzipped = 0;
+			currentFilename = localfile.filename;
+			currentFileNumber = i;
+			currentBytesUnarchivedInFile = 0;
 			
 			// actually do the unzipping
 			localfile.unzip();
 			
-			if (progress.isValid) {
-				progress.localFiles.push(localfile);
-				postMessage(progress);
-				// Wipe out old localFiles array now that has been copied out of the thread.
-				progress.localFiles = [];
+			if (localfile.fileData != null) {
+				postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
+				postProgress();
 			}
 		}
-		progress.isDone = true;
-		postMessage(progress);
-	}
-	return progress;
+		postProgress();
+		postMessage(new bitjs.archive.UnarchiveFinishEvent());
+  }
 }
 
 // returns a table of Huffman codes 
@@ -257,7 +260,7 @@ var unzip = function(arrayBuffer, bDebug) {
 function getHuffmanCodes(bitLengths) {
 	// ensure bitLengths is an array containing at least one element
 	if (typeof bitLengths != typeof [] || bitLengths.length < 1) {
-		throw "Error! getHuffmanCodes() called with an invalid array";
+		err("Error! getHuffmanCodes() called with an invalid array");
 		return null;
 	}
 	
@@ -271,7 +274,7 @@ function getHuffmanCodes(bitLengths) {
 		var length = bitLengths[i];
 		// test to ensure each bit length is a positive, non-zero number
 		if (typeof length != typeof 1 || length < 0) {
-			throw ("bitLengths contained an invalid number in getHuffmanCodes(): " + length + " of type " + (typeof length));
+			err("bitLengths contained an invalid number in getHuffmanCodes(): " + length + " of type " + (typeof length));
 			return null;
 		}
 		// increment the appropriate bitlength count
@@ -372,8 +375,8 @@ function decodeSymbol(bstream, hcTable) {
 			break;
 		}
 		if (len > hcTable.maxLength) {
-			throw ("Bit stream out of sync, didn't find a Huffman Code, length was " + len + 
-					" and table only max code length of " + hcTable.maxLength);
+			err("Bit stream out of sync, didn't find a Huffman Code, length was " + len + 
+			    " and table only max code length of " + hcTable.maxLength);
 			break;
 		}
 	}
@@ -488,13 +491,13 @@ function inflateBlockData(bstream, hcLiteralTable, hcDistanceTable, buffer) {
 				// 
 				// loop for each character
 				var ch = buffer.ptr - distance;
-			  blockSize += length;
-				if(length > distance){
+				blockSize += length;
+				if(length > distance) {
 				  var data = buffer.data;
 				  while (length--) {
 					  buffer.insertByte(data[ch++]);
 				  }
-				}else{
+				} else {
 				  buffer.insertBytes(buffer.data.subarray(ch, ch + length))
 				}
 				
@@ -606,14 +609,14 @@ function inflate(compressedData, numDecompressedBytes) {
 		}
 		// error
 		else {
-			throw "Error! Encountered deflate block of type 3";
+			err("Error! Encountered deflate block of type 3");
 			return null;
 		}
 
 		// update progress
-		progress.currentFileBytesUnzipped += blockSize;
-		progress.totalBytesUnzipped += blockSize;
-		postMessage(progress);
+		currentBytesUnarchivedInFile += blockSize;
+		currentBytesUnarchived += blockSize;
+		postProgress();
 
   } while (bFinal != 1);
   // we are done reading blocks if the bFinal bit was set for this block

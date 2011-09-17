@@ -13,10 +13,30 @@
 importScripts('binary.js');
 importScripts('archive.js');
 
-// Helper function.
+// Progress variables.
+var currentFilename = "";
+var currentFileNumber = 0;
+var currentBytesUnarchivedInFile = 0;
+var currentBytesUnarchived = 0;
+var totalUncompressedBytesInArchive = 0;
+var totalFilesInArchive = 0;
+
+// Helper functions.
 var info = function(str) {
   postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
 };
+var err = function(str) {
+  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+};
+var postProgress = function() {
+  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+      currentFilename,
+      currentBytesUnarchivedInFile,
+      currentBytesUnarchived,
+      totalUncompressedBytesInArchive,
+      totalFilesInArchive));
+};
+
 
 // Volume Types
 var MARK_HEAD      = 0x72,
@@ -31,31 +51,25 @@ var MARK_HEAD      = 0x72,
   ENDARC_HEAD      = 0x7b;
 
 // bstream is a bit stream
-var RarVolumeHeader = function(bstream, bDebug) {
-
-  this.debug = bDebug;
+var RarVolumeHeader = function(bstream) {
 
   var headPos = bstream.bytePtr;
   // byte 1,2
   info("Rar Volume Header @"+bstream.bytePtr);
   
   this.crc = bstream.readBits(16);
-  //console.log(this.crc);
-  if (bDebug)
-    info("  crc=" + this.crc);
+  info("  crc=" + this.crc);
 
   // byte 3
   this.headType = bstream.readBits(8);
-  if (bDebug)
-    info("  headType=" + this.headType);
+  info("  headType=" + this.headType);
 
   // Get flags
   // bytes 4,5
   this.flags = {};
   this.flags.value = bstream.peekBits(16);
   
-  if (bDebug)
-    info("  flags=" + twoByteValueToHexString(this.flags.value));
+  info("  flags=" + twoByteValueToHexString(this.flags.value));
   switch (this.headType) {
   case MAIN_HEAD:
     this.flags.MHD_VOLUME = !!bstream.readBits(1);
@@ -85,8 +99,7 @@ var RarVolumeHeader = function(bstream, bDebug) {
     this.flags.LHD_EXTTIME = !!bstream.readBits(1); // 0x1000
     this.flags.LHD_EXTFLAGS = !!bstream.readBits(1); // 0x2000
     bstream.readBits(2); // unused
-    if (bDebug)
-      info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
+    info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
     break;
   default:
     bstream.readBits(16);
@@ -94,16 +107,15 @@ var RarVolumeHeader = function(bstream, bDebug) {
   
   // byte 6,7
   this.headSize = bstream.readBits(16);
-  if (bDebug)
-    info("  headSize=" + this.headSize);
+  info("  headSize=" + this.headSize);
   switch (this.headType) {
   case MAIN_HEAD:
     this.highPosAv = bstream.readBits(16);
     this.posAv = bstream.readBits(32);
-    if (this.flags.MHD_ENCRYPTVER)
+    if (this.flags.MHD_ENCRYPTVER) {
       this.encryptVer = bstream.readBits(8);
-    if (this.debug)
-      info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
+    }
+    info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
     break;
   case FILE_HEAD:
     this.packSize = bstream.readBits(32);
@@ -172,13 +184,11 @@ var RarVolumeHeader = function(bstream, bDebug) {
     
     while(headPos + this.headSize > bstream.bytePtr) bstream.readBits(1);
     
-    if (this.debug)
-      info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
+    info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
     
     break;
   default:
-    if (this.debug)
-      info("Found a header of type 0x" + byteValueToHexString(this.headType));
+    info("Found a header of type 0x" + byteValueToHexString(this.headType));
     // skip the rest of the header bytes (for now)
     bstream.readBytes( this.headSize - 7 );
     break;
@@ -751,9 +761,9 @@ function unpack(v) {
 }
 
 // bstream is a bit stream
-var RarLocalFile = function(bstream, bDebug) {
+var RarLocalFile = function(bstream) {
   
-  this.header = new RarVolumeHeader(bstream, bDebug);
+  this.header = new RarVolumeHeader(bstream);
   this.filename = this.header.filename;
   
   if (this.header.headType != FILE_HEAD && this.header.headType != ENDARC_HEAD) {
@@ -792,19 +802,25 @@ RarLocalFile.prototype.unrar = function() {
   }
 }
 
-var unrar = function(arrayBuffer, bDebug) {
+var unrar = function(arrayBuffer) {
+  currentFilename = "";
+  currentFileNumber = 0;
+  currentBytesUnarchivedInFile = 0;
+  currentBytesUnarchived = 0;
+  totalUncompressedBytesInArchive = 0;
+  totalFilesInArchive = 0;
+
   postMessage(new bitjs.archive.UnarchiveStartEvent());
   var bstream = new bitjs.io.BitStream(arrayBuffer, false /* rtl */);
   
-  var header = new RarVolumeHeader(bstream, bDebug);
+  var header = new RarVolumeHeader(bstream);
   if (header.crc == 0x6152 && 
     header.headType == 0x72 && 
     header.flags.value == 0x1A21 &&
     header.headSize == 7) {
-    if (bDebug)
-      info("Found RAR signature");
+    info("Found RAR signature");
 
-    var mhead = new RarVolumeHeader(bstream, bDebug);
+    var mhead = new RarVolumeHeader(bstream);
     if (mhead.headType != MAIN_HEAD) {
       progress.isValid = false;
       info("Error! RAR did not include a MAIN_HEAD header");
@@ -814,9 +830,8 @@ var unrar = function(arrayBuffer, bDebug) {
         localFile = null;
       do {
         try {
-          localFile = new RarLocalFile(bstream, bDebug);
-          if (bDebug)
-            info("RAR localFile isValid=" + localFile.isValid + ", volume packSize=" + localFile.header.packSize);
+          localFile = new RarLocalFile(bstream);
+          info("RAR localFile isValid=" + localFile.isValid + ", volume packSize=" + localFile.header.packSize);
           if (localFile && localFile.isValid && localFile.header.packSize > 0) {
             progress.totalSizeInBytes += localFile.header.unpackedSize;
             progress.isValid = true;
@@ -879,8 +894,9 @@ var unrar = function(arrayBuffer, bDebug) {
     }
   }
   else {
-    untar(arrayBuffer, bDebug);
+    err("Invalid RAR file");
   }
+  postMessage(new bitjs.archive.UnarchiveFinishEvent());
 };
 
 // event.data.file has the ArrayBuffer.

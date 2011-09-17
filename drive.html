@@ -60,7 +60,13 @@
           fr.onload = function() {
             var ua = new bitjs.archive.Unzipper(fr.result);
             ua.addEventListener(bitjs.archive.UnarchiveEvent.Type.INFO, function(e) {
-              console.log("handler: " + e.msg);
+              console.log("info: " + e.msg);
+            })
+            ua.addEventListener(bitjs.archive.UnarchiveEvent.Type.PROGRESS, function(e) {
+              console.log("progress: " + e.msg);
+            })
+            ua.addEventListener(bitjs.archive.UnarchiveEvent.Type.EXTRACT, function(e) {
+              console.log("extract: " + e.unarchiveFile.filename);
             })
             ua.start();
           };
