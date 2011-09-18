@@ -31,10 +31,20 @@ var err = function(str) {
 var postProgress = function() {
   postMessage(new bitjs.archive.UnarchiveProgressEvent(
       currentFilename,
+      currentFileNumber,
       currentBytesUnarchivedInFile,
       currentBytesUnarchived,
       totalUncompressedBytesInArchive,
       totalFilesInArchive));
+};
+
+// shows a byte value as its hex representation
+var nibble = "0123456789ABCDEF";
+var byteValueToHexString = function(num) {
+  return nibble[num>>4] + nibble[num&0xF];
+};
+var twoByteValueToHexString = function(num) {
+  return nibble[(num>>12)&0xF] + nibble[(num>>8)&0xF] + nibble[(num>>4)&0xF] + nibble[num&0xF];
 };
 
 
@@ -469,10 +479,10 @@ function Unpack20(bstream, Solid) {
 }
 
 function RarUpdateProgress() {
-  var change = rBuffer.ptr - progress.currentFileBytesUnzipped;
-  progress.currentFileBytesUnzipped = rBuffer.ptr;
-  progress.totalBytesUnzipped += change;
-  postMessage(progress);
+  var change = rBuffer.ptr - currentBytesUnarchivedInFile;
+  currentBytesUnarchivedInFile = rBuffer.ptr;
+  currentBytesUnarchived += change;
+  postProgress();
 }
 
 
@@ -768,7 +778,6 @@ var RarLocalFile = function(bstream) {
   
   if (this.header.headType != FILE_HEAD && this.header.headType != ENDARC_HEAD) {
     this.isValid = false;
-    //progress.isValid = false;
     info("Error! RAR Volume did not include a FILE_HEAD header ");
   }
   else {
@@ -789,16 +798,12 @@ RarLocalFile.prototype.unrar = function() {
       info("Unstore "+this.filename);
       this.isValid = true;
       
-      progress.currentFileBytesUnzipped += this.fileData.length;
-      progress.totalBytesUnzipped += this.fileData.length;
+      currentBytesUnarchivedInFile += this.fileData.length;
+      currentBytesUnarchived += this.fileData.length;
     } else {
       this.isValid = true;
       this.fileData = unpack(this);
     }
-  }
-	if (this.isValid && this.fileData && this.fileData.buffer) {
-		this.imageString = createURLFromArray(this.fileData);
-    this.fileData = null;
   }
 }
 
@@ -822,7 +827,6 @@ var unrar = function(arrayBuffer) {
 
     var mhead = new RarVolumeHeader(bstream);
     if (mhead.headType != MAIN_HEAD) {
-      progress.isValid = false;
       info("Error! RAR did not include a MAIN_HEAD header");
     }
     else {
@@ -833,19 +837,17 @@ var unrar = function(arrayBuffer) {
           localFile = new RarLocalFile(bstream);
           info("RAR localFile isValid=" + localFile.isValid + ", volume packSize=" + localFile.header.packSize);
           if (localFile && localFile.isValid && localFile.header.packSize > 0) {
-            progress.totalSizeInBytes += localFile.header.unpackedSize;
-            progress.isValid = true;
+            totalUncompressedBytesInArchive += localFile.header.unpackedSize;
             localFiles.push(localFile);
           } else if (localFile.header.packSize == 0 && localFile.header.unpackedSize == 0) {
             localFile.isValid = true;
-            progress.isValid = true;
           }
         } catch(err) {
           break;
         }
         //info("bstream" + bstream.bytePtr+"/"+bstream.bytes.length);
       } while( localFile.isValid );
-      progress.totalNumFilesInZip = localFiles.length;
+      totalFilesInArchive = localFiles.length;
       
       // now we have all information but things are unpacked
       // TODO: unpack
@@ -876,21 +878,19 @@ var unrar = function(arrayBuffer) {
         var localfile = localFiles[i];
         
         // update progress 
-        progress.currentFilename = localfile.header.filename;
-        progress.currentFileBytesUnzipped = 0;
+        currentFilename = localfile.header.filename;
+        currentBytesUnarchivedInFile = 0;
         
         // actually do the unzipping
         localfile.unrar();
         
         if (localfile.isValid) {
-          progress.localFiles.push(localfile);
-          postMessage(progress);
-          progress.localFiles = [];
+          postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
+          postProgress();
         }
       }
       
-      progress.isDone = true;
-      postMessage(progress);
+      postProgress();
     }
   }
   else {

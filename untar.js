@@ -30,6 +30,7 @@ var err = function(str) {
 var postProgress = function() {
   postMessage(new bitjs.archive.UnarchiveProgressEvent(
       currentFilename,
+      currentFileNumber,
       currentBytesUnarchivedInFile,
       currentBytesUnarchived,
       totalUncompressedBytesInArchive,
@@ -90,7 +91,6 @@ var TarLocalFile = function(bstream) {
   	this.fileData = new Uint8Array(bstream.bytes.buffer, bstream.ptr, this.size);
     if (this.name.length > 0 && this.size > 0 && this.fileData && this.fileData.buffer) {
       this.isValid = true;
-      this.imageString = createURLFromArray(this.fileData);
   	}
 
     bstream.readBytes(this.size);
@@ -125,11 +125,10 @@ var untar = function(arrayBuffer) {
   	var oneLocalFile = new TarLocalFile(bstream);
   	if (oneLocalFile && oneLocalFile.isValid) {
       localFiles.push(oneLocalFile);
-      progress.totalNumFilesInZip++;
-      progress.totalSizeInBytes += oneLocalFile.size;
+      totalUncompressedBytesInArchive += oneLocalFile.size;
   	}
   }
-  progress.totalNumFilesInZip = localFiles.length;
+  totalFilesInArchive = localFiles.length;
 
   // got all local files, now sort them
   localFiles.sort(function(a,b) {
@@ -152,11 +151,9 @@ var untar = function(arrayBuffer) {
       return anum - bnum;
   });
 
-  progress.isValid = true;
-
   // report # files and total length
   if (localFiles.length > 0) {
-    postMessage(progress);
+    postProgress();
   }
 
   // now do the shipping of each file
@@ -165,23 +162,17 @@ var untar = function(arrayBuffer) {
     info("Sending file '" + localfile.filename + "' up");
 
     // update progress
-    progress.currentFilename = localfile.filename;
-    progress.currentFileBytesUnzipped = localfile.size;
-    progress.totalBytesUnzipped += localfile.size;
-    progress.isValid = true;
-    progress.localFiles.push(localfile);
-    postMessage(progress);
-
-    // Wipe out old localFiles array now that has been copied out of the thread.
-    progress.localFiles = [];
+    currentFilename = localfile.filename;
+    currentFileNumber = i;
+    currentBytesUnarchivedInFile = localfile.size;
+    currentBytesUnarchived += localfile.size;
+    postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
+    postProgress();
   }
 
-  progress.isDone = true;
-  postMessage(progress);
+  postProgress();
 
   postMessage(new bitjs.archive.UnarchiveFinishEvent());
-
-  return progress;
 };
 
 // event.data.file has the ArrayBuffer.
