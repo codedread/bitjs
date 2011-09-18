@@ -10,7 +10,7 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('binary.js');
+importScripts('io.js');
 importScripts('archive.js');
 
 // Progress variables.

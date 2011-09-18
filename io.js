@@ -1,5 +1,5 @@
 /*
- * binary.js
+ * io.js
  *
  * Provides readers for bit/byte streams (reading) and a byte buffer (writing).
  *
