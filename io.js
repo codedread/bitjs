@@ -53,6 +53,9 @@ bitjs.io.BitStream = function(ab, rtl, opt_offset, opt_length) {
  * 
  * The bit pointer starts at bit0 of byte0 and moves left until it reaches
  * bit7 of byte0, then jumps to bit0 of byte1, etc.
+ * @param {number} n The number of bits to peek.
+ * @param {boolean=} movePointers Whether to move the pointer, defaults false.
+ * @return {number} The peeked bits, as an unsigned number.
  */
 bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -112,6 +115,9 @@ bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
  *
  * The bit pointer starts at bit7 of byte0 and moves right until it reaches
  * bit0 of byte0, then goes to bit7 of byte1, etc.
+ * @param {number} n The number of bits to peek.
+ * @param {boolean=} movePointers Whether to move the pointer, defaults false.
+ * @return {number} The peeked bits, as an unsigned number.
  */
 bitjs.io.BitStream.prototype.peekBits_rtl = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -173,6 +179,9 @@ bitjs.io.BitStream.prototype.getBits = function() {
 
 
 /**
+ * Reads n bits out of the stream, consuming them (moving the bit pointer).
+ * @param {number} n The number of bits to read.
+ * @return {number} The read bits, as an unsigned number.
  */
 bitjs.io.BitStream.prototype.readBits = function(n) {
   return this.peekBits(n, true);
@@ -183,6 +192,9 @@ bitjs.io.BitStream.prototype.readBits = function(n) {
  * This returns n bytes as a sub-array, advancing the pointer if movePointers
  * is true.  Only use this for uncompressed blocks as this throws away remaining
  * bits in the current byte.
+ * @param {number} n The number of bytes to peek.
+ * @param {boolean=} movePointers Whether to move the pointer, defaults false.
+ * @return {number} The peeked bytes, as an unsigned number.
  */
 bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -210,6 +222,8 @@ bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
 
 
 /**
+ * @param {number} n The number of bytes to read.
+ * @return {number} The read bytes, as a number.
  */
 bitjs.io.BitStream.prototype.readBytes = function(n) {
   return this.peekBytes(n, true);
@@ -239,6 +253,8 @@ bitjs.io.ByteStream = function(ab, opt_offset, opt_length) {
  * Peeks at the next n bytes as an unsigned number but does not advance the
  * pointer.
  * TODO: This apparently cannot read more than 4 bytes as a number?
+ * @param {number} n The number of bytes to peek.
+ * @return {number} The peeked bytes, as an unsigned number.
  */
 bitjs.io.ByteStream.prototype.peekNumber = function(n) {
   // TODO: return error if n would go past the end of the stream?
@@ -260,6 +276,8 @@ bitjs.io.ByteStream.prototype.peekNumber = function(n) {
 /**
  * Returns the next n bytes as an unsigned number (or -1 on error) and advances
  * the stream pointer n bytes.
+ * @param {number} n The number of bytes to read.
+ * @return {number} The read bytes, as an unsigned number.
  */
 bitjs.io.ByteStream.prototype.readNumber = function(n) {
   var num = this.peekNumber( n );
@@ -271,6 +289,9 @@ bitjs.io.ByteStream.prototype.readNumber = function(n) {
 /**
  * This returns n bytes as a sub-array, advancing the pointer if movePointers
  * is true.
+ * @param {number} n The number of bytes to peek.
+ * @param {boolean=} movePointers Whether to move the pointer, defaults false.
+ * @return {ArrayBuffer} The bytes as a sub-array.
  */
 bitjs.io.ByteStream.prototype.peekBytes = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -288,6 +309,8 @@ bitjs.io.ByteStream.prototype.peekBytes = function(n, movePointers) {
 
 
 /**
+ * @param {number} n The number of bytes to read.
+ * @return {ArrayBuffer} The bytes as a sub-array.
  */
 bitjs.io.ByteStream.prototype.readBytes = function(n) {
   return this.peekBytes(n, true);
@@ -296,6 +319,8 @@ bitjs.io.ByteStream.prototype.readBytes = function(n) {
 
 /**
  * Peeks at the next n bytes as a string but does not advance the pointer.
+ * @param {number} n The number of bytes to peek.
+ * @return {string} The bytes, as a string.
  */
 bitjs.io.ByteStream.prototype.peekString = function(n) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -312,6 +337,8 @@ bitjs.io.ByteStream.prototype.peekString = function(n) {
 
 /**
  * Returns the next n bytes as a string and advances the stream pointer n bytes.
+ * @param {number} n The number of bytes to read.
+ * @return {string} The bytes, as a string.
  */
 bitjs.io.ByteStream.prototype.readString = function(n) {
   var strToReturn = this.peekString(n);
@@ -333,6 +360,8 @@ bitjs.io.ByteBuffer = function(numBytes) {
 
 
 /**
+ * Writes byte b to the buffer.
+ * @param {number} b The byte to write.
  */
 bitjs.io.ByteBuffer.prototype.insertByte = function(b) {
   // TODO: throw if byte is invalid?
@@ -341,6 +370,8 @@ bitjs.io.ByteBuffer.prototype.insertByte = function(b) {
 
 
 /**
+ * Writes a number of bytes to the buffer.
+ * @param {ArrayBuffer} bytes The typed array of bytes to append to the buffer.
  */
 bitjs.io.ByteBuffer.prototype.insertBytes = function(bytes) {
   // TODO: throw if bytes is invalid?
