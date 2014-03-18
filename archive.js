@@ -270,6 +270,9 @@ bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
   if ((e instanceof bitjs.archive.UnarchiveEvent || e.type) && 
       this.listeners_[e.type] instanceof Array) {
     this.listeners_[e.type].forEach(function (listener) { listener(e) });
+    if (e.type == bitjs.archive.UnarchiveEvent.Type.FINISH) {
+        this.worker_.terminate();
+    }
   } else {
     console.log(e);
   }
