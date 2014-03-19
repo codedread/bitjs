@@ -232,14 +232,12 @@ bitjs.io.BitStream.prototype.readBytes = function(n) {
 
 /**
  * This object allows you to peek and consume bytes as numbers and strings
- * out of an ArrayBuffer.
- *
- * This object is much easier to write than the above BitStream since
- * everything is byte-aligned.
+ * out of an ArrayBuffer.  In this buffer, everything must be byte-aligned.
  *
  * @param {ArrayBuffer} ab The ArrayBuffer object.
- * @param {Number} opt_offset The offset into the ArrayBuffer
- * @param {Number} opt_length The length of this BitStream
+ * @param {number=} opt_offset The offset into the ArrayBuffer
+ * @param {number=} opt_length The length of this BitStream
+ * @constructor
  */
 bitjs.io.ByteStream = function(ab, opt_offset, opt_length) {
   var offset = opt_offset || 0;
@@ -251,10 +249,10 @@ bitjs.io.ByteStream = function(ab, opt_offset, opt_length) {
 
 /**
  * Peeks at the next n bytes as an unsigned number but does not advance the
- * pointer.
+ * pointer
  * TODO: This apparently cannot read more than 4 bytes as a number?
- * @param {number} n The number of bytes to peek.
- * @return {number} The peeked bytes, as an unsigned number.
+ * @param {number} n The number of bytes to peek at.
+ * @return {number} The n bytes interpreted as an unsigned number.
  */
 bitjs.io.ByteStream.prototype.peekNumber = function(n) {
   // TODO: return error if n would go past the end of the stream?
@@ -274,10 +272,10 @@ bitjs.io.ByteStream.prototype.peekNumber = function(n) {
 
 
 /**
- * Returns the next n bytes as an unsigned number (or -1 on error) and advances
- * the stream pointer n bytes.
+ * Returns the next n bytes as an unsigned number (or -1 on error)
+ * and advances the stream pointer n bytes.
  * @param {number} n The number of bytes to read.
- * @return {number} The read bytes, as an unsigned number.
+ * @return {number} The n bytes interpreted as an unsigned number.
  */
 bitjs.io.ByteStream.prototype.readNumber = function(n) {
   var num = this.peekNumber( n );
@@ -287,15 +285,44 @@ bitjs.io.ByteStream.prototype.readNumber = function(n) {
 
 
 /**
+ * Returns the next n bytes as a signed number but does not advance the
+ * pointer.
+ * @param {number} n The number of bytes to read.
+ * @return {number} The bytes interpreted as a signed number.
+ */
+bitjs.io.ByteStream.prototype.peekSignedNumber = function(n) {
+  var num = this.peekNumber(n);
+  var HALF = Math.pow(2, (n * 8) - 1);
+  var FULL = HALF * 2;
+
+  if (num >= HALF) num -= FULL;
+
+  return num;
+};
+
+
+/**
+ * Returns the next n bytes as a signed number and advances the stream pointer.
+ * @param {number} n The number of bytes to read.
+ * @return {number} The bytes interpreted as a signed number.
+ */
+bitjs.io.ByteStream.prototype.readSignedNumber = function(n) {
+  var num = this.peekSignedNumber(n);
+  this.ptr += n;
+  return num;
+};
+
+
+/**
  * This returns n bytes as a sub-array, advancing the pointer if movePointers
  * is true.
- * @param {number} n The number of bytes to peek.
- * @param {boolean=} movePointers Whether to move the pointer, defaults false.
- * @return {ArrayBuffer} The bytes as a sub-array.
+ * @param {number} n The number of bytes to read.
+ * @param {boolean} movePointers Whether to move the pointers.
+ * @return {Uint8Array} The subarray.
  */
 bitjs.io.ByteStream.prototype.peekBytes = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
-    return 0;
+    return null;
   }
 
   var result = this.bytes.subarray(this.ptr, this.ptr + n);
@@ -309,8 +336,9 @@ bitjs.io.ByteStream.prototype.peekBytes = function(n, movePointers) {
 
 
 /**
+ * Reads the next n bytes as a sub-array.
  * @param {number} n The number of bytes to read.
- * @return {ArrayBuffer} The bytes as a sub-array.
+ * @return {Uint8Array} The subarray.
  */
 bitjs.io.ByteStream.prototype.readBytes = function(n) {
   return this.peekBytes(n, true);
@@ -319,12 +347,12 @@ bitjs.io.ByteStream.prototype.readBytes = function(n) {
 
 /**
  * Peeks at the next n bytes as a string but does not advance the pointer.
- * @param {number} n The number of bytes to peek.
- * @return {string} The bytes, as a string.
+ * @param {number} n The number of bytes to peek at.
+ * @return {string} The next n bytes as a string.
  */
 bitjs.io.ByteStream.prototype.peekString = function(n) {
   if (n <= 0 || typeof n != typeof 1) {
-    return 0;
+    return "";
   }
 
   var result = "";
@@ -336,9 +364,10 @@ bitjs.io.ByteStream.prototype.peekString = function(n) {
 
 
 /**
- * Returns the next n bytes as a string and advances the stream pointer n bytes.
+ * Returns the next n bytes as an ASCII string and advances the stream pointer
+ * n bytes.
  * @param {number} n The number of bytes to read.
- * @return {string} The bytes, as a string.
+ * @return {string} The next n bytes as a string.
  */
 bitjs.io.ByteStream.prototype.readString = function(n) {
   var strToReturn = this.peekString(n);
@@ -349,6 +378,8 @@ bitjs.io.ByteStream.prototype.readString = function(n) {
 
 /**
  * A write-only Byte buffer which uses a Uint8 Typed Array as a backing store.
+ * @param {number} numBytes The number of bytes to allocate.
+ * @constructor
  */
 bitjs.io.ByteBuffer = function(numBytes) {
   if (typeof numBytes != typeof 1 || numBytes <= 0) {
@@ -360,8 +391,7 @@ bitjs.io.ByteBuffer = function(numBytes) {
 
 
 /**
- * Writes byte b to the buffer.
- * @param {number} b The byte to write.
+ * @param {number} b The byte to insert.
  */
 bitjs.io.ByteBuffer.prototype.insertByte = function(b) {
   // TODO: throw if byte is invalid?
@@ -370,13 +400,84 @@ bitjs.io.ByteBuffer.prototype.insertByte = function(b) {
 
 
 /**
- * Writes a number of bytes to the buffer.
- * @param {ArrayBuffer} bytes The typed array of bytes to append to the buffer.
+ * @param {Array.<number>|Uint8Array|Int8Array} bytes The bytes to insert.
  */
 bitjs.io.ByteBuffer.prototype.insertBytes = function(bytes) {
   // TODO: throw if bytes is invalid?
   this.data.set(bytes, this.ptr);
   this.ptr += bytes.length;
+};
+
+
+/**
+ * Writes an unsigned number into the next n bytes.  If the number is too large
+ * to fit into n bytes or is negative, an error is thrown.
+ * @param {number} num The unsigned number to write.
+ * @param {number} numBytes The number of bytes to write the number into.
+ */
+bitjs.io.ByteBuffer.prototype.writeNumber = function(num, numBytes) {
+  if (numBytes < 1) {
+    throw 'Trying to write into too few bytes: ' + numBytes;
+  }
+  if (num < 0) {
+    throw 'Trying to write a negative number (' + num +
+        ') as an unsigned number to an ArrayBuffer';
+  }
+  if (num > (Math.pow(2, numBytes * 8) - 1)) {
+    throw 'Trying to write ' + num + ' into only ' + numBytes + ' bytes';
+  }
+
+  // Roll 8-bits at a time into an array of bytes.
+  var bytes = [];
+  while (numBytes-- > 0) {
+    var eightBits = num & 255;
+    bytes.push(eightBits);
+    num >>= 8;
+  }
+
+  this.insertBytes(bytes);
+};
+
+
+/**
+ * Writes a signed number into the next n bytes.  If the number is too large
+ * to fit into n bytes, an error is thrown.
+ * @param {number} num The signed number to write.
+ * @param {number} numBytes The number of bytes to write the number into.
+ */
+bitjs.io.ByteBuffer.prototype.writeSignedNumber = function(num, numBytes) {
+  if (numBytes < 1) {
+    throw 'Trying to write into too few bytes: ' + numBytes;
+  }
+
+  var HALF = Math.pow(2, (numBytes * 8) - 1);
+  if (num >= HALF || num < -HALF) {
+    throw 'Trying to write ' + num + ' into only ' + numBytes + ' bytes';
+  }
+
+  // Roll 8-bits at a time into an array of bytes.
+  var bytes = [];
+  while (numBytes-- > 0) {
+    var eightBits = num & 255;
+    bytes.push(eightBits);
+    num >>= 8;
+  }
+
+  this.insertBytes(bytes);
+};
+
+
+/**
+ * @param {string} str The ASCII string to write.
+ */
+bitjs.io.ByteBuffer.prototype.writeASCIIString = function(str) {
+  for (var i = 0; i < str.length; ++i) {
+    var curByte = str.charCodeAt(i);
+    if (curByte < 0 || curByte > 255) {
+      throw 'Trying to write a non-ASCII string!';
+    }
+    this.insertByte(curByte);
+  }
 };
 
 })();
