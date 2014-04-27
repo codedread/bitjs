@@ -194,7 +194,7 @@ bitjs.io.BitStream.prototype.readBits = function(n) {
  * bits in the current byte.
  * @param {number} n The number of bytes to peek.
  * @param {boolean=} movePointers Whether to move the pointer, defaults false.
- * @return {number} The peeked bytes, as an unsigned number.
+ * @return {Uint8Array} The subarray.
  */
 bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
@@ -223,7 +223,7 @@ bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
 
 /**
  * @param {number} n The number of bytes to read.
- * @return {number} The read bytes, as a number.
+ * @return {Uint8Array} The subarray.
  */
 bitjs.io.BitStream.prototype.readBytes = function(n) {
   return this.peekBytes(n, true);

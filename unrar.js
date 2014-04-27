@@ -724,11 +724,11 @@ function RarCopyString(length, distance) {
   if(destPtr < 0){    
     var l = rOldBuffers.length;
     while(destPtr < 0){
-      destPtr = rOldBuffers[--l].data.length + destPtr
+      destPtr = rOldBuffers[--l].data.length + destPtr;
     }
     //TODO: lets hope that it never needs to read beyond file boundaries
     while(length--) rBuffer.insertByte(rOldBuffers[l].data[destPtr++]);
-    
+
   }
   if (length > distance) {
     while(length--) rBuffer.insertByte(rBuffer.data[destPtr++]);
@@ -800,6 +800,12 @@ RarLocalFile.prototype.unrar = function() {
       
       currentBytesUnarchivedInFile += this.fileData.length;
       currentBytesUnarchived += this.fileData.length;
+
+      // Create a new buffer and copy it over.
+      var len = this.header.packSize;
+      var newBuffer = new bitjs.io.ByteBuffer(len);
+      newBuffer.insertBytes(this.fileData);
+      this.fileData = newBuffer.data;
     } else {
       this.isValid = true;
       this.fileData = unpack(this);
