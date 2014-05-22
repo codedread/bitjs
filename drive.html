@@ -67,7 +67,7 @@
               console.log("progress: " + e.msg);
             })
             ua.addEventListener(bitjs.archive.UnarchiveEvent.Type.EXTRACT, function(e) {
-              console.log("extract: " + e.unarchiveFile.filename);
+              console.log("extract: " + e.unarchivedFile.filename);
             })
             ua.start();
           };
