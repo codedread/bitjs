@@ -305,7 +305,17 @@ bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
 
     this.worker_.postMessage({file: this.ab});
   }
-}
+};
+
+/**
+ * Terminates the Web Worker for this Unarchiver and returns immediately.
+ */
+bitjs.archive.Unarchiver.prototype.stop = function() {
+  if (this.worker_) {
+    this.worker_.terminate();
+  }
+};
+
 
 /**
  * Unzipper
