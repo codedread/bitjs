@@ -132,7 +132,12 @@ var untar = function(arrayBuffer) {
 
   // got all local files, now sort them
   localFiles.sort(function(a,b) {
+      var aname = a.filename;
+      var bname = b.filename;
+      return aname > bname ? 1 : -1;
+
       // extract the number at the end of both filenames
+      /*
       var aname = a.filename;
       var bname = b.filename;
       var aindex = aname.length, bindex = bname.length;
@@ -149,6 +154,7 @@ var untar = function(arrayBuffer) {
       var anum = parseInt(aname.substr(aindex), 10),
           bnum = parseInt(bname.substr(bindex), 10);
       return anum - bnum;
+      */
   });
 
   // report # files and total length

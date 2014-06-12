@@ -858,10 +858,11 @@ var unrar = function(arrayBuffer) {
       // now we have all information but things are unpacked
       // TODO: unpack
       localFiles = localFiles.sort(function(a,b) {
-			  // extract the number at the end of both filenames
 			  var aname = a.filename;
 			  var bname = b.filename;
 			  return aname > bname ? 1 : -1;
+
+        // extract the number at the end of both filenames
 			  /*
 			  var aindex = aname.length, bindex = bname.length;
         
