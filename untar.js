@@ -96,7 +96,7 @@ var TarLocalFile = function(bstream) {
     bstream.readBytes(this.size);
 
     // Round up to 512-byte blocks.
-    var remaining = 512 - this.size % 512;
+    var remaining = 512 - bstream.ptr % 512;
     if (remaining > 0 && remaining < 512) {
       bstream.readBytes(remaining);
     }
