@@ -9,7 +9,7 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('io.js');
+importScripts('io/bytestream.js');
 importScripts('archive.js');
 
 // Progress variables.

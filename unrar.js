@@ -10,7 +10,8 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('io.js');
+importScripts('io/bitstream.js');
+importScripts('io/bytebuffer.js');
 importScripts('archive.js');
 
 // Progress variables.
@@ -865,7 +866,7 @@ var unrar = function(arrayBuffer) {
         // extract the number at the end of both filenames
 			  /*
 			  var aindex = aname.length, bindex = bname.length;
-        
+
 			  // Find the last number character from the back of the filename.
 			  while (aname[aindex-1] < '0' || aname[aindex-1] > '9') --aindex;
 			  while (bname[bindex-1] < '0' || bname[bindex-1] > '9') --bindex;
@@ -873,7 +874,7 @@ var unrar = function(arrayBuffer) {
 			  // Find the first number character from the back of the filename
 			  while (aname[aindex-1] >= '0' && aname[aindex-1] <= '9') --aindex;
 			  while (bname[bindex-1] >= '0' && bname[bindex-1] <= '9') --bindex;
-			
+
 			  // parse them into numbers and return comparison
 			  var anum = parseInt(aname.substr(aindex), 10),
 				  bnum = parseInt(bname.substr(bindex), 10);
