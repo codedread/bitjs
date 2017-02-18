@@ -565,6 +565,10 @@ RarVM.prototype.executeCode = function(preparedCodes) {
       case VM_Commands.VM_STANDARD:
         this.executeStandardFilter(cmd.Op1.Data);
         break;
+
+      default:
+        console.error('RarVM OpCode not supported: ' + getDebugString(VM_Commands, cmd.OpCode));
+        break;
     } // switch (cmd.OpCode)
     codeIndex++;
     cmd = preparedCodes[codeIndex];
@@ -600,6 +604,10 @@ RarVM.prototype.executeStandardFilter = function(filterType) {
         }
       }
 
+      break;
+
+    default:
+      console.error('RarVM Standard Filter not supported: ' + getDebugString(VM_StandardFilters, filterType));
       break;
   }
 };
