@@ -169,7 +169,10 @@ bitjs.io.BitStream.prototype.peekBits_rtl = function(n, movePointers) {
 
 
 /**
- * Some voodoo magic.
+ * Peek at 16 bits from current position in the buffer.
+ * Bit at (bytePtr,bitPtr) has the highest position in returning data.
+ * Taken from getbits.hpp in unrar.
+ * TODO: Move this out of BitStream and into unrar.
  */
 bitjs.io.BitStream.prototype.getBits = function() {
   return (((((this.bytes[this.bytePtr] & 0xff) << 16) +
