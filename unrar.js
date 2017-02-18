@@ -13,6 +13,7 @@
 importScripts('io/bitstream.js');
 importScripts('io/bytebuffer.js');
 importScripts('archive.js');
+importScripts('rarvm.js');
 
 // Progress variables.
 var currentFilename = "";
@@ -61,9 +62,13 @@ var MARK_HEAD      = 0x72,
   NEWSUB_HEAD      = 0x7a,
   ENDARC_HEAD      = 0x7b;
 
-// bstream is a bit stream
-var RarVolumeHeader = function(bstream) {
+// ============================================================================================== //
 
+/**
+ * @param {bitjs.io.BitStream} bstream
+ * @constructor
+ */
+var RarVolumeHeader = function(bstream) {
   var headPos = bstream.bytePtr;
   // byte 1,2
   info("Rar Volume Header @"+bstream.bytePtr);
@@ -178,13 +183,15 @@ var RarVolumeHeader = function(bstream) {
       // this is adapted straight out of arcread.cpp, Archive::ReadHeader()
       for (var I = 0; I < 4; ++I) {
         var rmode = extTimeFlags >> ((3-I)*4);
-        if ((rmode & 8)==0)
+        if ((rmode & 8)==0) {
           continue;
+        }
         if (I!=0)
           bstream.readBits(16);
           var count = (rmode&3);
-          for (var J = 0; J < count; ++J) 
+          for (var J = 0; J < count; ++J) {
             bstream.readBits(8);
+          }
       }
     }
     
@@ -193,7 +200,9 @@ var RarVolumeHeader = function(bstream) {
     }
     
     
-    while(headPos + this.headSize > bstream.bytePtr) bstream.readBits(1);
+    while (headPos + this.headSize > bstream.bytePtr) {
+      bstream.readBits(1);
+    }
     
     info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
     
@@ -263,12 +272,42 @@ var RD = { //rep decode
   DecodeNum: new Array(rRC)
 };
 
+/**
+ * @type {Array<bitjs.io.ByteBuffer>}
+ */
+var rOldBuffers = [];
+
+/**
+ * The current buffer we are unpacking to.
+ * @type {bitjs.io.ByteBuffer}
+ */
 var rBuffer;
 
-// read in Huffman tables for RAR
+/**
+ * The buffer of the final bytes after filtering (only used in Unpack29).
+ * @type {bitjs.io.ByteBuffer}
+ */
+var wBuffer;
+
+
+/**
+ * In unpack.cpp, UnpPtr keeps track of what bytes have been unpacked
+ * into the Window buffer and WrPtr keeps track of what bytes have been
+ * actually written to disk after the unpacking and optional filtering
+ * has been done.
+ *
+ * In our case, rBuffer is the buffer for the unpacked bytes and wBuffer is
+ * the final output bytes.
+ */
+
+
+/**
+ * Read in Huffman tables for RAR
+ * @param {bitjs.io.BitStream} bstream
+ */
 function RarReadTables(bstream) {
-  var BitLength = new Array(rBC),
-    Table = new Array(rHUFF_TABLE_SIZE);
+  var BitLength = new Array(rBC);
+  var Table = new Array(rHUFF_TABLE_SIZE);
 
   // before we start anything we need to get byte-aligned
   bstream.readBits( (8 - bstream.bitPtr) & 0x7 );
@@ -279,12 +318,13 @@ function RarReadTables(bstream) {
   }
   
   if (!bstream.readBits(1)) { //discard old table
-    for (var i = UnpOldTable.length; i--;) UnpOldTable[i] = 0;
+    for (var i = UnpOldTable.length; i--;) {
+      UnpOldTable[i] = 0;
+    }
   }
 
   // read in bit lengths
   for (var I = 0; I < rBC; ++I) {
-
     var Length = bstream.readBits(4);
     if (Length == 15) {
       var ZeroCount = bstream.readBits(4);
@@ -314,7 +354,7 @@ function RarReadTables(bstream) {
     if (num < 16) {
       Table[i] = (num + UnpOldTable[i]) & 0xf;
       i++;
-    } else if(num < 18) {
+    } else if (num < 18) {
       var N = (num == 16) ? (bstream.readBits(3) + 3) : (bstream.readBits(7) + 11);
 
       while (N-- > 0 && i < TableSize) {
@@ -368,13 +408,18 @@ function RarDecodeNumber(bstream, dec) {
 }
 
 
-
 function RarMakeDecodeTables(BitLength, offset, dec, size) {
-  var DecodeLen = dec.DecodeLen, DecodePos = dec.DecodePos, DecodeNum = dec.DecodeNum;
-  var LenCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-      TmpPos = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-      N = 0, M = 0;
-  for (var i = DecodeNum.length; i--;) DecodeNum[i] = 0;
+  var DecodeLen = dec.DecodeLen;
+  var DecodePos = dec.DecodePos;
+  var DecodeNum = dec.DecodeNum;
+  var LenCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  var TmpPos = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  var N = 0;
+  var M = 0;
+
+  for (var i = DecodeNum.length; i--;) {
+    DecodeNum[i] = 0;
+  }
   for (var i = 0; i < size; i++) {
     LenCount[BitLength[i + offset] & 0xF]++;
   }
@@ -386,23 +431,35 @@ function RarMakeDecodeTables(BitLength, offset, dec, size) {
   for (var I = 1; I < 16; ++I) {
     N = 2 * (N+LenCount[I]);
     M = (N << (15-I));
-    if (M > 0xFFFF)
+    if (M > 0xFFFF) {
       M = 0xFFFF;
+    }
     DecodeLen[I] = M;
     DecodePos[I] = DecodePos[I-1] + LenCount[I-1];
     TmpPos[I] = DecodePos[I];
   }
-  for (I = 0; I < size; ++I)
-    if (BitLength[I + offset] != 0)
+  for (I = 0; I < size; ++I) {
+    if (BitLength[I + offset] != 0) {
       DecodeNum[ TmpPos[ BitLength[offset + I] & 0xF ]++] = I;
+    }
+  }
 
 }
 
 // TODO: implement
+/**
+ * @param {bitjs.io.BitStream} bstream
+ * @param {boolean} Solid
+ */
 function Unpack15(bstream, Solid) {
   info("ERROR!  RAR 1.5 compression not supported");
 }
 
+/**
+ * Unpacks the bit stream into rBuffer using the Unpack20 algorithm.
+ * @param {bitjs.io.BitStream} bstream
+ * @param {boolean} Solid
+ */
 function Unpack20(bstream, Solid) {
   var destUnpSize = rBuffer.data.length;
   var oldDistPtr = 0;
@@ -426,7 +483,9 @@ function Unpack20(bstream, Solid) {
       }
       if (Distance >= 0x2000) {
         Length++;
-        if(Distance >= 0x40000) Length++;
+        if (Distance >= 0x40000) {
+          Length++;
+        }
       }
       lastLength = Length;
       lastDist = rOldDist[oldDistPtr++ & 3] = Distance;
@@ -435,9 +494,7 @@ function Unpack20(bstream, Solid) {
     }
     if (num == 269) {
       RarReadTables20(bstream);
-
-      RarUpdateProgress()
-      
+      RarUpdateProgress();
       continue;
     }
     if (num == 256) {
@@ -456,7 +513,9 @@ function Unpack20(bstream, Solid) {
         Length++;
         if (Distance >= 0x2000) {
           Length++
-          if (Distance >= 0x40000) Length++;
+          if (Distance >= 0x40000) {
+            Length++;
+          }
         }
       }
       lastLength = Length;
@@ -476,7 +535,7 @@ function Unpack20(bstream, Solid) {
     }
     
   }
-  RarUpdateProgress()
+  RarUpdateProgress();
 }
 
 function RarUpdateProgress() {
@@ -485,7 +544,6 @@ function RarUpdateProgress() {
   currentBytesUnarchived += change;
   postProgress();
 }
-
 
 var rNC20 = 298,
     rDC20 = 48,
@@ -500,11 +558,15 @@ function RarReadTables20(bstream) {
   var Table = new Array(rMC20 * 4);
   var TableSize, N, I;
   var AudioBlock = bstream.readBits(1);
-  if (!bstream.readBits(1))
-    for (var i = UnpOldTable20.length; i--;) UnpOldTable20[i] = 0;
+  if (!bstream.readBits(1)) {
+    for (var i = UnpOldTable20.length; i--;) {
+      UnpOldTable20[i] = 0;
+    }
+  }
   TableSize = rNC20 + rDC20 + rRC20;
-  for (var I = 0; I < rBC20; I++)
+  for (var I = 0; I < rBC20; I++) {
     BitLength[I] = bstream.readBits(4);
+  }
   RarMakeDecodeTables(BitLength, 0, BD, rBC20);
   I = 0;
   while (I < TableSize) {
@@ -512,7 +574,7 @@ function RarReadTables20(bstream) {
     if (num < 16) {
       Table[I] = num + UnpOldTable20[I] & 0xf;
       I++;
-    } else if(num == 16) {
+    } else if (num == 16) {
       N = bstream.readBits(2) + 3;
       while (N-- > 0 && I < TableSize) {
         Table[I] = Table[I - 1];
@@ -532,23 +594,262 @@ function RarReadTables20(bstream) {
   RarMakeDecodeTables(Table, 0, LD, rNC20);
   RarMakeDecodeTables(Table, rNC20, DD, rDC20);
   RarMakeDecodeTables(Table, rNC20 + rDC20, RD, rRC20);
-  for (var i = UnpOldTable20.length; i--;) UnpOldTable20[i] = Table[i];
+  for (var i = UnpOldTable20.length; i--;) {
+    UnpOldTable20[i] = Table[i];
+  }
 }
 
-var lowDistRepCount = 0, prevLowDist = 0;
+var lowDistRepCount = 0;
+var prevLowDist = 0;
 
 var rOldDist = [0,0,0,0];
 var lastDist;
 var lastLength;
 
+// ============================================================================================== //
 
+// Unpack code specific to RarVM
+var VM = new RarVM();
+
+/**
+ * Filters code, one entry per filter.
+ * @type {Array<UnpackFilter>}
+ */
+var Filters = [];
+
+/**
+ * Filters stack, several entrances of same filter are possible.
+ * @type {Array<UnpackFilter>}
+ */
+var PrgStack = [];
+
+/**
+ * Lengths of preceding blocks, one length per filter. Used to reduce
+ * size required to write block length if lengths are repeating.
+ * @type {Array<number>}
+ */
+var OldFilterLengths = [];
+
+var LastFilter = 0;
+
+function InitFilters() {
+  OldFilterLengths = [];
+  LastFilter = 0;
+  Filters = [];
+  PrgStack = [];
+}
+
+
+/**
+ * @param {number} firstByte The first byte (flags).
+ * @param {Uint8Array} vmCode An array of bytes.
+ */
+function RarAddVMCode(firstByte, vmCode) {
+  VM.init();
+  var bstream = new bitjs.io.BitStream(vmCode.buffer, true /* rtl */);
+
+  var filtPos;
+  if (firstByte & 0x80) {
+    filtPos = RarVM.readData(bstream);
+    if (filtPos == 0) {
+      InitFilters();
+    } else {
+      filtPos--;
+    }
+  } else {
+    filtPos = LastFilter;
+  }
+
+  if (filtPos > Filters.length || filtPos > OldFilterLengths.length) {
+    return false;
+  }
+
+  LastFilter = filtPos;
+  var newFilter = (filtPos == Filters.length);
+
+  // new filter for PrgStack
+  var stackFilter = new UnpackFilter();
+  var filter = null;
+  // new filter code, never used before since VM reset
+  if (newFilter) {
+    // too many different filters, corrupt archive
+    if (filtPos > 1024) {
+      return false;
+    }
+
+    filter = new UnpackFilter();
+    Filters.push(filter);
+    stackFilter.ParentFilter = (Filters.length - 1);
+    OldFilterLengths.push(0); // OldFilterLengths.Add(1)
+    filter.ExecCount = 0;
+  } else { // filter was used in the past
+    filter = Filters[filtPos];
+    stackFilter.ParentFilter = filtPos;
+    filter.ExecCount++;
+  }
+
+  var emptyCount = 0;
+  for (var i = 0; i < PrgStack.length; ++i) {
+    PrgStack[i - emptyCount] = PrgStack[i];
+
+    if (PrgStack[i] == null) {
+      emptyCount++;
+    }
+    if (emptyCount > 0) {
+      PrgStack[i] = null;
+    }
+  }
+
+  if (emptyCount == 0) {
+    PrgStack.push(null); //PrgStack.Add(1);
+    emptyCount = 1;
+  }
+
+  var stackPos = PrgStack.length - emptyCount;
+  PrgStack[stackPos] = stackFilter;
+  stackFilter.ExecCount = filter.ExecCount;
+
+  var blockStart = RarVM.readData(bstream);
+  if (firstByte & 0x40) {
+    blockStart += 258;
+  }
+  stackFilter.BlockStart = (blockStart + rBuffer.ptr) & MAXWINMASK;
+
+  if (firstByte & 0x20) {
+    stackFilter.BlockLength = RarVM.readData(bstream);
+  } else {
+    stackFilter.BlockLength = filtPos < OldFilterLengths.length
+        ? OldFilterLengths[filtPos]
+        : 0;
+  }
+  stackFilter.NextWindow = (wBuffer.ptr != rBuffer.ptr) &&
+      (((wBuffer.ptr - rBuffer.ptr) & MAXWINMASK) <= blockStart);
+
+  OldFilterLengths[filtPos] = stackFilter.BlockLength;
+
+  for (var i = 0; i < 7; ++i) {
+    stackFilter.Prg.InitR[i] = 0;
+  }
+  stackFilter.Prg.InitR[3] = VM_GLOBALMEMADDR;
+  stackFilter.Prg.InitR[4] = stackFilter.BlockLength;
+  stackFilter.Prg.InitR[5] = stackFilter.ExecCount;
+
+  // set registers to optional parameters if any
+  if (firstByte & 0x10) {
+    var initMask = bstream.readBits(7);
+    for (var i = 0; i < 7; ++i) {
+      if (initMask & (1 << i)) {
+        stackFilter.Prg.InitR[i] = RarVM.readData(bstream);
+      }
+    }
+  }
+
+  if (newFilter) {
+    var vmCodeSize = RarVM.readData(bstream);
+    if (vmCodeSize >= 0x10000 || vmCodeSize == 0) {
+      return false;
+    }
+    var vmCode = new Uint8Array(vmCodeSize);
+    for (var i = 0; i < vmCodeSize; ++i) {
+      //if (Inp.Overflow(3))
+      //  return(false);
+      vmCode[i] = bstream.readBits(8);
+    }
+    VM.prepare(vmCode, filter.Prg);
+  }
+  stackFilter.Prg.Cmd = filter.Prg.Cmd;
+  stackFilter.Prg.AltCmd = filter.Prg.Cmd;
+
+  var staticDataSize = filter.Prg.StaticData.length;
+  if (staticDataSize > 0 && staticDataSize < VM_GLOBALMEMSIZE) {
+    // read statically defined data contained in DB commands
+    for (var i = 0; i < staticDataSize; ++i) {
+      stackFilter.Prg.StaticData[i] = filter.Prg.StaticData[i];
+    }
+  }
+
+  if (stackFilter.Prg.GlobalData.length < VM_FIXEDGLOBALSIZE) {
+    stackFilter.Prg.GlobalData = new Uint8Array(VM_FIXEDGLOBALSIZE);
+  }
+
+  var globalData = stackFilter.Prg.GlobalData;
+  for (var i = 0; i < 7; ++i) {
+    VM.setLowEndianValue(globalData, stackFilter.Prg.InitR[i], i * 4);
+  }
+
+  VM.setLowEndianValue(globalData, stackFilter.BlockLength, 0x1c);
+  VM.setLowEndianValue(globalData, 0, 0x20);
+  VM.setLowEndianValue(globalData, stackFilter.ExecCount, 0x2c);
+  for (var i = 0; i < 16; ++i) {
+    globalData[0x30 + i] = 0;
+  }
+
+  // put data block passed as parameter if any
+  if (firstByte & 8) {
+    //if (Inp.Overflow(3))
+    //  return(false);
+    var dataSize = RarVM.readData(bstream);
+    if (dataSize > (VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE)) {
+      return(false);
+    }
+
+    var curSize = stackFilter.Prg.GlobalData.length;
+    if (curSize < dataSize + VM_FIXEDGLOBALSIZE) {
+      // Resize global data and update the stackFilter and local variable.
+      var numBytesToAdd = dataSize + VM_FIXEDGLOBALSIZE - curSize;
+      var newGlobalData = new Uint8Array(globalData.length + numBytesToAdd);
+      newGlobalData.set(globalData);
+
+      stackFilter.Prg.GlobalData = newGlobalData;
+      globalData = newGlobalData;
+    }
+    //byte *GlobalData=&StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
+    for (var i = 0; i < dataSize; ++i) {
+      //if (Inp.Overflow(3))
+      //  return(false);
+      globalData[VM_FIXEDGLOBALSIZE + i] = bstream.readBits(8);
+    }
+  }
+
+  return true;
+}
+
+
+/**
+ * @param {!bitjs.io.BitStream} bstream
+ */
+function RarReadVMCode(bstream) {
+  var firstByte = bstream.readBits(8);
+  var length = (firstByte & 7) + 1;
+  if (length == 7) {
+    length = bstream.readBits(8) + 7;
+  } else if (length == 8) {
+    length = bstream.readBits(16);
+  }
+
+  // Read all bytes of VM code into an array.
+  var vmCode = new Uint8Array(length);
+  for (var i = 0; i < length; i++) {
+    // Do something here with checking readbuf.
+    vmCode[i] = bstream.readBits(8);
+  }
+  return RarAddVMCode(firstByte, vmCode);
+}
+
+/**
+ * Unpacks the bit stream into rBuffer using the Unpack29 algorithm.
+ * @param {bitjs.io.BitStream} bstream
+ * @param {boolean} Solid
+ */
 function Unpack29(bstream, Solid) {
   // lazy initialize rDDecode and rDBits
 
   var DDecode = new Array(rDC);
   var DBits = new Array(rDC);
   
-  var Dist=0,BitLength=0,Slot=0;
+  var Dist = 0;
+  var BitLength = 0;
+  var Slot = 0;
   
   for (var I = 0; I < rDBitLengthCounts.length; I++,BitLength++) {
     for (var J = 0; J < rDBitLengthCounts[I]; J++,Slot++,Dist+=(1<<BitLength)) {
@@ -565,7 +866,9 @@ function Unpack29(bstream, Solid) {
   lastDist = 0;
   lastLength = 0;
 
-  for (var i = UnpOldTable.length; i--;) UnpOldTable[i] = 0;
+  for (var i = UnpOldTable.length; i--;) {
+    UnpOldTable[i] = 0;
+  }
     
   // read in Huffman tables
   RarReadTables(bstream);
@@ -583,7 +886,7 @@ function Unpack29(bstream, Solid) {
         Length += bstream.readBits(Bits);
       }
       var DistNumber = RarDecodeNumber(bstream, DD);
-      var Distance = DDecode[DistNumber]+1;
+      var Distance = DDecode[DistNumber] + 1;
       if ((Bits = DBits[DistNumber]) > 0) {
         if (DistNumber > 9) {
           if (Bits > 4) {
@@ -620,13 +923,15 @@ function Unpack29(bstream, Solid) {
       continue;
     }
     if (num == 256) {
-      if (!RarReadEndOfBlock(bstream)) break;
-      
+      if (!RarReadEndOfBlock(bstream)) {
+        break;
+      }
       continue;
     }
     if (num == 257) {
-      //console.log("READVMCODE");
-      if (!RarReadVMCode(bstream)) break;
+      if (!RarReadVMCode(bstream)) {
+        break;
+      }
       continue;
     }
     if (num == 258) {
@@ -663,15 +968,191 @@ function Unpack29(bstream, Solid) {
       RarCopyString(2, Distance);
       continue;
     }
-    
+  } // while (true)
+  RarUpdateProgress();
+  RarWriteBuf();
+}
+
+/**
+ * Does stuff to the current byte buffer (rBuffer) based on
+ * the filters loaded into the RarVM and writes out to wBuffer.
+ */
+function RarWriteBuf() {
+  var writeSize = (rBuffer.ptr & MAXWINMASK);
+
+  for (var i = 0; i < PrgStack.length; ++i) {
+    var flt = PrgStack[i];
+    if (flt == null) {
+      continue;
+    }
+
+    if (flt.NextWindow) {
+      flt.NextWindow = false;
+      continue;
+    }
+
+    var blockStart = flt.BlockStart;
+    var blockLength = flt.BlockLength;
+
+    // WrittenBorder = wBuffer.ptr
+    if (((blockStart - wBuffer.ptr) & MAXWINMASK) < writeSize) {
+      if (wBuffer.ptr != blockStart) {
+        // Copy blockStart bytes from rBuffer into wBuffer.
+        RarWriteArea(wBuffer.ptr, blockStart);
+        writeSize = (rBuffer.ptr - wBuffer.ptr) & MAXWINMASK;
+      }
+      if (blockLength <= writeSize) {
+        var blockEnd = (blockStart + blockLength) & MAXWINMASK;
+        if (blockStart < blockEnd || blockEnd == 0) {
+          VM.setMemory(0, rBuffer.data.subarray(blockStart, blockStart + blockLength), blockLength);
+        } else {
+          var firstPartLength = MAXWINSIZE - blockStart;
+          VM.setMemory(0, rBuffer.data.subarray(blockStart, blockStart + firstPartLength), firstPartLength);
+          VM.setMemory(firstPartLength, rBuffer.data, blockEnd);
+        }
+
+        var parentPrg = Filters[flt.ParentFilter].Prg;
+        var prg = flt.Prg;
+
+        if (parentPrg.GlobalData.length > VM_FIXEDGLOBALSIZE) {
+          // Copy global data from previous script execution if any.
+          prg.GlobalData = new Uint8Array(parentPrg.GlobalData);
+        }
+
+        RarExecuteCode(prg);
+
+        if (prg.GlobalData.length > VM_FIXEDGLOBALSIZE) {
+          // Save global data for next script execution.
+          var globalDataLen = prg.GlobalData.length;
+          if (parentPrg.GlobalData.length < globalDataLen) {
+            parentPrg.GlobalData = new Uint8Array(globalDataLen);
+          }
+          parentPrg.GlobalData.set(
+              this.mem_.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen),
+              VM_FIXEDGLOBALSIZE);
+        } else {
+          parentPrg.GlobalData = new Uint8Array(0);
+        }
+
+        var filteredData = prg.FilteredData;
+
+        PrgStack[i] = null;
+        while (i + 1 < PrgStack.length) {
+          var nextFilter = PrgStack[i + 1];
+          if (nextFilter == null || nextFilter.BlockStart != blockStart ||
+              nextFilter.BlockLength != filteredData.length || nextFilter.NextWindow) {
+            break;
+          }
+
+          // Apply several filters to same data block.
+
+          VM.setMemory(0, filteredData, filteredData.length);
+
+          var parentPrg = Filters[nextFilter.ParentFilter].Prg;
+          var nextPrg = nextFilter.Prg;
+
+          var globalDataLen = parentPrg.GlobalData.length;
+          if (globalDataLen > VM_FIXEDGLOBALSIZE) {
+            // Copy global data from previous script execution if any.
+            nextPrg.GlobalData = new Uint8Array(globalDataLen);
+            nextPrg.GlobalData.set(parentPrg.GlobalData.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen), VM_FIXEDGLOBALSIZE);
+          }
+
+          RarExecuteCode(nextPrg);
+
+          if (nextPrg.GlobalData.length > VM_GLOBALMEMSIZE) {
+            // Save global data for next script execution.
+            var globalDataLen = nextPrg.GlobalData.length;
+            if (parentPrg.GlobalData.length < globalDataLen) {
+              parentPrg.GlobalData = new Uint8Array(globalDataLen);
+            }
+            parentPrg.GlobalData.set(
+                this.mem_.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen),
+                VM_FIXEDGLOBALSIZE);
+          } else {
+            parentPrg.GlobalData = new Uint8Array(0);
+          }
+
+          filteredData = nextPrg.FilteredData;
+          i++;
+          PrgStack[i] = null;
+        } // while (i + 1 < PrgStack.length)
+
+        for (var j = 0; j < filteredData.length; ++j) {
+          wBuffer.insertByte(filteredData[j]);
+        }
+        writeSize = (rBuffer.ptr - wBuffer.ptr) & MAXWINMASK;
+      } // if (blockLength <= writeSize)
+      else {
+        for (var j = i; j < PrgStack.length; ++j) {
+          var flt = PrgStack[j];
+          if (flt != null && flt.NextWindow) {
+            flt.NextWindow = false;
+          }
+        }
+        //WrPtr=WrittenBorder;
+        return;
+      }
+    } // if (((blockStart - wBuffer.ptr) & MAXWINMASK) < writeSize)
+  } // for (var i = 0; i < PrgStack.length; ++i)
+
+  // Write any remaining bytes from rBuffer to wBuffer;
+  RarWriteArea(wBuffer.ptr, rBuffer.ptr);
+
+  // Now that the filtered buffer has been written, swap it back to rBuffer.
+  rBuffer = wBuffer;
+}
+
+/**
+ * Copy bytes from rBuffer to wBuffer.
+ * @param {number} startPtr The starting point to copy from rBuffer.
+ * @param {number} endPtr The ending point to copy from rBuffer.
+ */
+function RarWriteArea(startPtr, endPtr) {
+  if (endPtr < startPtr) {
+    console.error('endPtr < startPtr, endPtr=' + endPtr + ', startPtr=' + startPtr);
+//    RarWriteData(startPtr, -(int)StartPtr & MAXWINMASK);
+//    RarWriteData(0, endPtr);
+    return;
+  } else if (startPtr < endPtr) {
+    RarWriteData(startPtr, endPtr - startPtr);
   }
-  RarUpdateProgress()
+}
+
+/**
+ * Writes bytes into wBuffer from rBuffer.
+ * @param {number} offset The starting point to copy bytes from rBuffer.
+ * @param {number} numBytes The number of bytes to copy.
+ */
+function RarWriteData(offset, numBytes) {
+  if (wBuffer.ptr >= rBuffer.data.length) {
+    return;
+  }
+  var leftToWrite = rBuffer.data.length - wBuffer.ptr;
+  if (numBytes > leftToWrite) {
+    numBytes = leftToWrite;
+  }
+  for (var i = 0; i < numBytes; ++i) {
+    wBuffer.insertByte(rBuffer.data[offset + i]);
+  }
+}
+
+/**
+ * @param {VM_PreparedProgram} prg
+ */
+function RarExecuteCode(prg)
+{
+  if (prg.GlobalData.length > 0) {
+    var writtenFileSize = wBuffer.ptr;
+    prg.InitR[6] = writtenFileSize;
+    VM.setLowEndianValue(prg.GlobalData, writtenFileSize, 0x24);
+    VM.setLowEndianValue(prg.GlobalData, (writtenFileSize >>> 32) >> 0, 0x28);
+    VM.execute(prg);
+  }
 }
 
 function RarReadEndOfBlock(bstream) {
-  
-  RarUpdateProgress()
-
+  RarUpdateProgress();
 
   var NewTable = false, NewFile = false;
   if (bstream.readBits(1)) {
@@ -684,31 +1165,6 @@ function RarReadEndOfBlock(bstream) {
   return !(NewFile || NewTable && !RarReadTables(bstream));
 }
 
-
-function RarReadVMCode(bstream) {
-  var FirstByte = bstream.readBits(8);
-  var Length = (FirstByte & 7) + 1;
-  if (Length == 7) {
-    Length = bstream.readBits(8) + 7;
-  } else if(Length == 8) {
-    Length = bstream.readBits(16);
-  }
-  var vmCode = [];
-  for(var I = 0; I < Length; I++) {
-    //do something here with cheking readbuf
-    vmCode.push(bstream.readBits(8));
-  }
-  return RarAddVMCode(FirstByte, vmCode, Length);
-}
-
-function RarAddVMCode(firstByte, vmCode, length) {
-  //console.log(vmCode);
-  if (vmCode.length > 0) {
-    info("Error! RarVM not supported yet!");
-  }
-  return true;
-}
-
 function RarInsertLastMatch(length, distance) {
   lastDist = distance;
   lastLength = length;
@@ -719,38 +1175,46 @@ function RarInsertOldDist(distance) {
   rOldDist.splice(0,0,distance);
 }
 
-//this is the real function, the other one is for debugging
-function RarCopyString(length, distance) {
-  var destPtr = rBuffer.ptr - distance;
-  if(destPtr < 0){    
+/**
+ * Copies len bytes from distance bytes ago in the buffer to the end of the
+ * current byte buffer.
+ * @param {number} length How many bytes to copy.
+ * @param {number} distance How far back in the buffer from the current write
+ *     pointer to start copying from.
+ */
+function RarCopyString(len, distance) {
+  var srcPtr = rBuffer.ptr - distance;
+  if (srcPtr < 0) {
     var l = rOldBuffers.length;
-    while(destPtr < 0){
-      destPtr = rOldBuffers[--l].data.length + destPtr;
+    while (srcPtr < 0) {
+      srcPtr = rOldBuffers[--l].data.length + srcPtr;
     }
-    //TODO: lets hope that it never needs to read beyond file boundaries
-    while(length--) rBuffer.insertByte(rOldBuffers[l].data[destPtr++]);
-
+    // TODO: lets hope that it never needs to read beyond file boundaries
+    while (len--) {
+      rBuffer.insertByte(rOldBuffers[l].data[srcPtr++]);
+    }
   }
-  if (length > distance) {
-    while(length--) rBuffer.insertByte(rBuffer.data[destPtr++]);
+  if (len > distance) {
+    while (len--) {
+      rBuffer.insertByte(rBuffer.data[srcPtr++]);
+    }
   } else {
-    rBuffer.insertBytes(rBuffer.data.subarray(destPtr, destPtr + length));
+    rBuffer.insertBytes(rBuffer.data.subarray(srcPtr, srcPtr + len));
   }
-  
 }
 
-var rOldBuffers = []
-// v must be a valid RarVolume
+/**
+ * @param {RarLocalFile} v
+ */
 function unpack(v) {
-
   // TODO: implement what happens when unpVer is < 15
-  var Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer,
-    Solid = v.header.LHD_SOLID,
-    bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
+  var Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
+  var Solid = v.header.LHD_SOLID;
+  var bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
   
   rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
 
-  info("Unpacking "+v.filename+" RAR v"+Ver);
+  info("Unpacking " + v.filename + " RAR v" + Ver);
     
   switch(Ver) {
     case 15: // rar 1.5 compression
@@ -762,18 +1226,18 @@ function unpack(v) {
       break;
     case 29: // rar 3.x compression
     case 36: // alternative hash
+      wBuffer = new bitjs.io.ByteBuffer(rBuffer.data.length);
       Unpack29(bstream, Solid);
       break;
   } // switch(method)
   
   rOldBuffers.push(rBuffer);
-  //TODO: clear these old buffers when there's over 4MB of history
+  // TODO: clear these old buffers when there's over 4MB of history
   return rBuffer.data;
 }
 
 // bstream is a bit stream
 var RarLocalFile = function(bstream) {
-  
   this.header = new RarVolumeHeader(bstream);
   this.filename = this.header.filename;
   
@@ -792,7 +1256,6 @@ var RarLocalFile = function(bstream) {
 };
 
 RarLocalFile.prototype.unrar = function() {
-
   if (!this.header.flags.LHD_SPLIT_BEFORE) {
     // unstore file
     if (this.header.method == 0x30) {
@@ -853,32 +1316,15 @@ var unrar = function(arrayBuffer) {
           break;
         }
         //info("bstream" + bstream.bytePtr+"/"+bstream.bytes.length);
-      } while( localFile.isValid );
+      } while (localFile.isValid);
       totalFilesInArchive = localFiles.length;
       
       // now we have all information but things are unpacked
       // TODO: unpack
       localFiles = localFiles.sort(function(a,b) {
-			  var aname = a.filename;
-			  var bname = b.filename;
-			  return aname > bname ? 1 : -1;
-
-        // extract the number at the end of both filenames
-			  /*
-			  var aindex = aname.length, bindex = bname.length;
-
-			  // Find the last number character from the back of the filename.
-			  while (aname[aindex-1] < '0' || aname[aindex-1] > '9') --aindex;
-			  while (bname[bindex-1] < '0' || bname[bindex-1] > '9') --bindex;
-
-			  // Find the first number character from the back of the filename
-			  while (aname[aindex-1] >= '0' && aname[aindex-1] <= '9') --aindex;
-			  while (bname[bindex-1] >= '0' && bname[bindex-1] <= '9') --bindex;
-
-			  // parse them into numbers and return comparison
-			  var anum = parseInt(aname.substr(aindex), 10),
-				  bnum = parseInt(bname.substr(bindex), 10);
-			  return bnum - anum;*/
+        var aname = a.filename.toLowerCase();
+        var bname = b.filename.toLowerCase();
+        return aname > bname ? 1 : -1;
 		  });
 
       info(localFiles.map(function(a){return a.filename}).join(', '));
