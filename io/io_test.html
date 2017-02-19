@@ -14,33 +14,33 @@
       setUp: function() {
         buffer = new bitjs.io.ByteBuffer(10);
       },
-      tests: [
-        function testWriteNumberThenRead() {
+      tests: {
+        testWriteNumberThenRead: function() {
           buffer.writeNumber(1234, 4);
           var stream = new bitjs.io.ByteStream(buffer.data);
           muther.assertEquals(1234, stream.peekNumber(4));
         },
-        function testWriteUnsignedByteThenRead() {
+        testWriteUnsignedByteThenRead: function() {
           buffer.writeNumber(192, 1);
           var stream = new bitjs.io.ByteStream(buffer.data);
           muther.assertEquals(192, stream.readNumber(1));
         },
-        function testWriteSignedByteThenRead() {
+        testWriteSignedByteThenRead: function() {
           buffer.writeSignedNumber(-120, 1);
           var stream = new bitjs.io.ByteStream(buffer.data);
           muther.assertEquals(-120, stream.readSignedNumber(1));
         },
-        function testWriteSignedPositiveNumberThenRead() {
+        testWriteSignedPositiveNumberThenRead: function() {
           buffer.writeSignedNumber(1234, 4);
           var stream = new bitjs.io.ByteStream(buffer.data);
           muther.assertEquals(1234, stream.readSignedNumber(4));
         },
-        function testWriteSignedNegativeNumberThenRead() {
+        testWriteSignedNegativeNumberThenRead: function() {
           buffer.writeSignedNumber(-128, 1);
           var stream = new bitjs.io.ByteStream(buffer.data);
           muther.assertEquals(-128, stream.readSignedNumber(1));
         },
-        function testWriteOverflowUnsigned() {
+        testWriteOverflowUnsigned: function() {
           var passed = false;
           try {
               buffer.writeNumber(256, 1);
@@ -49,7 +49,7 @@
           }
           muther.assert(passed);
         },
-        function testWriteOverflowSignedPositive() {
+        testWriteOverflowSignedPositive: function() {
           var passed = false;
           try {
               buffer.writeSignedNumber(128, 1);
@@ -58,7 +58,7 @@
           }
           muther.assert(passed);
         },
-        function testWriteOverflowSignedNegative() {
+        testWriteOverflowSignedNegative: function() {
           var passed = false;
           try {
               buffer.writeSignedNumber(-129, 1);
@@ -66,8 +66,8 @@
               passed = true;
           }
           muther.assert(passed);
-        }
-      ]
+        },
+      },
     });
 </script>
 </body>
