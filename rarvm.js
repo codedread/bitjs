@@ -1,12 +1,9 @@
 /**
  * rarvm.js
  *
- * Copyright(c) 2011 Google Inc.
- * Copyright(c) 2011 antimatter15
+ * Licensed under the MIT License
  *
- * Reference Documentation:
- *
- * http://kthoom.googlecode.com/hg/docs/unrar.html
+ * Copyright(c) 2017 Google Inc.
  */
 
 /**

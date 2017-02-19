@@ -1,6 +1,8 @@
 /**
  * unzip.js
  *
+ * Licensed under the MIT License
+ *
  * Copyright(c) 2011 Google Inc.
  * Copyright(c) 2011 antimatter15
  *

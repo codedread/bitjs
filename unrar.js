@@ -1,12 +1,10 @@
 /**
  * unrar.js
  *
+ * Licensed under the MIT License
+ *
  * Copyright(c) 2011 Google Inc.
  * Copyright(c) 2011 antimatter15
- *
- * Reference Documentation:
- *
- * http://kthoom.googlecode.com/hg/docs/unrar.html
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
