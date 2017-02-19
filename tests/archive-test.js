@@ -10,7 +10,12 @@ var assertEquals = muther.assertEquals;
 var testInputs = {
     'testUnzipDeflate': 'archive-testfiles/test-unzip-deflate.json',
     'testUnzipStore': 'archive-testfiles/test-unzip-store.json',
-    'testUnrar': 'archive-testfiles/test-unrar.json',
+    'testUnrarM1': 'archive-testfiles/test-unrar-m1.json',
+    'testUnrarM2': 'archive-testfiles/test-unrar-m2.json',
+    'testUnrarM3': 'archive-testfiles/test-unrar-m3.json',
+    'testUnrarM4': 'archive-testfiles/test-unrar-m4.json',
+    'testUnrarM5': 'archive-testfiles/test-unrar-m5.json',
+    'testUnrarMA4': 'archive-testfiles/test-unrar-ma4.json',
 };
 
 var testSuite = {tests: {}};

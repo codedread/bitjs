@@ -361,7 +361,8 @@ bitjs.archive.GetUnarchiver = function(ab, opt_pathToBitJS) {
   var unarchiver = null;
   var pathToBitJS = opt_pathToBitJS || '';
   var h = new Uint8Array(ab, 0, 10);
-  if (h[0] == 0x52 && h[1] == 0x61 && h[2] == 0x72 && h[3] == 0x21) { //Rar!
+
+  if (h[0] == 0x52 && h[1] == 0x61 && h[2] == 0x72 && h[3] == 0x21) { // Rar!
     unarchiver = new bitjs.archive.Unrarrer(ab, pathToBitJS);
   } else if (h[0] == 80 && h[1] == 75) { // PK (Zip)
     unarchiver = new bitjs.archive.Unzipper(ab, pathToBitJS);

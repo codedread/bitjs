@@ -1213,8 +1213,8 @@ function unpack(v) {
   rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
 
   info("Unpacking " + v.filename + " RAR v" + Ver);
-    
-  switch(Ver) {
+
+  switch (Ver) {
     case 15: // rar 1.5 compression
       Unpack15(bstream, Solid);
       break;
