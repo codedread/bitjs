@@ -1,17 +1,18 @@
 /**
- * Mini Unit Test Harness
- * Copyright(c) 2014, Google Inc.
+ * Minimal Unit Test Harness
  *
- * A really tiny unit test harness.
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2014, Google Inc.
  */
 var muther = muther || {};
 
-var $ = function(s) { return document.querySelector(s) || {}; }
+muther.$ = function(s) { return document.querySelector(s) || {}; }
 muther.assert = function(cond, err) { if (!cond) { throw err; } };
 muther.assertEquals = function(a, b, err) { muther.assert(a === b, err); };
 
 muther.set_ = function(id, style, innerHTML) {
-  $('#' + id).innerHTML = '';
+  muther.$('#' + id).innerHTML = '';
   document.body.innerHTML += '<div id="' + id + '" style="' + style + '">' + innerHTML + '</div>';
 };
 
