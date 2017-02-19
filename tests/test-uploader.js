@@ -62,7 +62,6 @@ function output() {
   json += '  "archivedFile": "' + archivedFileAsText + '",\n';
   json += '  "unarchivedFile": "' + unarchivedFileAsText + '"\n';
   json += '}';
-  debugger;
   window.open('data:application/json;utf8,' + json);
 }
 

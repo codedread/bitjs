@@ -8,7 +8,9 @@
 
 var assertEquals = muther.assertEquals;
 var testInputs = {
-    'testZip': 'archive-testfiles/test-unzip.json',
+    'testUnzipDeflate': 'archive-testfiles/test-unzip-deflate.json',
+    'testUnzipStore': 'archive-testfiles/test-unzip-store.json',
+    'testUnrar': 'archive-testfiles/test-unrar.json',
 };
 
 var testSuite = {tests: {}};
