@@ -13,9 +13,9 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('io/bitstream.js');
-importScripts('io/bytebuffer.js');
-importScripts('io/bytestream.js');
+importScripts('../io/bitstream.js');
+importScripts('../io/bytebuffer.js');
+importScripts('../io/bytestream.js');
 importScripts('archive.js');
 
 // Progress variables.

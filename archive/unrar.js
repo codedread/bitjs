@@ -8,8 +8,8 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('io/bitstream.js');
-importScripts('io/bytebuffer.js');
+importScripts('../io/bitstream.js');
+importScripts('../io/bytebuffer.js');
 importScripts('archive.js');
 importScripts('rarvm.js');
 

@@ -203,7 +203,7 @@ bitjs.archive.Unarchiver = function(arrayBuffer, opt_pathToBitJS) {
    * @type {string}
    * @private
    */
-  this.pathToBitJS_ = opt_pathToBitJS || '';
+  this.pathToBitJS_ = opt_pathToBitJS || '/';
 
   /**
    * A map from event type to an array of listeners.
