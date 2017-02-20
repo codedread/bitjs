@@ -50,8 +50,16 @@ const zDigitalSignatureSignature = 0x05054b50;
 const zEndOfCentralDirSignature = 0x06064b50;
 const zEndOfCentralDirLocatorSignature = 0x07064b50;
 
-// takes a ByteStream and parses out the local file information
-const ZipLocalFile = function(bstream) {
+// mask for getting the Nth bit (zero-based)
+const BIT = [ 0x01, 0x02, 0x04, 0x08,
+    0x10, 0x20, 0x40, 0x80,
+    0x100, 0x200, 0x400, 0x800,
+    0x1000, 0x2000, 0x4000, 0x8000];
+
+
+class ZipLocalFile {
+  // takes a ByteStream and parses out the local file information
+  constructor(bstream) {
     if (typeof bstream != typeof {} || !bstream.readNumber || typeof bstream.readNumber != typeof function(){}) {
         return null;
     }
@@ -103,32 +111,32 @@ const ZipLocalFile = function(bstream) {
     // "This descriptor exists only if bit 3 of the general purpose bit flag is set"
     // But how do you figure out how big the file data is if you don't know the compressedSize
     // from the header?!?
-    if ((this.generalPurpose & bitjs.BIT[3]) != 0) {
+    if ((this.generalPurpose & BIT[3]) != 0) {
         this.crc32 = bstream.readNumber(4);
         this.compressedSize = bstream.readNumber(4);
         this.uncompressedSize = bstream.readNumber(4);
     }
-};
+  }
 
-// determine what kind of compressed data we have and decompress
-ZipLocalFile.prototype.unzip = function() {
-  // Zip Version 1.0, no compression (store only)
-  if (this.compressionMethod == 0 ) {
-    info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
-    currentBytesUnarchivedInFile = this.compressedSize;
-    currentBytesUnarchived += this.compressedSize;
+  // determine what kind of compressed data we have and decompress
+  unzip() {
+    // Zip Version 1.0, no compression (store only)
+    if (this.compressionMethod == 0 ) {
+      info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+      currentBytesUnarchivedInFile = this.compressedSize;
+      currentBytesUnarchived += this.compressedSize;
+    }
+    // version == 20, compression method == 8 (DEFLATE)
+    else if (this.compressionMethod == 8) {
+      info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+      this.fileData = inflate(this.fileData, this.uncompressedSize);
+    }
+    else {
+      err("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
+      this.fileData = null;
+    }
   }
-  // version == 20, compression method == 8 (DEFLATE)
-  else if (this.compressionMethod == 8) {
-    info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
-    this.fileData = inflate(this.fileData, this.uncompressedSize);
-  }
-  else {
-    err("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
-    this.fileData = null;
-  }
-};
-
+}
 
 // Takes an ArrayBuffer of a zip file in
 // returns null on error
@@ -374,21 +382,22 @@ function decodeSymbol(bstream, hcTable) {
 
 
 const CodeLengthCodeOrder = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
-    /*
-         Extra               Extra               Extra
-    Code Bits Length(s) Code Bits Lengths   Code Bits Length(s)
-    ---- ---- ------     ---- ---- -------   ---- ---- -------
-     257   0     3       267   1   15,16     277   4   67-82
-     258   0     4       268   1   17,18     278   4   83-98
-     259   0     5       269   2   19-22     279   4   99-114
-     260   0     6       270   2   23-26     280   4  115-130
-     261   0     7       271   2   27-30     281   5  131-162
-     262   0     8       272   2   31-34     282   5  163-194
-     263   0     9       273   3   35-42     283   5  195-226
-     264   0    10       274   3   43-50     284   5  227-257
-     265   1  11,12      275   3   51-58     285   0    258
-     266   1  13,14      276   3   59-66
-    */
+
+/*
+     Extra               Extra               Extra
+Code Bits Length(s) Code Bits Lengths   Code Bits Length(s)
+---- ---- ------     ---- ---- -------   ---- ---- -------
+ 257   0     3       267   1   15,16     277   4   67-82
+ 258   0     4       268   1   17,18     278   4   83-98
+ 259   0     5       269   2   19-22     279   4   99-114
+ 260   0     6       270   2   23-26     280   4  115-130
+ 261   0     7       271   2   27-30     281   5  131-162
+ 262   0     8       272   2   31-34     282   5  163-194
+ 263   0     9       273   3   35-42     283   5  195-226
+ 264   0    10       274   3   43-50     284   5  227-257
+ 265   1  11,12      275   3   51-58     285   0    258
+ 266   1  13,14      276   3   59-66
+*/
 const LengthLookupTable = [
     [0,3], [0,4], [0,5], [0,6],
     [0,7], [0,8], [0,9], [0,10],
@@ -399,21 +408,22 @@ const LengthLookupTable = [
     [5,131], [5,163], [5,195], [5,227],
     [0,258]
 ];
-    /*
-          Extra           Extra                Extra
-     Code Bits Dist  Code Bits   Dist     Code Bits Distance
-     ---- ---- ----  ---- ----  ------    ---- ---- --------
-       0   0    1     10   4     33-48    20    9   1025-1536
-       1   0    2     11   4     49-64    21    9   1537-2048
-       2   0    3     12   5     65-96    22   10   2049-3072
-       3   0    4     13   5     97-128   23   10   3073-4096
-       4   1   5,6    14   6    129-192   24   11   4097-6144
-       5   1   7,8    15   6    193-256   25   11   6145-8192
-       6   2   9-12   16   7    257-384   26   12  8193-12288
-       7   2  13-16   17   7    385-512   27   12 12289-16384
-       8   3  17-24   18   8    513-768   28   13 16385-24576
-       9   3  25-32   19   8   769-1024   29   13 24577-32768
-    */
+
+/*
+      Extra           Extra                Extra
+ Code Bits Dist  Code Bits   Dist     Code Bits Distance
+ ---- ---- ----  ---- ----  ------    ---- ---- --------
+   0   0    1     10   4     33-48    20    9   1025-1536
+   1   0    2     11   4     49-64    21    9   1537-2048
+   2   0    3     12   5     65-96    22   10   2049-3072
+   3   0    4     13   5     97-128   23   10   3073-4096
+   4   1   5,6    14   6    129-192   24   11   4097-6144
+   5   1   7,8    15   6    193-256   25   11   6145-8192
+   6   2   9-12   16   7    257-384   26   12  8193-12288
+   7   2  13-16   17   7    385-512   27   12 12289-16384
+   8   3  17-24   18   8    513-768   28   13 16385-24576
+   9   3  25-32   19   8   769-1024   29   13 24577-32768
+*/
 const DistLookupTable = [
     [0,1], [0,2], [0,3], [0,4],
     [1,5], [1,7],

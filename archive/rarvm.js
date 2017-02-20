@@ -201,132 +201,132 @@ function getDebugString(obj, val) {
 }
 
 /**
- * @struct
- * @constructor
  */
-const VM_PreparedOperand = function() {
-  /** @type {VM_OpType} */
-  this.Type;
+class VM_PreparedOperand {
+  constructor() {
+    /** @type {VM_OpType} */
+    this.Type;
 
-  /** @type {number} */
-  this.Data = 0;
+    /** @type {number} */
+    this.Data = 0;
 
-  /** @type {number} */
-  this.Base = 0;
+    /** @type {number} */
+    this.Base = 0;
 
-  // TODO: In C++ this is a uint*
-  /** @type {Array<number>} */
-  this.Addr = null;
-};
+    // TODO: In C++ this is a uint*
+    /** @type {Array<number>} */
+    this.Addr = null;
+  };
 
-/** @return {string} */
-VM_PreparedOperand.prototype.toString = function() {
-  if (this.Type === null) {
-    return 'Error: Type was null in VM_PreparedOperand';
+  /** @return {string} */
+  toString() {
+    if (this.Type === null) {
+      return 'Error: Type was null in VM_PreparedOperand';
+    }
+    return '{ '
+        + 'Type: ' + getDebugString(VM_OpType, this.Type)
+        + ', Data: ' + this.Data
+        + ', Base: ' + this.Base
+        + ' }';
   }
-  return '{ '
-      + 'Type: ' + getDebugString(VM_OpType, this.Type)
-      + ', Data: ' + this.Data
-      + ', Base: ' + this.Base
-      + ' }';
-};
+}
 
 /**
- * @struct
- * @constructor
  */
-const VM_PreparedCommand = function() {
-  /** @type {VM_Commands} */
-  this.OpCode;
+class VM_PreparedCommand {
+  constructor() {
+    /** @type {VM_Commands} */
+    this.OpCode;
 
-  /** @type {boolean} */
-  this.ByteMode = false;
+    /** @type {boolean} */
+    this.ByteMode = false;
 
-  /** @type {VM_PreparedOperand} */
-  this.Op1 = new VM_PreparedOperand();
+    /** @type {VM_PreparedOperand} */
+    this.Op1 = new VM_PreparedOperand();
 
-  /** @type {VM_PreparedOperand} */
-  this.Op2 = new VM_PreparedOperand();
-};
-
-/** @return {string} */
-VM_PreparedCommand.prototype.toString = function(indent) {
-  if (this.OpCode === null) {
-    return 'Error: OpCode was null in VM_PreparedCommand';
+    /** @type {VM_PreparedOperand} */
+    this.Op2 = new VM_PreparedOperand();
   }
-  indent = indent || '';
-  return indent + '{\n'
-      + indent + '  OpCode: ' + getDebugString(VM_Commands, this.OpCode) + ',\n'
-      + indent + '  ByteMode: ' + this.ByteMode + ',\n'
-      + indent + '  Op1: ' + this.Op1.toString() + ',\n'
-      + indent + '  Op2: ' + this.Op2.toString() + ',\n'
-      + indent + '}';
-};
+
+  /** @return {string} */
+  toString(indent) {
+    if (this.OpCode === null) {
+      return 'Error: OpCode was null in VM_PreparedCommand';
+    }
+    indent = indent || '';
+    return indent + '{\n'
+        + indent + '  OpCode: ' + getDebugString(VM_Commands, this.OpCode) + ',\n'
+        + indent + '  ByteMode: ' + this.ByteMode + ',\n'
+        + indent + '  Op1: ' + this.Op1.toString() + ',\n'
+        + indent + '  Op2: ' + this.Op2.toString() + ',\n'
+        + indent + '}';
+  }
+}
 
 /**
- * @struct
- * @constructor
  */
-const VM_PreparedProgram = function() {
-  /** @type {Array<VM_PreparedCommand>} */
-  this.Cmd = [];
+class VM_PreparedProgram {
+  constructor() {
+    /** @type {Array<VM_PreparedCommand>} */
+    this.Cmd = [];
 
-  /** @type {Array<VM_PreparedCommand>} */
-  this.AltCmd = null;
+    /** @type {Array<VM_PreparedCommand>} */
+    this.AltCmd = null;
 
-  /** @type {Uint8Array} */
-  this.GlobalData = new Uint8Array();
+    /** @type {Uint8Array} */
+    this.GlobalData = new Uint8Array();
 
-  /** @type {Uint8Array} */
-  this.StaticData = new Uint8Array(); // static data contained in DB operators
+    /** @type {Uint8Array} */
+    this.StaticData = new Uint8Array(); // static data contained in DB operators
 
-  /** @type {Uint32Array} */
-  this.InitR = new Uint32Array(7);
+    /** @type {Uint32Array} */
+    this.InitR = new Uint32Array(7);
 
-  /**
-   * A pointer to bytes that have been filtered by a program.
-   * @type {Uint8Array}
-   */
-  this.FilteredData = null;
-};
-
-/** @return {string} */
-VM_PreparedProgram.prototype.toString = function() {
-  let s = '{\n  Cmd: [\n';
-  for (let i = 0; i < this.Cmd.length; ++i) {
-    s += this.Cmd[i].toString('  ') + ',\n';
+    /**
+     * A pointer to bytes that have been filtered by a program.
+     * @type {Uint8Array}
+     */
+    this.FilteredData = null;
   }
-  s += '],\n';
-  // TODO: Dump GlobalData, StaticData, InitR?
-  s += ' }\n';
-  return s;
-};
+
+  /** @return {string} */
+  toString() {
+    let s = '{\n  Cmd: [\n';
+    for (let i = 0; i < this.Cmd.length; ++i) {
+      s += this.Cmd[i].toString('  ') + ',\n';
+    }
+    s += '],\n';
+    // TODO: Dump GlobalData, StaticData, InitR?
+    s += ' }\n';
+    return s;
+  }
+}
 
 /**
- * @struct
- * @constructor
  */
-const UnpackFilter = function() {
-  /** @type {number} */
-  this.BlockStart = 0;
+class UnpackFilter {
+  constructor() {
+    /** @type {number} */
+    this.BlockStart = 0;
 
-  /** @type {number} */
-  this.BlockLength = 0;
+    /** @type {number} */
+    this.BlockLength = 0;
 
-  /** @type {number} */
-  this.ExecCount = 0;
+    /** @type {number} */
+    this.ExecCount = 0;
 
-  /** @type {boolean} */
-  this.NextWindow = false;
+    /** @type {boolean} */
+    this.NextWindow = false;
 
-  // position of parent filter in Filters array used as prototype for filter
-  // in PrgStack array. Not defined for filters in Filters array.
-  /** @type {number} */
-  this.ParentFilter = null;
+    // position of parent filter in Filters array used as prototype for filter
+    // in PrgStack array. Not defined for filters in Filters array.
+    /** @type {number} */
+    this.ParentFilter = null;
 
-  /** @type {VM_PreparedProgram} */
-  this.Prg = new VM_PreparedProgram();
-};
+    /** @type {VM_PreparedProgram} */
+    this.Prg = new VM_PreparedProgram();
+  }
+}
 
 const VMCF_OP0       =  0;
 const VMCF_OP1       =  1;
@@ -383,22 +383,24 @@ const VM_CmdFlags = [
 
 
 /**
- * @param {number} length
- * @param {number} crc
- * @param {VM_StandardFilters} type
- * @struct
- * @constructor
  */
-const StandardFilterSignature = function(length, crc, type) {
-  /** @type {number} */
-  this.Length = length;
+class StandardFilterSignature {
+  /**
+   * @param {number} length
+   * @param {number} crc
+   * @param {VM_StandardFilters} type
+   */
+  constructor(length, crc, type) {
+    /** @type {number} */
+    this.Length = length;
 
-  /** @type {number} */
-  this.CRC = crc;
+    /** @type {number} */
+    this.CRC = crc;
 
-  /** @type {VM_StandardFilters} */
-  this.Type = type;
-};
+    /** @type {VM_StandardFilters} */
+    this.Type = type;
+  }
+}
 
 /**
  * @type {Array<StandardFilterSignature>}
@@ -416,402 +418,404 @@ const StdList = [
 /**
  * @constructor
  */
-const RarVM = function() {
-  /** @private {Uint8Array} */
-  this.mem_ = null;
+class RarVM {
+  constructor() {
+    /** @private {Uint8Array} */
+    this.mem_ = null;
 
-  /** @private {Uint32Array<number>} */
-  this.R_ = new Uint32Array(8);
+    /** @private {Uint32Array<number>} */
+    this.R_ = new Uint32Array(8);
 
-  /** @private {number} */
-  this.flags_ = 0;
-};
-
-/**
- * Initializes the memory of the VM.
- */
-RarVM.prototype.init = function() {
-  if (!this.mem_) {
-    this.mem_ = new Uint8Array(VM_MEMSIZE);
-  }
-};
-
-/**
- * @param {Uint8Array} code
- * @return {VM_StandardFilters}
- */
-RarVM.prototype.isStandardFilter = function(code) {
-  const codeCRC = (CRC(0xffffffff, code, code.length) ^ 0xffffffff) >>> 0;
-  for (let i = 0; i < StdList.length; ++i) {
-    if (StdList[i].CRC == codeCRC && StdList[i].Length == code.length)
-      return StdList[i].Type;
+    /** @private {number} */
+    this.flags_ = 0;
   }
 
-  return VM_StandardFilters.VMSF_NONE;
-};
+  /**
+   * Initializes the memory of the VM.
+   */
+  init() {
+    if (!this.mem_) {
+      this.mem_ = new Uint8Array(VM_MEMSIZE);
+    }
+  }
 
-/**
- * @param {VM_PreparedOperand} op
- * @param {boolean} byteMode
- * @param {bitjs.io.BitStream} bstream A rtl bit stream.
- */
-RarVM.prototype.decodeArg = function(op, byteMode, bstream) {
-  const data = bstream.peekBits(16);
-  if (data & 0x8000) {
-    op.Type = VM_OpType.VM_OPREG;        // Operand is register (R[0]..R[7])
-    bstream.readBits(1);                 // 1 flag bit and...
-    op.Data = bstream.readBits(3);       // ... 3 register number bits
-    op.Addr = [this.R_[op.Data]] // TODO &R[Op.Data] // Register address
-  } else {
-    if ((data & 0xc000) == 0) {
-      op.Type = VM_OpType.VM_OPINT; // Operand is integer
-      bstream.readBits(2); // 2 flag bits
-      if (byteMode) {
-        op.Data = bstream.readBits(8);         // Byte integer.
-      } else {
-        op.Data = RarVM.readData(bstream);     // 32 bit integer.
-      }
+  /**
+   * @param {Uint8Array} code
+   * @return {VM_StandardFilters}
+   */
+  isStandardFilter(code) {
+    const codeCRC = (CRC(0xffffffff, code, code.length) ^ 0xffffffff) >>> 0;
+    for (let i = 0; i < StdList.length; ++i) {
+      if (StdList[i].CRC == codeCRC && StdList[i].Length == code.length)
+        return StdList[i].Type;
+    }
+
+    return VM_StandardFilters.VMSF_NONE;
+  }
+
+  /**
+   * @param {VM_PreparedOperand} op
+   * @param {boolean} byteMode
+   * @param {bitjs.io.BitStream} bstream A rtl bit stream.
+   */
+  decodeArg(op, byteMode, bstream) {
+    const data = bstream.peekBits(16);
+    if (data & 0x8000) {
+      op.Type = VM_OpType.VM_OPREG;        // Operand is register (R[0]..R[7])
+      bstream.readBits(1);                 // 1 flag bit and...
+      op.Data = bstream.readBits(3);       // ... 3 register number bits
+      op.Addr = [this.R_[op.Data]] // TODO &R[Op.Data] // Register address
     } else {
-      // Operand is data addressed by register data, base address or both.
-      op.Type = VM_OpType.VM_OPREGMEM;
-      if ((data & 0x2000) == 0) {
-        bstream.readBits(3); // 3 flag bits
-        // Base address is zero, just use the address from register.
-        op.Data = bstream.readBits(3); // (Data>>10)&7
-        op.Addr = [this.R_[op.Data]]; // TODO &R[op.Data]
-        op.Base = 0;
-      } else {
-        bstream.readBits(4); // 4 flag bits
-        if ((data & 0x1000) == 0) {
-          // Use both register and base address.
-          op.Data = bstream.readBits(3);
-          op.Addr = [this.R_[op.Data]]; // TODO &R[op.Data]
+      if ((data & 0xc000) == 0) {
+        op.Type = VM_OpType.VM_OPINT; // Operand is integer
+        bstream.readBits(2); // 2 flag bits
+        if (byteMode) {
+          op.Data = bstream.readBits(8);         // Byte integer.
         } else {
-          // Use base address only. Access memory by fixed address.
-          op.Data = 0;
+          op.Data = RarVM.readData(bstream);     // 32 bit integer.
         }
-        op.Base = RarVM.readData(bstream); // Read base address.
+      } else {
+        // Operand is data addressed by register data, base address or both.
+        op.Type = VM_OpType.VM_OPREGMEM;
+        if ((data & 0x2000) == 0) {
+          bstream.readBits(3); // 3 flag bits
+          // Base address is zero, just use the address from register.
+          op.Data = bstream.readBits(3); // (Data>>10)&7
+          op.Addr = [this.R_[op.Data]]; // TODO &R[op.Data]
+          op.Base = 0;
+        } else {
+          bstream.readBits(4); // 4 flag bits
+          if ((data & 0x1000) == 0) {
+            // Use both register and base address.
+            op.Data = bstream.readBits(3);
+            op.Addr = [this.R_[op.Data]]; // TODO &R[op.Data]
+          } else {
+            // Use base address only. Access memory by fixed address.
+            op.Data = 0;
+          }
+          op.Base = RarVM.readData(bstream); // Read base address.
+        }
       }
     }
   }
-};
 
-/**
- * @param {VM_PreparedProgram} prg
- */
-RarVM.prototype.execute = function(prg) {
-  this.R_.set(prg.InitR);
+  /**
+   * @param {VM_PreparedProgram} prg
+   */
+  execute(prg) {
+    this.R_.set(prg.InitR);
 
-  const globalSize = Math.min(prg.GlobalData.length, VM_GLOBALMEMSIZE);
-  if (globalSize) {
-    this.mem_.set(prg.GlobalData.subarray(0, globalSize), VM_GLOBALMEMADDR);
+    const globalSize = Math.min(prg.GlobalData.length, VM_GLOBALMEMSIZE);
+    if (globalSize) {
+      this.mem_.set(prg.GlobalData.subarray(0, globalSize), VM_GLOBALMEMADDR);
+    }
+
+    const staticSize = Math.min(prg.StaticData.length, VM_GLOBALMEMSIZE - globalSize);
+    if (staticSize) {
+      this.mem_.set(prg.StaticData.subarray(0, staticSize), VM_GLOBALMEMADDR + globalSize);
+    }
+
+    this.R_[7] = VM_MEMSIZE;
+    this.flags_ = 0;
+
+    const preparedCodes = prg.AltCmd ? prg.AltCmd : prg.Cmd;
+    if (prg.Cmd.length > 0 && !this.executeCode(preparedCodes)) {
+      // Invalid VM program. Let's replace it with 'return' command.
+      preparedCode.OpCode = VM_Commands.VM_RET;
+    }
+
+    const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
+    let newBlockPos = dataView.getUint32(0x20, true /* little endian */) & VM_MEMMASK;
+    const newBlockSize = dataView.getUint32(0x1c, true /* little endian */) & VM_MEMMASK;
+    if (newBlockPos + newBlockSize >= VM_MEMSIZE) {
+      newBlockPos = newBlockSize = 0;
+    }
+    prg.FilteredData = this.mem_.subarray(newBlockPos, newBlockPos + newBlockSize);
+
+    prg.GlobalData = new Uint8Array(0);
+
+    const dataSize = Math.min(dataView.getUint32(0x30), (VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE));
+    if (dataSize != 0) {
+      const len = dataSize + VM_FIXEDGLOBALSIZE;
+      prg.GlobalData = new Uint8Array(len);
+      prg.GlobalData.set(mem.subarray(VM_GLOBALMEMADDR, VM_GLOBALMEMADDR + len));
+    }
   }
 
-  const staticSize = Math.min(prg.StaticData.length, VM_GLOBALMEMSIZE - globalSize);
-  if (staticSize) {
-    this.mem_.set(prg.StaticData.subarray(0, staticSize), VM_GLOBALMEMADDR + globalSize);
+  /**
+   * @param {Array<VM_PreparedCommand>} preparedCodes
+   * @return {boolean}
+   */
+  executeCode(preparedCodes) {
+    let codeIndex = 0;
+    let cmd = preparedCodes[codeIndex];
+    // TODO: Why is this an infinite loop instead of just returning
+    // when a VM_RET is hit?
+    while (1) {
+      switch (cmd.OpCode) {
+        case VM_Commands.VM_RET:
+          if (this.R_[7] >= VM_MEMSIZE) {
+            return true;
+          }
+          //SET_IP(GET_VALUE(false,(uint *)&Mem[R[7] & VM_MEMMASK]));
+          this.R_[7] += 4;
+          continue;
+
+        case VM_Commands.VM_STANDARD:
+          this.executeStandardFilter(cmd.Op1.Data);
+          break;
+
+        default:
+          console.error('RarVM OpCode not supported: ' + getDebugString(VM_Commands, cmd.OpCode));
+          break;
+      } // switch (cmd.OpCode)
+      codeIndex++;
+      cmd = preparedCodes[codeIndex];
+    }
   }
 
-  this.R_[7] = VM_MEMSIZE;
-  this.flags_ = 0;
+  /**
+   * @param {number} filterType
+   */
+  executeStandardFilter(filterType) {
+    switch (filterType) {
+      case VM_StandardFilters.VMSF_DELTA:
+        const dataSize = this.R_[4];
+        const channels = this.R_[0];
+        let srcPos = 0;
+        const border = dataSize * 2;
 
-  const preparedCodes = prg.AltCmd ? prg.AltCmd : prg.Cmd;
-  if (prg.Cmd.length > 0 && !this.executeCode(preparedCodes)) {
-    // Invalid VM program. Let's replace it with 'return' command.
-    preparedCode.OpCode = VM_Commands.VM_RET;
-  }
+        //SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
+        const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
+        dataView.setUint32(0x20, dataSize, true /* little endian */);
 
-  const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
-  let newBlockPos = dataView.getUint32(0x20, true /* little endian */) & VM_MEMMASK;
-  const newBlockSize = dataView.getUint32(0x1c, true /* little endian */) & VM_MEMMASK;
-  if (newBlockPos + newBlockSize >= VM_MEMSIZE) {
-    newBlockPos = newBlockSize = 0;
-  }
-  prg.FilteredData = this.mem_.subarray(newBlockPos, newBlockPos + newBlockSize);
-
-  prg.GlobalData = new Uint8Array(0);
-
-  const dataSize = Math.min(dataView.getUint32(0x30), (VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE));
-  if (dataSize != 0) {
-    const len = dataSize + VM_FIXEDGLOBALSIZE;
-    prg.GlobalData = new Uint8Array(len);
-    prg.GlobalData.set(mem.subarray(VM_GLOBALMEMADDR, VM_GLOBALMEMADDR + len));
-  }
-};
-
-/**
- * @param {Array<VM_PreparedCommand>} preparedCodes
- * @return {boolean}
- */
-RarVM.prototype.executeCode = function(preparedCodes) {
-  let codeIndex = 0;
-  let cmd = preparedCodes[codeIndex];
-  // TODO: Why is this an infinite loop instead of just returning
-  // when a VM_RET is hit?
-  while (1) {
-    switch (cmd.OpCode) {
-      case VM_Commands.VM_RET:
-        if (this.R_[7] >= VM_MEMSIZE) {
-          return true;
+        if (dataSize >= VM_GLOBALMEMADDR / 2) {
+          break;
         }
-        //SET_IP(GET_VALUE(false,(uint *)&Mem[R[7] & VM_MEMMASK]));
-        this.R_[7] += 4;
-        continue;
 
-      case VM_Commands.VM_STANDARD:
-        this.executeStandardFilter(cmd.Op1.Data);
+        // Bytes from same channels are grouped to continual data blocks,
+        // so we need to place them back to their interleaving positions.
+        for (let curChannel = 0; curChannel < channels; ++curChannel) {
+          let prevByte = 0;
+          for (let destPos = dataSize + curChannel; destPos < border; destPos += channels) {
+            prevByte = (prevByte - this.mem_[srcPos++]) & 0xff;
+            this.mem_[destPos] = prevByte;
+          }
+        }
+
         break;
 
       default:
-        console.error('RarVM OpCode not supported: ' + getDebugString(VM_Commands, cmd.OpCode));
+        console.error('RarVM Standard Filter not supported: ' + getDebugString(VM_StandardFilters, filterType));
         break;
-    } // switch (cmd.OpCode)
-    codeIndex++;
-    cmd = preparedCodes[codeIndex];
+    }
   }
-};
 
-/**
- * @param {number} filterType
- */
-RarVM.prototype.executeStandardFilter = function(filterType) {
-  switch (filterType) {
-    case VM_StandardFilters.VMSF_DELTA:
-      const dataSize = this.R_[4];
-      const channels = this.R_[0];
-      let srcPos = 0;
-      const border = dataSize * 2;
+  /**
+   * @param {Uint8Array} code
+   * @param {VM_PreparedProgram} prg
+   */
+  prepare(code, prg) {
+    let codeSize = code.length;
 
-      //SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
-      const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
-      dataView.setUint32(0x20, dataSize, true /* little endian */);
+    //InitBitInput();
+    //memcpy(InBuf,Code,Min(CodeSize,BitInput::MAX_SIZE));
+    const bstream = new bitjs.io.BitStream(code.buffer, true /* rtl */);
 
-      if (dataSize >= VM_GLOBALMEMADDR / 2) {
-        break;
+    // Calculate the single byte XOR checksum to check validity of VM code.
+    let xorSum = 0;
+    for (let i = 1; i < codeSize; ++i) {
+      xorSum ^= code[i];
+    }
+
+    bstream.readBits(8);
+
+    prg.Cmd = [];  // TODO: Is this right?  I don't see it being done in rarvm.cpp.
+
+    // VM code is valid if equal.
+    if (xorSum == code[0]) {
+      const filterType = this.isStandardFilter(code);
+      if (filterType != VM_StandardFilters.VMSF_NONE) {
+        // VM code is found among standard filters.
+        const curCmd = new VM_PreparedCommand();
+        prg.Cmd.push(curCmd);
+
+        curCmd.OpCode = VM_Commands.VM_STANDARD;
+        curCmd.Op1.Data = filterType;
+        // TODO: Addr=&CurCmd->Op1.Data
+        curCmd.Op1.Addr = [curCmd.Op1.Data];
+        curCmd.Op2.Addr = [null]; // &CurCmd->Op2.Data;
+        curCmd.Op1.Type = VM_OpType.VM_OPNONE;
+        curCmd.Op2.Type = VM_OpType.VM_OPNONE;
+        codeSize = 0;
       }
 
-      // Bytes from same channels are grouped to continual data blocks,
-      // so we need to place them back to their interleaving positions.
-      for (let curChannel = 0; curChannel < channels; ++curChannel) {
-        let prevByte = 0;
-        for (let destPos = dataSize + curChannel; destPos < border; destPos += channels) {
-          prevByte = (prevByte - this.mem_[srcPos++]) & 0xff;
-          this.mem_[destPos] = prevByte;
+      const dataFlag = bstream.readBits(1);
+
+      // Read static data contained in DB operators. This data cannot be
+      // changed, it is a part of VM code, not a filter parameter.
+
+      if (dataFlag & 0x8000) {
+        const dataSize = RarVM.readData(bstream) + 1;
+        // TODO: This accesses the byte pointer of the bstream directly.  Is that ok?
+        for (let i = 0; i < bstream.bytePtr < codeSize && i < dataSize; ++i) {
+          // Append a byte to the program's static data.
+          const newStaticData = new Uint8Array(prg.StaticData.length + 1);
+          newStaticData.set(prg.StaticData);
+          newStaticData[newStaticData.length - 1] = bstream.readBits(8);
+          prg.StaticData = newStaticData;
         }
       }
 
-      break;
-
-    default:
-      console.error('RarVM Standard Filter not supported: ' + getDebugString(VM_StandardFilters, filterType));
-      break;
-  }
-};
-
-/**
- * @param {Uint8Array} code
- * @param {VM_PreparedProgram} prg
- */
-RarVM.prototype.prepare = function(code, prg) {
-  let codeSize = code.length;
-
-  //InitBitInput();
-  //memcpy(InBuf,Code,Min(CodeSize,BitInput::MAX_SIZE));
-  const bstream = new bitjs.io.BitStream(code.buffer, true /* rtl */);
-
-  // Calculate the single byte XOR checksum to check validity of VM code.
-  let xorSum = 0;
-  for (let i = 1; i < codeSize; ++i) {
-    xorSum ^= code[i];
-  }
-
-  bstream.readBits(8);
-
-  prg.Cmd = [];  // TODO: Is this right?  I don't see it being done in rarvm.cpp.
-
-  // VM code is valid if equal.
-  if (xorSum == code[0]) {
-    const filterType = this.isStandardFilter(code);
-    if (filterType != VM_StandardFilters.VMSF_NONE) {
-      // VM code is found among standard filters.
-      const curCmd = new VM_PreparedCommand();
-      prg.Cmd.push(curCmd);
-
-      curCmd.OpCode = VM_Commands.VM_STANDARD;
-      curCmd.Op1.Data = filterType;
-      // TODO: Addr=&CurCmd->Op1.Data
-      curCmd.Op1.Addr = [curCmd.Op1.Data];
-      curCmd.Op2.Addr = [null]; // &CurCmd->Op2.Data;
-      curCmd.Op1.Type = VM_OpType.VM_OPNONE;
-      curCmd.Op2.Type = VM_OpType.VM_OPNONE;
-      codeSize = 0;
-    }
-
-    const dataFlag = bstream.readBits(1);
-
-    // Read static data contained in DB operators. This data cannot be
-    // changed, it is a part of VM code, not a filter parameter.
-
-    if (dataFlag & 0x8000) {
-      const dataSize = RarVM.readData(bstream) + 1;
-      // TODO: This accesses the byte pointer of the bstream directly.  Is that ok?
-      for (let i = 0; i < bstream.bytePtr < codeSize && i < dataSize; ++i) {
-        // Append a byte to the program's static data.
-        const newStaticData = new Uint8Array(prg.StaticData.length + 1);
-        newStaticData.set(prg.StaticData);
-        newStaticData[newStaticData.length - 1] = bstream.readBits(8);
-        prg.StaticData = newStaticData;
-      }
-    }
-
-    while (bstream.bytePtr < codeSize) {
-      const curCmd = new VM_PreparedCommand();
-      prg.Cmd.push(curCmd); // Prg->Cmd.Add(1)
-      const flag = bstream.peekBits(1);
-      if (!flag) { // (Data&0x8000)==0
-        curCmd.OpCode = bstream.readBits(4);
-      } else {
-        curCmd.OpCode = (bstream.readBits(6) - 24);
-      }
-
-      if (VM_CmdFlags[curCmd.OpCode] & VMCF_BYTEMODE) {
-        curCmd.ByteMode = (bstream.readBits(1) != 0);
-      } else {
-        curCmd.ByteMode = 0;
-      }
-      curCmd.Op1.Type = VM_OpType.VM_OPNONE;
-      curCmd.Op2.Type = VM_OpType.VM_OPNONE;
-      const opNum = (VM_CmdFlags[curCmd.OpCode] & VMCF_OPMASK);
-      curCmd.Op1.Addr = null;
-      curCmd.Op2.Addr = null;
-      if (opNum > 0) {
-        this.decodeArg(curCmd.Op1, curCmd.ByteMode, bstream); // reading the first operand
-        if (opNum == 2) {
-          this.decodeArg(curCmd.Op2, curCmd.ByteMode, bstream); // reading the second operand
+      while (bstream.bytePtr < codeSize) {
+        const curCmd = new VM_PreparedCommand();
+        prg.Cmd.push(curCmd); // Prg->Cmd.Add(1)
+        const flag = bstream.peekBits(1);
+        if (!flag) { // (Data&0x8000)==0
+          curCmd.OpCode = bstream.readBits(4);
         } else {
-          if (curCmd.Op1.Type == VM_OpType.VM_OPINT && (VM_CmdFlags[curCmd.OpCode] & (VMCF_JUMP|VMCF_PROC))) {
-            // Calculating jump distance.
-            let distance = curCmd.Op1.Data;
-            if (distance >= 256) {
-              distance -= 256;
-            } else {
-              if (distance >= 136) {
-                distance -= 264;
+          curCmd.OpCode = (bstream.readBits(6) - 24);
+        }
+
+        if (VM_CmdFlags[curCmd.OpCode] & VMCF_BYTEMODE) {
+          curCmd.ByteMode = (bstream.readBits(1) != 0);
+        } else {
+          curCmd.ByteMode = 0;
+        }
+        curCmd.Op1.Type = VM_OpType.VM_OPNONE;
+        curCmd.Op2.Type = VM_OpType.VM_OPNONE;
+        const opNum = (VM_CmdFlags[curCmd.OpCode] & VMCF_OPMASK);
+        curCmd.Op1.Addr = null;
+        curCmd.Op2.Addr = null;
+        if (opNum > 0) {
+          this.decodeArg(curCmd.Op1, curCmd.ByteMode, bstream); // reading the first operand
+          if (opNum == 2) {
+            this.decodeArg(curCmd.Op2, curCmd.ByteMode, bstream); // reading the second operand
+          } else {
+            if (curCmd.Op1.Type == VM_OpType.VM_OPINT && (VM_CmdFlags[curCmd.OpCode] & (VMCF_JUMP|VMCF_PROC))) {
+              // Calculating jump distance.
+              let distance = curCmd.Op1.Data;
+              if (distance >= 256) {
+                distance -= 256;
               } else {
-                if (distance >= 16) {
-                  distance -= 8;
+                if (distance >= 136) {
+                  distance -= 264;
                 } else {
-                  if (distance >= 8) {
-                    distance -= 16;
+                  if (distance >= 16) {
+                    distance -= 8;
+                  } else {
+                    if (distance >= 8) {
+                      distance -= 16;
+                    }
                   }
                 }
+                distance += prg.Cmd.length;
               }
-              distance += prg.Cmd.length;
+              curCmd.Op1.Data = distance;
             }
-            curCmd.Op1.Data = distance;
           }
-        }
-      } // if (OpNum>0)
-    } // while ((uint)InAddr<CodeSize)
-  } // if (XorSum==Code[0])
+        } // if (OpNum>0)
+      } // while ((uint)InAddr<CodeSize)
+    } // if (XorSum==Code[0])
 
-  const curCmd = new VM_PreparedCommand();
-  prg.Cmd.push(curCmd);
-  curCmd.OpCode = VM_Commands.VM_RET;
-  // TODO: Addr=&CurCmd->Op1.Data
-  curCmd.Op1.Addr = [curCmd.Op1.Data];
-  curCmd.Op2.Addr = [curCmd.Op2.Data];
-  curCmd.Op1.Type = VM_OpType.VM_OPNONE;
-  curCmd.Op2.Type = VM_OpType.VM_OPNONE;
+    const curCmd = new VM_PreparedCommand();
+    prg.Cmd.push(curCmd);
+    curCmd.OpCode = VM_Commands.VM_RET;
+    // TODO: Addr=&CurCmd->Op1.Data
+    curCmd.Op1.Addr = [curCmd.Op1.Data];
+    curCmd.Op2.Addr = [curCmd.Op2.Data];
+    curCmd.Op1.Type = VM_OpType.VM_OPNONE;
+    curCmd.Op2.Type = VM_OpType.VM_OPNONE;
 
-  // If operand 'Addr' field has not been set by DecodeArg calls above,
-  // let's set it to point to operand 'Data' field. It is necessary for
-  // VM_OPINT type operands (usual integers) or maybe if something was
-  // not set properly for other operands. 'Addr' field is required
-  // for quicker addressing of operand data.
-  for (let i = 0; i < prg.Cmd.length; ++i) {
-    const cmd = prg.Cmd[i];
-    if (cmd.Op1.Addr == null) {
-      cmd.Op1.Addr = [cmd.Op1.Data];
-    }
-    if (cmd.Op2.Addr == null) {
-      cmd.Op2.Addr = [cmd.Op2.Data];
-    }
-  }
-
-/*
-#ifdef VM_OPTIMIZE
-  if (CodeSize!=0)
-    Optimize(Prg);
-#endif
-  */
-};
-
-/**
- * @param {Uint8Array} arr The byte array to set a value in.
- * @param {number} value The unsigned 32-bit value to set.
- * @param {number} offset Offset into arr to start setting the value, defaults to 0.
- */
-RarVM.prototype.setLowEndianValue = function(arr, value, offset) {
-  const i = offset || 0;
-  arr[i]     = value & 0xff;
-  arr[i + 1] = (value >>> 8) & 0xff;
-  arr[i + 2] = (value >>> 16) & 0xff;
-  arr[i + 3] = (value >>> 24) & 0xff;
-};
-
-/**
- * Sets a number of bytes of the VM memory at the given position from a
- * source buffer of bytes.
- * @param {number} pos The position in the VM memory to start writing to.
- * @param {Uint8Array} buffer The source buffer of bytes.
- * @param {number} dataSize The number of bytes to set.
- */
-RarVM.prototype.setMemory = function(pos, buffer, dataSize) {
-  if (pos < VM_MEMSIZE) {
-    const numBytes = Math.min(dataSize, VM_MEMSIZE - pos);
-    for (let i = 0; i < numBytes; ++i) {
-      this.mem_[pos + i] = buffer[i];
-    }
-  }
-};
-
-/**
- * Static function that reads in the next set of bits for the VM
- * (might return 4, 8, 16 or 32 bits).
- * @param {bitjs.io.BitStream} bstream A RTL bit stream.
- * @return {number} The value of the bits read.
- */
-RarVM.readData = function(bstream) {
-  // Read in the first 2 bits.
-  const flags = bstream.readBits(2);
-  switch (flags) { // Data&0xc000
-    // Return the next 4 bits.
-    case 0:
-      return bstream.readBits(4); // (Data>>10)&0xf
-
-    case 1: // 0x4000
-      // 0x3c00 => 0011 1100 0000 0000
-      if (bstream.peekBits(4) == 0) { // (Data&0x3c00)==0
-        // Skip the 4 zero bits.
-        bstream.readBits(4);
-        // Read in the next 8 and pad with 1s to 32 bits.
-        return (0xffffff00 | bstream.readBits(8)) >>> 0; // ((Data>>2)&0xff)
+    // If operand 'Addr' field has not been set by DecodeArg calls above,
+    // let's set it to point to operand 'Data' field. It is necessary for
+    // VM_OPINT type operands (usual integers) or maybe if something was
+    // not set properly for other operands. 'Addr' field is required
+    // for quicker addressing of operand data.
+    for (let i = 0; i < prg.Cmd.length; ++i) {
+      const cmd = prg.Cmd[i];
+      if (cmd.Op1.Addr == null) {
+        cmd.Op1.Addr = [cmd.Op1.Data];
       }
+      if (cmd.Op2.Addr == null) {
+        cmd.Op2.Addr = [cmd.Op2.Data];
+      }
+    }
 
-      // Else, read in the next 8.
-      return bstream.readBits(8);
-
-    // Read in the next 16.
-    case 2: // 0x8000
-      const val = bstream.getBits();
-      bstream.readBits(16);
-      return val; //bstream.readBits(16);
-
-    // case 3
-    default:
-      return (bstream.readBits(16) << 16) | bstream.readBits(16);
+  /*
+  #ifdef VM_OPTIMIZE
+    if (CodeSize!=0)
+      Optimize(Prg);
+  #endif
+    */
   }
-};
+
+  /**
+   * @param {Uint8Array} arr The byte array to set a value in.
+   * @param {number} value The unsigned 32-bit value to set.
+   * @param {number} offset Offset into arr to start setting the value, defaults to 0.
+   */
+  setLowEndianValue(arr, value, offset) {
+    const i = offset || 0;
+    arr[i]     = value & 0xff;
+    arr[i + 1] = (value >>> 8) & 0xff;
+    arr[i + 2] = (value >>> 16) & 0xff;
+    arr[i + 3] = (value >>> 24) & 0xff;
+  }
+
+  /**
+   * Sets a number of bytes of the VM memory at the given position from a
+   * source buffer of bytes.
+   * @param {number} pos The position in the VM memory to start writing to.
+   * @param {Uint8Array} buffer The source buffer of bytes.
+   * @param {number} dataSize The number of bytes to set.
+   */
+  setMemory(pos, buffer, dataSize) {
+    if (pos < VM_MEMSIZE) {
+      const numBytes = Math.min(dataSize, VM_MEMSIZE - pos);
+      for (let i = 0; i < numBytes; ++i) {
+        this.mem_[pos + i] = buffer[i];
+      }
+    }
+  }
+
+  /**
+   * Static function that reads in the next set of bits for the VM
+   * (might return 4, 8, 16 or 32 bits).
+   * @param {bitjs.io.BitStream} bstream A RTL bit stream.
+   * @return {number} The value of the bits read.
+   */
+  static readData(bstream) {
+    // Read in the first 2 bits.
+    const flags = bstream.readBits(2);
+    switch (flags) { // Data&0xc000
+      // Return the next 4 bits.
+      case 0:
+        return bstream.readBits(4); // (Data>>10)&0xf
+
+      case 1: // 0x4000
+        // 0x3c00 => 0011 1100 0000 0000
+        if (bstream.peekBits(4) == 0) { // (Data&0x3c00)==0
+          // Skip the 4 zero bits.
+          bstream.readBits(4);
+          // Read in the next 8 and pad with 1s to 32 bits.
+          return (0xffffff00 | bstream.readBits(8)) >>> 0; // ((Data>>2)&0xff)
+        }
+
+        // Else, read in the next 8.
+        return bstream.readBits(8);
+
+      // Read in the next 16.
+      case 2: // 0x8000
+        const val = bstream.getBits();
+        bstream.readBits(16);
+        return val; //bstream.readBits(16);
+
+      // case 3
+      default:
+        return (bstream.readBits(16) << 16) | bstream.readBits(16);
+    }
+  }
+}
 
 // ============================================================================================== //

@@ -63,156 +63,158 @@ const ENDARC_HEAD    = 0x7b;
 // ============================================================================================== //
 
 /**
- * @param {bitjs.io.BitStream} bstream
- * @constructor
  */
-const RarVolumeHeader = function(bstream) {
-  const headPos = bstream.bytePtr;
-  // byte 1,2
-  info("Rar Volume Header @"+bstream.bytePtr);
-  
-  this.crc = bstream.readBits(16);
-  info("  crc=" + this.crc);
+class RarVolumeHeader {
+  /**
+   * @param {bitjs.io.BitStream} bstream
+   */
+  constructor(bstream) {
+    const headPos = bstream.bytePtr;
+    // byte 1,2
+    info("Rar Volume Header @"+bstream.bytePtr);
 
-  // byte 3
-  this.headType = bstream.readBits(8);
-  info("  headType=" + this.headType);
+    this.crc = bstream.readBits(16);
+    info("  crc=" + this.crc);
 
-  // Get flags
-  // bytes 4,5
-  this.flags = {};
-  this.flags.value = bstream.peekBits(16);
-  
-  info("  flags=" + twoByteValueToHexString(this.flags.value));
-  switch (this.headType) {
-  case MAIN_HEAD:
-    this.flags.MHD_VOLUME = !!bstream.readBits(1);
-    this.flags.MHD_COMMENT = !!bstream.readBits(1);
-    this.flags.MHD_LOCK = !!bstream.readBits(1);
-    this.flags.MHD_SOLID = !!bstream.readBits(1);
-    this.flags.MHD_PACK_COMMENT = !!bstream.readBits(1);
-    this.flags.MHD_NEWNUMBERING = this.flags.MHD_PACK_COMMENT;
-    this.flags.MHD_AV = !!bstream.readBits(1);
-    this.flags.MHD_PROTECT = !!bstream.readBits(1);
-    this.flags.MHD_PASSWORD = !!bstream.readBits(1);
-    this.flags.MHD_FIRSTVOLUME = !!bstream.readBits(1);
-    this.flags.MHD_ENCRYPTVER = !!bstream.readBits(1);
-    bstream.readBits(6); // unused
-    break;
-  case FILE_HEAD:
-    this.flags.LHD_SPLIT_BEFORE = !!bstream.readBits(1); // 0x0001
-    this.flags.LHD_SPLIT_AFTER = !!bstream.readBits(1); // 0x0002
-    this.flags.LHD_PASSWORD = !!bstream.readBits(1); // 0x0004
-    this.flags.LHD_COMMENT = !!bstream.readBits(1); // 0x0008
-    this.flags.LHD_SOLID = !!bstream.readBits(1); // 0x0010
-    bstream.readBits(3); // unused
-    this.flags.LHD_LARGE = !!bstream.readBits(1); // 0x0100
-    this.flags.LHD_UNICODE = !!bstream.readBits(1); // 0x0200
-    this.flags.LHD_SALT = !!bstream.readBits(1); // 0x0400
-    this.flags.LHD_VERSION = !!bstream.readBits(1); // 0x0800
-    this.flags.LHD_EXTTIME = !!bstream.readBits(1); // 0x1000
-    this.flags.LHD_EXTFLAGS = !!bstream.readBits(1); // 0x2000
-    bstream.readBits(2); // unused
-    info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
-    break;
-  default:
-    bstream.readBits(16);
-  }
-  
-  // byte 6,7
-  this.headSize = bstream.readBits(16);
-  info("  headSize=" + this.headSize);
-  switch (this.headType) {
-  case MAIN_HEAD:
-    this.highPosAv = bstream.readBits(16);
-    this.posAv = bstream.readBits(32);
-    if (this.flags.MHD_ENCRYPTVER) {
-      this.encryptVer = bstream.readBits(8);
-    }
-    info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
-    break;
-  case FILE_HEAD:
-    this.packSize = bstream.readBits(32);
-    this.unpackedSize = bstream.readBits(32);
-    this.hostOS = bstream.readBits(8);
-    this.fileCRC = bstream.readBits(32);
-    this.fileTime = bstream.readBits(32);
-    this.unpVer = bstream.readBits(8);
-    this.method = bstream.readBits(8);
-    this.nameSize = bstream.readBits(16);
-    this.fileAttr = bstream.readBits(32);
+    // byte 3
+    this.headType = bstream.readBits(8);
+    info("  headType=" + this.headType);
+
+    // Get flags
+    // bytes 4,5
+    this.flags = {};
+    this.flags.value = bstream.peekBits(16);
     
-    if (this.flags.LHD_LARGE) {
-      info("Warning: Reading in LHD_LARGE 64-bit size values");
-      this.HighPackSize = bstream.readBits(32);
-      this.HighUnpSize = bstream.readBits(32);
-    } else {
-      this.HighPackSize = 0;
-      this.HighUnpSize = 0;
-      if (this.unpackedSize == 0xffffffff) {
-        this.HighUnpSize = 0x7fffffff
-        this.unpackedSize = 0xffffffff;
+    info("  flags=" + twoByteValueToHexString(this.flags.value));
+    switch (this.headType) {
+    case MAIN_HEAD:
+      this.flags.MHD_VOLUME = !!bstream.readBits(1);
+      this.flags.MHD_COMMENT = !!bstream.readBits(1);
+      this.flags.MHD_LOCK = !!bstream.readBits(1);
+      this.flags.MHD_SOLID = !!bstream.readBits(1);
+      this.flags.MHD_PACK_COMMENT = !!bstream.readBits(1);
+      this.flags.MHD_NEWNUMBERING = this.flags.MHD_PACK_COMMENT;
+      this.flags.MHD_AV = !!bstream.readBits(1);
+      this.flags.MHD_PROTECT = !!bstream.readBits(1);
+      this.flags.MHD_PASSWORD = !!bstream.readBits(1);
+      this.flags.MHD_FIRSTVOLUME = !!bstream.readBits(1);
+      this.flags.MHD_ENCRYPTVER = !!bstream.readBits(1);
+      bstream.readBits(6); // unused
+      break;
+    case FILE_HEAD:
+      this.flags.LHD_SPLIT_BEFORE = !!bstream.readBits(1); // 0x0001
+      this.flags.LHD_SPLIT_AFTER = !!bstream.readBits(1); // 0x0002
+      this.flags.LHD_PASSWORD = !!bstream.readBits(1); // 0x0004
+      this.flags.LHD_COMMENT = !!bstream.readBits(1); // 0x0008
+      this.flags.LHD_SOLID = !!bstream.readBits(1); // 0x0010
+      bstream.readBits(3); // unused
+      this.flags.LHD_LARGE = !!bstream.readBits(1); // 0x0100
+      this.flags.LHD_UNICODE = !!bstream.readBits(1); // 0x0200
+      this.flags.LHD_SALT = !!bstream.readBits(1); // 0x0400
+      this.flags.LHD_VERSION = !!bstream.readBits(1); // 0x0800
+      this.flags.LHD_EXTTIME = !!bstream.readBits(1); // 0x1000
+      this.flags.LHD_EXTFLAGS = !!bstream.readBits(1); // 0x2000
+      bstream.readBits(2); // unused
+      info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
+      break;
+    default:
+      bstream.readBits(16);
+    }
+    
+    // byte 6,7
+    this.headSize = bstream.readBits(16);
+    info("  headSize=" + this.headSize);
+    switch (this.headType) {
+    case MAIN_HEAD:
+      this.highPosAv = bstream.readBits(16);
+      this.posAv = bstream.readBits(32);
+      if (this.flags.MHD_ENCRYPTVER) {
+        this.encryptVer = bstream.readBits(8);
       }
-    }
-    this.fullPackSize = 0;
-    this.fullUnpackSize = 0;
-    this.fullPackSize |= this.HighPackSize;
-    this.fullPackSize <<= 32;
-    this.fullPackSize |= this.packSize;
-    
-    // read in filename
-    
-    this.filename = bstream.readBytes(this.nameSize);
-    let _s = '';
-    for (let _i = 0; _i < this.filename.length; _i++) {
-      _s += String.fromCharCode(this.filename[_i]);
-    }
-    
-    this.filename = _s;
-    
-    if (this.flags.LHD_SALT) {
-      info("Warning: Reading in 64-bit salt value");
-      this.salt = bstream.readBits(64); // 8 bytes
-    }
-    
-    if (this.flags.LHD_EXTTIME) {
-      // 16-bit flags
-      const extTimeFlags = bstream.readBits(16);
+      info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
+      break;
+    case FILE_HEAD:
+      this.packSize = bstream.readBits(32);
+      this.unpackedSize = bstream.readBits(32);
+      this.hostOS = bstream.readBits(8);
+      this.fileCRC = bstream.readBits(32);
+      this.fileTime = bstream.readBits(32);
+      this.unpVer = bstream.readBits(8);
+      this.method = bstream.readBits(8);
+      this.nameSize = bstream.readBits(16);
+      this.fileAttr = bstream.readBits(32);
       
-      // this is adapted straight out of arcread.cpp, Archive::ReadHeader()
-      for (let I = 0; I < 4; ++I) {
-        const rmode = extTimeFlags >> ((3 - I) * 4);
-        if ((rmode & 8) == 0) {
-          continue;
+      if (this.flags.LHD_LARGE) {
+        info("Warning: Reading in LHD_LARGE 64-bit size values");
+        this.HighPackSize = bstream.readBits(32);
+        this.HighUnpSize = bstream.readBits(32);
+      } else {
+        this.HighPackSize = 0;
+        this.HighUnpSize = 0;
+        if (this.unpackedSize == 0xffffffff) {
+          this.HighUnpSize = 0x7fffffff
+          this.unpackedSize = 0xffffffff;
         }
-        if (I != 0)
-          bstream.readBits(16);
-          const count = (rmode & 3);
-          for (let J = 0; J < count; ++J) {
-            bstream.readBits(8);
-          }
       }
+      this.fullPackSize = 0;
+      this.fullUnpackSize = 0;
+      this.fullPackSize |= this.HighPackSize;
+      this.fullPackSize <<= 32;
+      this.fullPackSize |= this.packSize;
+
+      // read in filename
+
+      this.filename = bstream.readBytes(this.nameSize);
+      let _s = '';
+      for (let _i = 0; _i < this.filename.length; _i++) {
+        _s += String.fromCharCode(this.filename[_i]);
+      }
+
+      this.filename = _s;
+
+      if (this.flags.LHD_SALT) {
+        info("Warning: Reading in 64-bit salt value");
+        this.salt = bstream.readBits(64); // 8 bytes
+      }
+
+      if (this.flags.LHD_EXTTIME) {
+        // 16-bit flags
+        const extTimeFlags = bstream.readBits(16);
+        
+        // this is adapted straight out of arcread.cpp, Archive::ReadHeader()
+        for (let I = 0; I < 4; ++I) {
+          const rmode = extTimeFlags >> ((3 - I) * 4);
+          if ((rmode & 8) == 0) {
+            continue;
+          }
+          if (I != 0)
+            bstream.readBits(16);
+            const count = (rmode & 3);
+            for (let J = 0; J < count; ++J) {
+              bstream.readBits(8);
+            }
+        }
+      }
+
+      if (this.flags.LHD_COMMENT) {
+        info("Found a LHD_COMMENT");
+      }
+
+      while (headPos + this.headSize > bstream.bytePtr) {
+        bstream.readBits(1);
+      }
+
+      info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
+
+      break;
+    default:
+      info("Found a header of type 0x" + byteValueToHexString(this.headType));
+      // skip the rest of the header bytes (for now)
+      bstream.readBytes(this.headSize - 7);
+      break;
     }
-    
-    if (this.flags.LHD_COMMENT) {
-      info("Found a LHD_COMMENT");
-    }
-    
-    
-    while (headPos + this.headSize > bstream.bytePtr) {
-      bstream.readBits(1);
-    }
-    
-    info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
-    
-    break;
-  default:
-    info("Found a header of type 0x" + byteValueToHexString(this.headType));
-    // skip the rest of the header bytes (for now)
-    bstream.readBytes(this.headSize - 7);
-    break;
   }
-};
+}
 
 const BLOCK_LZ = 0;
 const BLOCK_PPM = 1;
@@ -1212,7 +1214,7 @@ function unpack(v) {
   const Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
   const Solid = v.header.LHD_SOLID;
   const bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
-  
+
   rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
 
   info("Unpacking " + v.filename + " RAR v" + Ver);
@@ -1237,43 +1239,49 @@ function unpack(v) {
   return rBuffer.data;
 }
 
-// bstream is a bit stream
-const RarLocalFile = function(bstream) {
-  this.header = new RarVolumeHeader(bstream);
-  this.filename = this.header.filename;
-  
-  if (this.header.headType != FILE_HEAD && this.header.headType != ENDARC_HEAD) {
-    this.isValid = false;
-    info("Error! RAR Volume did not include a FILE_HEAD header ");
-  }
-  else {
-    // read in the compressed data
-    this.fileData = null;
-    if (this.header.packSize > 0) {
-      this.fileData = bstream.readBytes(this.header.packSize);
-      this.isValid = true;
+/**
+ */
+class RarLocalFile {
+  /**
+   * @param {bitjs.io.BitStream} bstream
+   */
+  constructor(bstream) {
+    this.header = new RarVolumeHeader(bstream);
+    this.filename = this.header.filename;
+    
+    if (this.header.headType != FILE_HEAD && this.header.headType != ENDARC_HEAD) {
+      this.isValid = false;
+      info("Error! RAR Volume did not include a FILE_HEAD header ");
+    }
+    else {
+      // read in the compressed data
+      this.fileData = null;
+      if (this.header.packSize > 0) {
+        this.fileData = bstream.readBytes(this.header.packSize);
+        this.isValid = true;
+      }
     }
   }
-};
 
-RarLocalFile.prototype.unrar = function() {
-  if (!this.header.flags.LHD_SPLIT_BEFORE) {
-    // unstore file
-    if (this.header.method == 0x30) {
-      info("Unstore "+this.filename);
-      this.isValid = true;
-      
-      currentBytesUnarchivedInFile += this.fileData.length;
-      currentBytesUnarchived += this.fileData.length;
+  unrar() {
+    if (!this.header.flags.LHD_SPLIT_BEFORE) {
+      // unstore file
+      if (this.header.method == 0x30) {
+        info("Unstore "+this.filename);
+        this.isValid = true;
 
-      // Create a new buffer and copy it over.
-      const len = this.header.packSize;
-      const newBuffer = new bitjs.io.ByteBuffer(len);
-      newBuffer.insertBytes(this.fileData);
-      this.fileData = newBuffer.data;
-    } else {
-      this.isValid = true;
-      this.fileData = unpack(this);
+        currentBytesUnarchivedInFile += this.fileData.length;
+        currentBytesUnarchived += this.fileData.length;
+
+        // Create a new buffer and copy it over.
+        const len = this.header.packSize;
+        const newBuffer = new bitjs.io.ByteBuffer(len);
+        newBuffer.insertBytes(this.fileData);
+        this.fileData = newBuffer.data;
+      } else {
+        this.isValid = true;
+        this.fileData = unpack(this);
+      }
     }
   }
 }
