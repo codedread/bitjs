@@ -67,9 +67,9 @@ bitjs.io.ByteBuffer.prototype.writeNumber = function(num, numBytes) {
   }
 
   // Roll 8-bits at a time into an array of bytes.
-  var bytes = [];
+  const bytes = [];
   while (numBytes-- > 0) {
-    var eightBits = num & 255;
+    const eightBits = num & 255;
     bytes.push(eightBits);
     num >>= 8;
   }
@@ -89,15 +89,15 @@ bitjs.io.ByteBuffer.prototype.writeSignedNumber = function(num, numBytes) {
     throw 'Trying to write into too few bytes: ' + numBytes;
   }
 
-  var HALF = Math.pow(2, (numBytes * 8) - 1);
+  const HALF = Math.pow(2, (numBytes * 8) - 1);
   if (num >= HALF || num < -HALF) {
     throw 'Trying to write ' + num + ' into only ' + numBytes + ' bytes';
   }
 
   // Roll 8-bits at a time into an array of bytes.
-  var bytes = [];
+  const bytes = [];
   while (numBytes-- > 0) {
-    var eightBits = num & 255;
+    const eightBits = num & 255;
     bytes.push(eightBits);
     num >>= 8;
   }
@@ -110,8 +110,8 @@ bitjs.io.ByteBuffer.prototype.writeSignedNumber = function(num, numBytes) {
  * @param {string} str The ASCII string to write.
  */
 bitjs.io.ByteBuffer.prototype.writeASCIIString = function(str) {
-  for (var i = 0; i < str.length; ++i) {
-    var curByte = str.charCodeAt(i);
+  for (let i = 0; i < str.length; ++i) {
+    const curByte = str.charCodeAt(i);
     if (curByte < 0 || curByte > 255) {
       throw 'Trying to write a non-ASCII string!';
     }

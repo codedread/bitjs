@@ -18,18 +18,17 @@ muther.set_ = function(id, style, innerHTML) {
 
 muther.go = function(spec) {
   Object.keys(spec['tests']).forEach(function(testName) {
-    var test = spec['tests'][testName];
+    const test = spec['tests'][testName];
     if (test instanceof Promise) {
       muther.set_(testName, 'color:#F90', 'RUNNING: ' + testName);
-      // TODO: What if we want setup() and tearDown()?
       test.then(function() {
         muther.set_(testName, 'color:#090', 'PASS: ' + testName);
       }, function(err) {
         muther.set_(testName, 'color:#900', 'FAIL: ' + testName + ': ' + err);
       });
     } else if (test instanceof Function) {
-      var setup = spec['setUp'] || function(){};
-      var tearDown = spec['tearDown'] || function(){};
+      const setup = spec['setUp'] || function(){};
+      const tearDown = spec['tearDown'] || function(){};
       try {
         setup(); test(); tearDown();
         muther.set_(testName, 'color:#090', 'PASS: ' + testName);

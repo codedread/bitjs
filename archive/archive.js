@@ -16,16 +16,16 @@ bitjs.archive = bitjs.archive || {};
 // ===========================================================================
 // Stolen from Closure because it's the best way to do Java-like inheritance.
 bitjs.base = function(me, opt_methodName, var_args) {
-  var caller = arguments.callee.caller;
+  const caller = arguments.callee.caller;
   if (caller.superClass_) {
     // This is a constructor. Call the superclass constructor.
     return caller.superClass_.constructor.apply(
         me, Array.prototype.slice.call(arguments, 1));
   }
 
-  var args = Array.prototype.slice.call(arguments, 2);
-  var foundCaller = false;
-  for (var ctor = me.constructor;
+  const args = Array.prototype.slice.call(arguments, 2);
+  let foundCaller = false;
+  for (let ctor = me.constructor;
        ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
     if (ctor.prototype[opt_methodName] === caller) {
       foundCaller = true;
@@ -210,7 +210,7 @@ bitjs.archive.Unarchiver = function(arrayBuffer, opt_pathToBitJS) {
    * @type {Map.<string, Array>}
    */
   this.listeners_ = {};
-  for (var type in bitjs.archive.UnarchiveEvent.Type) {
+  for (let type in bitjs.archive.UnarchiveEvent.Type) {
     this.listeners_[bitjs.archive.UnarchiveEvent.Type[type]] = [];
   }
 };
@@ -253,7 +253,7 @@ bitjs.archive.Unarchiver.prototype.addEventListener = function(type, listener) {
  */
 bitjs.archive.Unarchiver.prototype.removeEventListener = function(type, listener) {
   if (type in this.listeners_) {
-    var index = this.listeners_[type].indexOf(listener);
+    const index = this.listeners_[type].indexOf(listener);
     if (index != -1) {
       this.listeners_[type].splice(index, 1);
     }
@@ -282,8 +282,8 @@ bitjs.archive.Unarchiver.prototype.handleWorkerEvent_ = function(e) {
  * Starts the unarchive in a separate Web Worker thread and returns immediately.
  */
  bitjs.archive.Unarchiver.prototype.start = function() {
-  var me = this;
-  var scriptFileName = this.pathToBitJS_ + this.getScriptFileName();
+  const me = this;
+  const scriptFileName = this.pathToBitJS_ + this.getScriptFileName();
   if (scriptFileName) {
     this.worker_ = new Worker(scriptFileName);
 
@@ -326,7 +326,7 @@ bitjs.archive.Unzipper = function(arrayBuffer, opt_pathToBitJS) {
   bitjs.base(this, arrayBuffer, opt_pathToBitJS);
 };
 bitjs.inherits(bitjs.archive.Unzipper, bitjs.archive.Unarchiver);
-bitjs.archive.Unzipper.prototype.getScriptFileName = function() { return 'unzip.js' };
+bitjs.archive.Unzipper.prototype.getScriptFileName = function() { return 'archive/unzip.js' };
 
 /**
  * Unrarrer
@@ -337,7 +337,7 @@ bitjs.archive.Unrarrer = function(arrayBuffer, opt_pathToBitJS) {
   bitjs.base(this, arrayBuffer, opt_pathToBitJS);
 };
 bitjs.inherits(bitjs.archive.Unrarrer, bitjs.archive.Unarchiver);
-bitjs.archive.Unrarrer.prototype.getScriptFileName = function() { return 'unrar.js' };
+bitjs.archive.Unrarrer.prototype.getScriptFileName = function() { return 'archive/unrar.js' };
 
 /**
  * Untarrer
@@ -348,7 +348,7 @@ bitjs.archive.Untarrer = function(arrayBuffer, opt_pathToBitJS) {
   bitjs.base(this, arrayBuffer, opt_pathToBitJS);
 };
 bitjs.inherits(bitjs.archive.Untarrer, bitjs.archive.Unarchiver);
-bitjs.archive.Untarrer.prototype.getScriptFileName = function() { return 'untar.js' };
+bitjs.archive.Untarrer.prototype.getScriptFileName = function() { return 'archive/untar.js' };
 
 /**
  * Factory method that creates an unarchiver based on the byte signature found
@@ -358,9 +358,9 @@ bitjs.archive.Untarrer.prototype.getScriptFileName = function() { return 'untar.
  * @return {bitjs.archive.Unarchiver}
  */
 bitjs.archive.GetUnarchiver = function(ab, opt_pathToBitJS) {
-  var unarchiver = null;
-  var pathToBitJS = opt_pathToBitJS || '';
-  var h = new Uint8Array(ab, 0, 10);
+  let unarchiver = null;
+  const pathToBitJS = opt_pathToBitJS || '';
+  const h = new Uint8Array(ab, 0, 10);
 
   if (h[0] == 0x52 && h[1] == 0x61 && h[2] == 0x72 && h[3] == 0x21) { // Rar!
     unarchiver = new bitjs.archive.Unrarrer(ab, pathToBitJS);

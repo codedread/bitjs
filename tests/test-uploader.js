@@ -20,10 +20,10 @@
   }
  */
 
-var archiveUploaderEl = null;
-var archivedFileAsText = null;
-var unarchiveUploaderEl = null;
-var unarchivedFileAsText = null;
+let archiveUploaderEl = null;
+let archivedFileAsText = null;
+let unarchiveUploaderEl = null;
+let unarchivedFileAsText = null;
 
 function init() {
   archiveUploaderEl = document.querySelector('#archive-uploader');
@@ -34,10 +34,10 @@ function init() {
 }
 
 function getArchivedFile(evt) {
-  var filelist = evt.target.files;
-  var fr = new FileReader();
+  const filelist = evt.target.files;
+  const fr = new FileReader();
   fr.onload = function() {
-      var arr = new Uint8Array(fr.result);
+      const arr = new Uint8Array(fr.result);
       archivedFileAsText = btoa(arr);
       archiveUploaderEl.setAttribute('disabled', 'true');
       unarchiveUploaderEl.removeAttribute('disabled');
@@ -46,10 +46,10 @@ function getArchivedFile(evt) {
 }
 
 function getUnarchivedFile(evt) {
-  var filelist = evt.target.files;
-  var fr = new FileReader();
+  const filelist = evt.target.files;
+  const fr = new FileReader();
   fr.onload = function() {
-      var arr = new Uint8Array(fr.result);
+      const arr = new Uint8Array(fr.result);
       unarchivedFileAsText = btoa(arr);
       unarchiveUploaderEl.setAttribute('disabled', 'true');
       output();
@@ -58,7 +58,7 @@ function getUnarchivedFile(evt) {
 }
 
 function output() {
-  var json = 'window.archiveTestFile = {\n';
+  let json = 'window.archiveTestFile = {\n';
   json += '  "archivedFile": "' + archivedFileAsText + '",\n';
   json += '  "unarchivedFile": "' + unarchivedFileAsText + '"\n';
   json += '}';

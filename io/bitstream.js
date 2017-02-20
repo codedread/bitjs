@@ -21,7 +21,7 @@ bitjs.BIT = [ 0x01, 0x02, 0x04, 0x08,
     0x1000, 0x2000, 0x4000, 0x8000];
 
 // mask for getting N number of bits (0-8)
-var BITMASK = [0, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF ];
+const BITMASK = [0, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF ];
 
 
 /**
@@ -38,8 +38,8 @@ bitjs.io.BitStream = function(ab, rtl, opt_offset, opt_length) {
     throw "Error! BitArray constructed with an invalid ArrayBuffer object";
   }
 
-  var offset = opt_offset || 0;
-  var length = opt_length || ab.byteLength;
+  const offset = opt_offset || 0;
+  const length = opt_length || ab.byteLength;
   this.bytes = new Uint8Array(ab, offset, length);
   this.bytePtr = 0; // tracks which byte we are on
   this.bitPtr = 0; // tracks which bit we are on (can have values 0 through 7)
@@ -57,17 +57,17 @@ bitjs.io.BitStream = function(ab, rtl, opt_offset, opt_length) {
  * @param {boolean=} movePointers Whether to move the pointer, defaults false.
  * @return {number} The peeked bits, as an unsigned number.
  */
-bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
+bitjs.io.BitStream.prototype.peekBits_ltr = function(n, opt_movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
     return 0;
   }
 
-  var movePointers = movePointers || false,
-    bytePtr = this.bytePtr,
-    bitPtr = this.bitPtr,
-    result = 0,
-    bitsIn = 0,
-    bytes = this.bytes;
+  const movePointers = opt_movePointers || false;
+  const bytes = this.bytes;
+  let bytePtr = this.bytePtr;
+  let bitPtr = this.bitPtr;
+  let result = 0;
+  let bitsIn = 0;
 
   // keep going until we have no more bits left to peek at
   // TODO: Consider putting all bits from bytes we will need into a variable and then
@@ -80,9 +80,9 @@ bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
       return -1;
     }
 
-    var numBitsLeftInThisByte = (8 - bitPtr);
+    const numBitsLeftInThisByte = (8 - bitPtr);
     if (n >= numBitsLeftInThisByte) {
-      var mask = (BITMASK[numBitsLeftInThisByte] << bitPtr);
+      const mask = (BITMASK[numBitsLeftInThisByte] << bitPtr);
       result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
       bytePtr++;
@@ -91,7 +91,7 @@ bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
       n -= numBitsLeftInThisByte;
     }
     else {
-      var mask = (BITMASK[n] << bitPtr);
+      const mask = (BITMASK[n] << bitPtr);
       result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
       bitPtr += n;
@@ -119,16 +119,16 @@ bitjs.io.BitStream.prototype.peekBits_ltr = function(n, movePointers) {
  * @param {boolean=} movePointers Whether to move the pointer, defaults false.
  * @return {number} The peeked bits, as an unsigned number.
  */
-bitjs.io.BitStream.prototype.peekBits_rtl = function(n, movePointers) {
+bitjs.io.BitStream.prototype.peekBits_rtl = function(n, opt_movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
     return 0;
   }
 
-  var movePointers = movePointers || false,
-    bytePtr = this.bytePtr,
-    bitPtr = this.bitPtr,
-    result = 0,
-    bytes = this.bytes;
+  const movePointers = opt_movePointers || false;
+  const bytes = this.bytes;
+  let bytePtr = this.bytePtr;
+  let bitPtr = this.bitPtr;
+  let result = 0;
 
   // keep going until we have no more bits left to peek at
   // TODO: Consider putting all bits from bytes we will need into a variable and then
@@ -142,7 +142,7 @@ bitjs.io.BitStream.prototype.peekBits_rtl = function(n, movePointers) {
       return -1;
     }
 
-    var numBitsLeftInThisByte = (8 - bitPtr);
+    const numBitsLeftInThisByte = (8 - bitPtr);
     if (n >= numBitsLeftInThisByte) {
       result <<= numBitsLeftInThisByte;
       result |= (BITMASK[numBitsLeftInThisByte] & bytes[bytePtr]);
@@ -199,7 +199,7 @@ bitjs.io.BitStream.prototype.readBits = function(n) {
  * @param {boolean=} movePointers Whether to move the pointer, defaults false.
  * @return {Uint8Array} The subarray.
  */
-bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
+bitjs.io.BitStream.prototype.peekBytes = function(n, opt_movePointers) {
   if (n <= 0 || typeof n != typeof 1) {
     return 0;
   }
@@ -210,11 +210,11 @@ bitjs.io.BitStream.prototype.peekBytes = function(n, movePointers) {
     this.readBits(1);
   }
 
-  var movePointers = movePointers || false;
-  var bytePtr = this.bytePtr,
-      bitPtr = this.bitPtr;
+  const movePointers = opt_movePointers || false;
+  let bytePtr = this.bytePtr;
+  let bitPtr = this.bitPtr;
 
-  var result = this.bytes.subarray(bytePtr, bytePtr + n);
+  const result = this.bytes.subarray(bytePtr, bytePtr + n);
 
   if (movePointers) {
     this.bytePtr += n;

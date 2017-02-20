@@ -25,8 +25,8 @@ bitjs.io = bitjs.io || {};
  * @constructor
  */
 bitjs.io.ByteStream = function(ab, opt_offset, opt_length) {
-  var offset = opt_offset || 0;
-  var length = opt_length || ab.byteLength;
+  const offset = opt_offset || 0;
+  const length = opt_length || ab.byteLength;
   this.bytes = new Uint8Array(ab, offset, length);
   this.ptr = 0;
 };
@@ -44,9 +44,9 @@ bitjs.io.ByteStream.prototype.peekNumber = function(n) {
   if (n <= 0 || typeof n != typeof 1)
     return -1;
 
-  var result = 0;
+  let result = 0;
   // read from last byte to first byte and roll them in
-  var curByte = this.ptr + n - 1;
+  let curByte = this.ptr + n - 1;
   while (curByte >= this.ptr) {
     result <<= 8;
     result |= this.bytes[curByte];
@@ -63,7 +63,7 @@ bitjs.io.ByteStream.prototype.peekNumber = function(n) {
  * @return {number} The n bytes interpreted as an unsigned number.
  */
 bitjs.io.ByteStream.prototype.readNumber = function(n) {
-  var num = this.peekNumber( n );
+  const num = this.peekNumber( n );
   this.ptr += n;
   return num;
 };
@@ -76,9 +76,9 @@ bitjs.io.ByteStream.prototype.readNumber = function(n) {
  * @return {number} The bytes interpreted as a signed number.
  */
 bitjs.io.ByteStream.prototype.peekSignedNumber = function(n) {
-  var num = this.peekNumber(n);
-  var HALF = Math.pow(2, (n * 8) - 1);
-  var FULL = HALF * 2;
+  let num = this.peekNumber(n);
+  const HALF = Math.pow(2, (n * 8) - 1);
+  const FULL = HALF * 2;
 
   if (num >= HALF) num -= FULL;
 
@@ -92,7 +92,7 @@ bitjs.io.ByteStream.prototype.peekSignedNumber = function(n) {
  * @return {number} The bytes interpreted as a signed number.
  */
 bitjs.io.ByteStream.prototype.readSignedNumber = function(n) {
-  var num = this.peekSignedNumber(n);
+  const num = this.peekSignedNumber(n);
   this.ptr += n;
   return num;
 };
@@ -110,7 +110,7 @@ bitjs.io.ByteStream.prototype.peekBytes = function(n, movePointers) {
     return null;
   }
 
-  var result = this.bytes.subarray(this.ptr, this.ptr + n);
+  const result = this.bytes.subarray(this.ptr, this.ptr + n);
 
   if (movePointers) {
     this.ptr += n;
@@ -140,8 +140,8 @@ bitjs.io.ByteStream.prototype.peekString = function(n) {
     return "";
   }
 
-  var result = "";
-  for (var p = this.ptr, end = this.ptr + n; p < end; ++p) {
+  let result = "";
+  for (let p = this.ptr, end = this.ptr + n; p < end; ++p) {
     result += String.fromCharCode(this.bytes[p]);
   }
   return result;
@@ -155,7 +155,7 @@ bitjs.io.ByteStream.prototype.peekString = function(n) {
  * @return {string} The next n bytes as a string.
  */
 bitjs.io.ByteStream.prototype.readString = function(n) {
-  var strToReturn = this.peekString(n);
+  const strToReturn = this.peekString(n);
   this.ptr += n;
   return strToReturn;
 };

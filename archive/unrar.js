@@ -14,21 +14,21 @@ importScripts('archive.js');
 importScripts('rarvm.js');
 
 // Progress variables.
-var currentFilename = "";
-var currentFileNumber = 0;
-var currentBytesUnarchivedInFile = 0;
-var currentBytesUnarchived = 0;
-var totalUncompressedBytesInArchive = 0;
-var totalFilesInArchive = 0;
+let currentFilename = "";
+let currentFileNumber = 0;
+let currentBytesUnarchivedInFile = 0;
+let currentBytesUnarchived = 0;
+let totalUncompressedBytesInArchive = 0;
+let totalFilesInArchive = 0;
 
 // Helper functions.
-var info = function(str) {
+const info = function(str) {
   postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
 };
-var err = function(str) {
+const err = function(str) {
   postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
 };
-var postProgress = function() {
+const postProgress = function() {
   postMessage(new bitjs.archive.UnarchiveProgressEvent(
       currentFilename,
       currentFileNumber,
@@ -39,26 +39,26 @@ var postProgress = function() {
 };
 
 // shows a byte value as its hex representation
-var nibble = "0123456789ABCDEF";
-var byteValueToHexString = function(num) {
+const nibble = "0123456789ABCDEF";
+const byteValueToHexString = function(num) {
   return nibble[num>>4] + nibble[num&0xF];
 };
-var twoByteValueToHexString = function(num) {
+const twoByteValueToHexString = function(num) {
   return nibble[(num>>12)&0xF] + nibble[(num>>8)&0xF] + nibble[(num>>4)&0xF] + nibble[num&0xF];
 };
 
 
 // Volume Types
-var MARK_HEAD      = 0x72,
-  MAIN_HEAD      = 0x73,
-  FILE_HEAD      = 0x74,
-  COMM_HEAD      = 0x75,
-  AV_HEAD        = 0x76,
-  SUB_HEAD      = 0x77,
-  PROTECT_HEAD    = 0x78,
-  SIGN_HEAD      = 0x79,
-  NEWSUB_HEAD      = 0x7a,
-  ENDARC_HEAD      = 0x7b;
+const MARK_HEAD      = 0x72;
+const MAIN_HEAD      = 0x73;
+const FILE_HEAD      = 0x74;
+const COMM_HEAD      = 0x75;
+const AV_HEAD        = 0x76;
+const SUB_HEAD       = 0x77;
+const PROTECT_HEAD   = 0x78;
+const SIGN_HEAD      = 0x79;
+const NEWSUB_HEAD    = 0x7a;
+const ENDARC_HEAD    = 0x7b;
 
 // ============================================================================================== //
 
@@ -66,8 +66,8 @@ var MARK_HEAD      = 0x72,
  * @param {bitjs.io.BitStream} bstream
  * @constructor
  */
-var RarVolumeHeader = function(bstream) {
-  var headPos = bstream.bytePtr;
+const RarVolumeHeader = function(bstream) {
+  const headPos = bstream.bytePtr;
   // byte 1,2
   info("Rar Volume Header @"+bstream.bytePtr);
   
@@ -163,7 +163,8 @@ var RarVolumeHeader = function(bstream) {
     // read in filename
     
     this.filename = bstream.readBytes(this.nameSize);
-    for (var _i = 0, _s = ''; _i < this.filename.length; _i++) {
+    let _s = '';
+    for (let _i = 0; _i < this.filename.length; _i++) {
       _s += String.fromCharCode(this.filename[_i]);
     }
     
@@ -176,18 +177,18 @@ var RarVolumeHeader = function(bstream) {
     
     if (this.flags.LHD_EXTTIME) {
       // 16-bit flags
-      var extTimeFlags = bstream.readBits(16);
+      const extTimeFlags = bstream.readBits(16);
       
       // this is adapted straight out of arcread.cpp, Archive::ReadHeader()
-      for (var I = 0; I < 4; ++I) {
-        var rmode = extTimeFlags >> ((3-I)*4);
-        if ((rmode & 8)==0) {
+      for (let I = 0; I < 4; ++I) {
+        const rmode = extTimeFlags >> ((3 - I) * 4);
+        if ((rmode & 8) == 0) {
           continue;
         }
-        if (I!=0)
+        if (I != 0)
           bstream.readBits(16);
-          var count = (rmode&3);
-          for (var J = 0; J < count; ++J) {
+          const count = (rmode & 3);
+          for (let J = 0; J < count; ++J) {
             bstream.readBits(8);
           }
       }
@@ -208,63 +209,62 @@ var RarVolumeHeader = function(bstream) {
   default:
     info("Found a header of type 0x" + byteValueToHexString(this.headType));
     // skip the rest of the header bytes (for now)
-    bstream.readBytes( this.headSize - 7 );
+    bstream.readBytes(this.headSize - 7);
     break;
   }
 };
 
-var BLOCK_LZ = 0,
-  BLOCK_PPM = 1;
+const BLOCK_LZ = 0;
+const BLOCK_PPM = 1;
 
-var rLDecode = [0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224],
-  rLBits = [0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5],
-  rDBitLengthCounts = [4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,14,0,12],
-  rSDDecode = [0,4,8,16,32,64,128,192],
-  rSDBits = [2,2,3, 4, 5, 6,  6,  6];
+const rLDecode = [0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224];
+const rLBits = [0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5];
+const rDBitLengthCounts = [4,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,14,0,12];
+const rSDDecode = [0,4,8,16,32,64,128,192];
+const rSDBits = [2,2,3, 4, 5, 6,  6,  6];
   
-var rDDecode = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32,
+const rDDecode = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32,
 			48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072,
 			4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536, 98304,
 			131072, 196608, 262144, 327680, 393216, 458752, 524288, 589824,
 			655360, 720896, 786432, 851968, 917504, 983040];
 
-var rDBits = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5,
+const rDBits = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5,
 			5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
 			15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16];
 
-var rLOW_DIST_REP_COUNT = 16;
+const rLOW_DIST_REP_COUNT = 16;
 
-var rNC = 299,
-  rDC = 60,
-  rLDC = 17,
-  rRC = 28,
-  rBC = 20,
-  rHUFF_TABLE_SIZE = (rNC+rDC+rRC+rLDC);
+const rNC = 299;
+const rDC = 60;
+const rLDC = 17;
+const rRC = 28;
+const rBC = 20;
+const rHUFF_TABLE_SIZE = (rNC+rDC+rRC+rLDC);
 
-var UnpBlockType = BLOCK_LZ;
-var UnpOldTable = new Array(rHUFF_TABLE_SIZE);
+const UnpOldTable = new Array(rHUFF_TABLE_SIZE);
 
-var BD = { //bitdecode
+const BD = { //bitdecode
   DecodeLen: new Array(16),
   DecodePos: new Array(16),
   DecodeNum: new Array(rBC)
 };
-var LD = { //litdecode
+const LD = { //litdecode
   DecodeLen: new Array(16),
   DecodePos: new Array(16),
   DecodeNum: new Array(rNC)
 };
-var DD = { //distdecode
+const DD = { //distdecode
   DecodeLen: new Array(16),
   DecodePos: new Array(16),
   DecodeNum: new Array(rDC)
 };
-var LDD = { //low dist decode
+const LDD = { //low dist decode
   DecodeLen: new Array(16),
   DecodePos: new Array(16),
   DecodeNum: new Array(rLDC)
 };
-var RD = { //rep decode
+const RD = { //rep decode
   DecodeLen: new Array(16),
   DecodePos: new Array(16),
   DecodeNum: new Array(rRC)
@@ -273,19 +273,19 @@ var RD = { //rep decode
 /**
  * @type {Array<bitjs.io.ByteBuffer>}
  */
-var rOldBuffers = [];
+const rOldBuffers = [];
 
 /**
  * The current buffer we are unpacking to.
  * @type {bitjs.io.ByteBuffer}
  */
-var rBuffer;
+let rBuffer;
 
 /**
  * The buffer of the final bytes after filtering (only used in Unpack29).
  * @type {bitjs.io.ByteBuffer}
  */
-var wBuffer;
+let wBuffer;
 
 
 /**
@@ -304,8 +304,8 @@ var wBuffer;
  * @param {bitjs.io.BitStream} bstream
  */
 function RarReadTables(bstream) {
-  var BitLength = new Array(rBC);
-  var Table = new Array(rHUFF_TABLE_SIZE);
+  const BitLength = new Array(rBC);
+  const Table = new Array(rHUFF_TABLE_SIZE);
 
   // before we start anything we need to get byte-aligned
   bstream.readBits( (8 - bstream.bitPtr) & 0x7 );
@@ -316,16 +316,16 @@ function RarReadTables(bstream) {
   }
   
   if (!bstream.readBits(1)) { //discard old table
-    for (var i = UnpOldTable.length; i--;) {
+    for (let i = UnpOldTable.length; i--;) {
       UnpOldTable[i] = 0;
     }
   }
 
   // read in bit lengths
-  for (var I = 0; I < rBC; ++I) {
-    var Length = bstream.readBits(4);
+  for (let I = 0; I < rBC; ++I) {
+    const Length = bstream.readBits(4);
     if (Length == 15) {
-      var ZeroCount = bstream.readBits(4);
+      let ZeroCount = bstream.readBits(4);
       if (ZeroCount == 0) {
         BitLength[I] = 15;
       }
@@ -345,22 +345,21 @@ function RarReadTables(bstream) {
 
   RarMakeDecodeTables(BitLength, 0, BD, rBC);
   
-  var TableSize = rHUFF_TABLE_SIZE;
-  //console.log(DecodeLen, DecodePos, DecodeNum);
-  for (var i = 0; i < TableSize;) {
-    var num = RarDecodeNumber(bstream, BD);
+  const TableSize = rHUFF_TABLE_SIZE;
+  for (let i = 0; i < TableSize;) {
+    const num = RarDecodeNumber(bstream, BD);
     if (num < 16) {
       Table[i] = (num + UnpOldTable[i]) & 0xf;
       i++;
     } else if (num < 18) {
-      var N = (num == 16) ? (bstream.readBits(3) + 3) : (bstream.readBits(7) + 11);
+      let N = (num == 16) ? (bstream.readBits(3) + 3) : (bstream.readBits(7) + 11);
 
       while (N-- > 0 && i < TableSize) {
         Table[i] = Table[i - 1];
         i++;
       }
     } else {
-      var N = (num == 18) ? (bstream.readBits(3) + 3) : (bstream.readBits(7) + 11);
+      let N = (num == 18) ? (bstream.readBits(3) + 3) : (bstream.readBits(7) + 11);
 
       while (N-- > 0 && i < TableSize) {
         Table[i++] = 0;
@@ -373,7 +372,7 @@ function RarReadTables(bstream) {
   RarMakeDecodeTables(Table, rNC + rDC, LDD, rLDC);
   RarMakeDecodeTables(Table, rNC + rDC + rLDC, RD, rRC);  
   
-  for (var i = UnpOldTable.length; i--;) {
+  for (let i = UnpOldTable.length; i--;) {
     UnpOldTable[i] = Table[i];
   }
   return true;
@@ -381,10 +380,12 @@ function RarReadTables(bstream) {
 
 
 function RarDecodeNumber(bstream, dec) {
-  var DecodeLen = dec.DecodeLen, DecodePos = dec.DecodePos, DecodeNum = dec.DecodeNum;
-  var bitField = bstream.getBits() & 0xfffe;
+  const DecodeLen = dec.DecodeLen;
+  const DecodePos = dec.DecodePos;
+  const DecodeNum = dec.DecodeNum;
+  const bitField = bstream.getBits() & 0xfffe;
   //some sort of rolled out binary search
-  var bits = ((bitField < DecodeLen[8])?
+  const bits = ((bitField < DecodeLen[8])?
     ((bitField < DecodeLen[4])?
       ((bitField < DecodeLen[2])?
         ((bitField < DecodeLen[1])?1:2)
@@ -400,25 +401,25 @@ function RarDecodeNumber(bstream, dec) {
         ((bitField < DecodeLen[13])?13:14)
         :15));
   bstream.readBits(bits);
-  var N = DecodePos[bits] + ((bitField - DecodeLen[bits -1]) >>> (16 - bits));
+  const N = DecodePos[bits] + ((bitField - DecodeLen[bits -1]) >>> (16 - bits));
   
   return DecodeNum[N];
 }
 
 
 function RarMakeDecodeTables(BitLength, offset, dec, size) {
-  var DecodeLen = dec.DecodeLen;
-  var DecodePos = dec.DecodePos;
-  var DecodeNum = dec.DecodeNum;
-  var LenCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-  var TmpPos = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-  var N = 0;
-  var M = 0;
+  const DecodeLen = dec.DecodeLen;
+  const DecodePos = dec.DecodePos;
+  const DecodeNum = dec.DecodeNum;
+  const LenCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  const TmpPos = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  let N = 0;
+  let M = 0;
 
-  for (var i = DecodeNum.length; i--;) {
+  for (let i = DecodeNum.length; i--;) {
     DecodeNum[i] = 0;
   }
-  for (var i = 0; i < size; i++) {
+  for (let i = 0; i < size; i++) {
     LenCount[BitLength[i + offset] & 0xF]++;
   }
   LenCount[0] = 0;
@@ -426,7 +427,7 @@ function RarMakeDecodeTables(BitLength, offset, dec, size) {
   DecodePos[0] = 0;
   DecodeLen[0] = 0;
   
-  for (var I = 1; I < 16; ++I) {
+  for (let I = 1; I < 16; ++I) {
     N = 2 * (N+LenCount[I]);
     M = (N << (15-I));
     if (M > 0xFFFF) {
@@ -436,7 +437,7 @@ function RarMakeDecodeTables(BitLength, offset, dec, size) {
     DecodePos[I] = DecodePos[I-1] + LenCount[I-1];
     TmpPos[I] = DecodePos[I];
   }
-  for (I = 0; I < size; ++I) {
+  for (let I = 0; I < size; ++I) {
     if (BitLength[I + offset] != 0) {
       DecodeNum[ TmpPos[ BitLength[offset + I] & 0xF ]++] = I;
     }
@@ -459,23 +460,23 @@ function Unpack15(bstream, Solid) {
  * @param {boolean} Solid
  */
 function Unpack20(bstream, Solid) {
-  var destUnpSize = rBuffer.data.length;
-  var oldDistPtr = 0;
+  const destUnpSize = rBuffer.data.length;
+  let oldDistPtr = 0;
   
   RarReadTables20(bstream);
   while (destUnpSize > rBuffer.ptr) {
-    var num = RarDecodeNumber(bstream, LD);
+    const num = RarDecodeNumber(bstream, LD);
     if (num < 256) {
       rBuffer.insertByte(num);
       continue;
     }
     if (num > 269) {
-      var Length = rLDecode[num -= 270] + 3;
+      let Length = rLDecode[num -= 270] + 3;
       if ((Bits = rLBits[num]) > 0) {
         Length += bstream.readBits(Bits);
       }
-      var DistNumber = RarDecodeNumber(bstream, DD);
-      var Distance = rDDecode[DistNumber] + 1;
+      let DistNumber = RarDecodeNumber(bstream, DD);
+      let Distance = rDDecode[DistNumber] + 1;
       if ((Bits = rDBits[DistNumber]) > 0) {
         Distance += bstream.readBits(Bits);
       }
@@ -501,9 +502,9 @@ function Unpack20(bstream, Solid) {
       continue;
     }
     if (num < 261) {
-      var Distance = rOldDist[(oldDistPtr - (num - 256)) & 3];
-      var LengthNumber = RarDecodeNumber(bstream, RD);
-      var Length = rLDecode[LengthNumber] +2;
+      const Distance = rOldDist[(oldDistPtr - (num - 256)) & 3];
+      const LengthNumber = RarDecodeNumber(bstream, RD);
+      let Length = rLDecode[LengthNumber] +2;
       if ((Bits = rLBits[LengthNumber]) > 0) {
         Length += bstream.readBits(Bits);
       }
@@ -522,7 +523,7 @@ function Unpack20(bstream, Solid) {
       continue;
     }
     if (num < 270) {
-      var Distance = rSDDecode[num -= 261] + 1;
+      let Distance = rSDDecode[num -= 261] + 1;
       if ((Bits = rSDBits[num]) > 0) {
         Distance += bstream.readBits(Bits);
       }
@@ -537,38 +538,40 @@ function Unpack20(bstream, Solid) {
 }
 
 function RarUpdateProgress() {
-  var change = rBuffer.ptr - currentBytesUnarchivedInFile;
+  const change = rBuffer.ptr - currentBytesUnarchivedInFile;
   currentBytesUnarchivedInFile = rBuffer.ptr;
   currentBytesUnarchived += change;
   postProgress();
 }
 
-var rNC20 = 298,
-    rDC20 = 48,
-    rRC20 = 28,
-    rBC20 = 19,
-    rMC20 = 257;
+const rNC20 = 298;
+const rDC20 = 48;
+const rRC20 = 28;
+const rBC20 = 19;
+const rMC20 = 257;
 
-var UnpOldTable20 = new Array(rMC20 * 4);
+const UnpOldTable20 = new Array(rMC20 * 4);
 
 function RarReadTables20(bstream) {
-  var BitLength = new Array(rBC20);
-  var Table = new Array(rMC20 * 4);
-  var TableSize, N, I;
-  var AudioBlock = bstream.readBits(1);
+  const BitLength = new Array(rBC20);
+  const Table = new Array(rMC20 * 4);
+  let TableSize;
+  let N;
+  let I;
+  const AudioBlock = bstream.readBits(1);
   if (!bstream.readBits(1)) {
-    for (var i = UnpOldTable20.length; i--;) {
+    for (let i = UnpOldTable20.length; i--;) {
       UnpOldTable20[i] = 0;
     }
   }
   TableSize = rNC20 + rDC20 + rRC20;
-  for (var I = 0; I < rBC20; I++) {
+  for (I = 0; I < rBC20; I++) {
     BitLength[I] = bstream.readBits(4);
   }
   RarMakeDecodeTables(BitLength, 0, BD, rBC20);
   I = 0;
   while (I < TableSize) {
-    var num = RarDecodeNumber(bstream, BD);
+    const num = RarDecodeNumber(bstream, BD);
     if (num < 16) {
       Table[I] = num + UnpOldTable20[I] & 0xf;
       I++;
@@ -592,43 +595,43 @@ function RarReadTables20(bstream) {
   RarMakeDecodeTables(Table, 0, LD, rNC20);
   RarMakeDecodeTables(Table, rNC20, DD, rDC20);
   RarMakeDecodeTables(Table, rNC20 + rDC20, RD, rRC20);
-  for (var i = UnpOldTable20.length; i--;) {
+  for (let i = UnpOldTable20.length; i--;) {
     UnpOldTable20[i] = Table[i];
   }
 }
 
-var lowDistRepCount = 0;
-var prevLowDist = 0;
+let lowDistRepCount = 0;
+let prevLowDist = 0;
 
-var rOldDist = [0,0,0,0];
-var lastDist;
-var lastLength;
+let rOldDist = [0,0,0,0];
+let lastDist;
+let lastLength;
 
 // ============================================================================================== //
 
 // Unpack code specific to RarVM
-var VM = new RarVM();
+const VM = new RarVM();
 
 /**
  * Filters code, one entry per filter.
  * @type {Array<UnpackFilter>}
  */
-var Filters = [];
+let Filters = [];
 
 /**
  * Filters stack, several entrances of same filter are possible.
  * @type {Array<UnpackFilter>}
  */
-var PrgStack = [];
+let PrgStack = [];
 
 /**
  * Lengths of preceding blocks, one length per filter. Used to reduce
  * size required to write block length if lengths are repeating.
  * @type {Array<number>}
  */
-var OldFilterLengths = [];
+let OldFilterLengths = [];
 
-var LastFilter = 0;
+let LastFilter = 0;
 
 function InitFilters() {
   OldFilterLengths = [];
@@ -644,9 +647,9 @@ function InitFilters() {
  */
 function RarAddVMCode(firstByte, vmCode) {
   VM.init();
-  var bstream = new bitjs.io.BitStream(vmCode.buffer, true /* rtl */);
+  const bstream = new bitjs.io.BitStream(vmCode.buffer, true /* rtl */);
 
-  var filtPos;
+  let filtPos;
   if (firstByte & 0x80) {
     filtPos = RarVM.readData(bstream);
     if (filtPos == 0) {
@@ -663,11 +666,11 @@ function RarAddVMCode(firstByte, vmCode) {
   }
 
   LastFilter = filtPos;
-  var newFilter = (filtPos == Filters.length);
+  const newFilter = (filtPos == Filters.length);
 
   // new filter for PrgStack
-  var stackFilter = new UnpackFilter();
-  var filter = null;
+  const stackFilter = new UnpackFilter();
+  let filter = null;
   // new filter code, never used before since VM reset
   if (newFilter) {
     // too many different filters, corrupt archive
@@ -686,8 +689,8 @@ function RarAddVMCode(firstByte, vmCode) {
     filter.ExecCount++;
   }
 
-  var emptyCount = 0;
-  for (var i = 0; i < PrgStack.length; ++i) {
+  let emptyCount = 0;
+  for (let i = 0; i < PrgStack.length; ++i) {
     PrgStack[i - emptyCount] = PrgStack[i];
 
     if (PrgStack[i] == null) {
@@ -703,11 +706,11 @@ function RarAddVMCode(firstByte, vmCode) {
     emptyCount = 1;
   }
 
-  var stackPos = PrgStack.length - emptyCount;
+  const stackPos = PrgStack.length - emptyCount;
   PrgStack[stackPos] = stackFilter;
   stackFilter.ExecCount = filter.ExecCount;
 
-  var blockStart = RarVM.readData(bstream);
+  let blockStart = RarVM.readData(bstream);
   if (firstByte & 0x40) {
     blockStart += 258;
   }
@@ -725,7 +728,7 @@ function RarAddVMCode(firstByte, vmCode) {
 
   OldFilterLengths[filtPos] = stackFilter.BlockLength;
 
-  for (var i = 0; i < 7; ++i) {
+  for (let i = 0; i < 7; ++i) {
     stackFilter.Prg.InitR[i] = 0;
   }
   stackFilter.Prg.InitR[3] = VM_GLOBALMEMADDR;
@@ -734,8 +737,8 @@ function RarAddVMCode(firstByte, vmCode) {
 
   // set registers to optional parameters if any
   if (firstByte & 0x10) {
-    var initMask = bstream.readBits(7);
-    for (var i = 0; i < 7; ++i) {
+    const initMask = bstream.readBits(7);
+    for (let i = 0; i < 7; ++i) {
       if (initMask & (1 << i)) {
         stackFilter.Prg.InitR[i] = RarVM.readData(bstream);
       }
@@ -743,12 +746,12 @@ function RarAddVMCode(firstByte, vmCode) {
   }
 
   if (newFilter) {
-    var vmCodeSize = RarVM.readData(bstream);
+    const vmCodeSize = RarVM.readData(bstream);
     if (vmCodeSize >= 0x10000 || vmCodeSize == 0) {
       return false;
     }
-    var vmCode = new Uint8Array(vmCodeSize);
-    for (var i = 0; i < vmCodeSize; ++i) {
+    const vmCode = new Uint8Array(vmCodeSize);
+    for (let i = 0; i < vmCodeSize; ++i) {
       //if (Inp.Overflow(3))
       //  return(false);
       vmCode[i] = bstream.readBits(8);
@@ -758,10 +761,10 @@ function RarAddVMCode(firstByte, vmCode) {
   stackFilter.Prg.Cmd = filter.Prg.Cmd;
   stackFilter.Prg.AltCmd = filter.Prg.Cmd;
 
-  var staticDataSize = filter.Prg.StaticData.length;
+  const staticDataSize = filter.Prg.StaticData.length;
   if (staticDataSize > 0 && staticDataSize < VM_GLOBALMEMSIZE) {
     // read statically defined data contained in DB commands
-    for (var i = 0; i < staticDataSize; ++i) {
+    for (let i = 0; i < staticDataSize; ++i) {
       stackFilter.Prg.StaticData[i] = filter.Prg.StaticData[i];
     }
   }
@@ -770,15 +773,15 @@ function RarAddVMCode(firstByte, vmCode) {
     stackFilter.Prg.GlobalData = new Uint8Array(VM_FIXEDGLOBALSIZE);
   }
 
-  var globalData = stackFilter.Prg.GlobalData;
-  for (var i = 0; i < 7; ++i) {
+  const globalData = stackFilter.Prg.GlobalData;
+  for (let i = 0; i < 7; ++i) {
     VM.setLowEndianValue(globalData, stackFilter.Prg.InitR[i], i * 4);
   }
 
   VM.setLowEndianValue(globalData, stackFilter.BlockLength, 0x1c);
   VM.setLowEndianValue(globalData, 0, 0x20);
   VM.setLowEndianValue(globalData, stackFilter.ExecCount, 0x2c);
-  for (var i = 0; i < 16; ++i) {
+  for (let i = 0; i < 16; ++i) {
     globalData[0x30 + i] = 0;
   }
 
@@ -786,23 +789,23 @@ function RarAddVMCode(firstByte, vmCode) {
   if (firstByte & 8) {
     //if (Inp.Overflow(3))
     //  return(false);
-    var dataSize = RarVM.readData(bstream);
+    const dataSize = RarVM.readData(bstream);
     if (dataSize > (VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE)) {
-      return(false);
+      return false;
     }
 
-    var curSize = stackFilter.Prg.GlobalData.length;
+    const curSize = stackFilter.Prg.GlobalData.length;
     if (curSize < dataSize + VM_FIXEDGLOBALSIZE) {
       // Resize global data and update the stackFilter and local variable.
-      var numBytesToAdd = dataSize + VM_FIXEDGLOBALSIZE - curSize;
-      var newGlobalData = new Uint8Array(globalData.length + numBytesToAdd);
+      const numBytesToAdd = dataSize + VM_FIXEDGLOBALSIZE - curSize;
+      const newGlobalData = new Uint8Array(globalData.length + numBytesToAdd);
       newGlobalData.set(globalData);
 
       stackFilter.Prg.GlobalData = newGlobalData;
       globalData = newGlobalData;
     }
     //byte *GlobalData=&StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
-    for (var i = 0; i < dataSize; ++i) {
+    for (let i = 0; i < dataSize; ++i) {
       //if (Inp.Overflow(3))
       //  return(false);
       globalData[VM_FIXEDGLOBALSIZE + i] = bstream.readBits(8);
@@ -817,8 +820,8 @@ function RarAddVMCode(firstByte, vmCode) {
  * @param {!bitjs.io.BitStream} bstream
  */
 function RarReadVMCode(bstream) {
-  var firstByte = bstream.readBits(8);
-  var length = (firstByte & 7) + 1;
+  const firstByte = bstream.readBits(8);
+  let length = (firstByte & 7) + 1;
   if (length == 7) {
     length = bstream.readBits(8) + 7;
   } else if (length == 8) {
@@ -826,8 +829,8 @@ function RarReadVMCode(bstream) {
   }
 
   // Read all bytes of VM code into an array.
-  var vmCode = new Uint8Array(length);
-  for (var i = 0; i < length; i++) {
+  const vmCode = new Uint8Array(length);
+  for (let i = 0; i < length; i++) {
     // Do something here with checking readbuf.
     vmCode[i] = bstream.readBits(8);
   }
@@ -842,21 +845,21 @@ function RarReadVMCode(bstream) {
 function Unpack29(bstream, Solid) {
   // lazy initialize rDDecode and rDBits
 
-  var DDecode = new Array(rDC);
-  var DBits = new Array(rDC);
+  const DDecode = new Array(rDC);
+  const DBits = new Array(rDC);
   
-  var Dist = 0;
-  var BitLength = 0;
-  var Slot = 0;
+  let Dist = 0;
+  let BitLength = 0;
+  let Slot = 0;
   
-  for (var I = 0; I < rDBitLengthCounts.length; I++,BitLength++) {
-    for (var J = 0; J < rDBitLengthCounts[I]; J++,Slot++,Dist+=(1<<BitLength)) {
+  for (let I = 0; I < rDBitLengthCounts.length; I++,BitLength++) {
+    for (let J = 0; J < rDBitLengthCounts[I]; J++,Slot++,Dist+=(1<<BitLength)) {
       DDecode[Slot]=Dist;
       DBits[Slot]=BitLength;
     }
   }
   
-  var Bits;
+  let Bits;
   //tablesRead = false;
 
   rOldDist = [0,0,0,0]
@@ -864,7 +867,7 @@ function Unpack29(bstream, Solid) {
   lastDist = 0;
   lastLength = 0;
 
-  for (var i = UnpOldTable.length; i--;) {
+  for (let i = UnpOldTable.length; i--;) {
     UnpOldTable[i] = 0;
   }
     
@@ -872,19 +875,19 @@ function Unpack29(bstream, Solid) {
   RarReadTables(bstream);
  
   while (true) {
-    var num = RarDecodeNumber(bstream, LD);
+    let num = RarDecodeNumber(bstream, LD);
     
     if (num < 256) {
       rBuffer.insertByte(num);
       continue;
     }
     if (num >= 271) {
-      var Length = rLDecode[num -= 271] + 3;
+      let Length = rLDecode[num -= 271] + 3;
       if ((Bits = rLBits[num]) > 0) {
         Length += bstream.readBits(Bits);
       }
-      var DistNumber = RarDecodeNumber(bstream, DD);
-      var Distance = DDecode[DistNumber] + 1;
+      const DistNumber = RarDecodeNumber(bstream, DD);
+      let Distance = DDecode[DistNumber] + 1;
       if ((Bits = DBits[DistNumber]) > 0) {
         if (DistNumber > 9) {
           if (Bits > 4) {
@@ -896,7 +899,7 @@ function Unpack29(bstream, Solid) {
             lowDistRepCount--;
             Distance += prevLowDist;
           } else {
-            var LowDist = RarDecodeNumber(bstream, LDD);
+            const LowDist = RarDecodeNumber(bstream, LDD);
             if (LowDist == 16) {
               lowDistRepCount = rLOW_DIST_REP_COUNT - 1;
               Distance += prevLowDist;
@@ -939,16 +942,16 @@ function Unpack29(bstream, Solid) {
       continue;
     }
     if (num < 263) {
-      var DistNum = num - 259;
-      var Distance = rOldDist[DistNum];
+      const DistNum = num - 259;
+      const Distance = rOldDist[DistNum];
 
-      for (var I = DistNum; I > 0; I--) {
+      for (let I = DistNum; I > 0; I--) {
         rOldDist[I] = rOldDist[I-1];
       }
       rOldDist[0] = Distance;
 
-      var LengthNumber = RarDecodeNumber(bstream, RD);
-      var Length = rLDecode[LengthNumber] + 2;
+      const LengthNumber = RarDecodeNumber(bstream, RD);
+      let Length = rLDecode[LengthNumber] + 2;
       if ((Bits = rLBits[LengthNumber]) > 0) {
         Length += bstream.readBits(Bits);
       }
@@ -957,7 +960,7 @@ function Unpack29(bstream, Solid) {
       continue;
     }
     if (num < 272) {
-      var Distance = rSDDecode[num -= 263] + 1;
+      let Distance = rSDDecode[num -= 263] + 1;
       if ((Bits = rSDBits[num]) > 0) {
         Distance += bstream.readBits(Bits);
       }
@@ -976,10 +979,10 @@ function Unpack29(bstream, Solid) {
  * the filters loaded into the RarVM and writes out to wBuffer.
  */
 function RarWriteBuf() {
-  var writeSize = (rBuffer.ptr & MAXWINMASK);
+  let writeSize = (rBuffer.ptr & MAXWINMASK);
 
-  for (var i = 0; i < PrgStack.length; ++i) {
-    var flt = PrgStack[i];
+  for (let i = 0; i < PrgStack.length; ++i) {
+    const flt = PrgStack[i];
     if (flt == null) {
       continue;
     }
@@ -989,8 +992,8 @@ function RarWriteBuf() {
       continue;
     }
 
-    var blockStart = flt.BlockStart;
-    var blockLength = flt.BlockLength;
+    const blockStart = flt.BlockStart;
+    const blockLength = flt.BlockLength;
 
     // WrittenBorder = wBuffer.ptr
     if (((blockStart - wBuffer.ptr) & MAXWINMASK) < writeSize) {
@@ -1000,17 +1003,17 @@ function RarWriteBuf() {
         writeSize = (rBuffer.ptr - wBuffer.ptr) & MAXWINMASK;
       }
       if (blockLength <= writeSize) {
-        var blockEnd = (blockStart + blockLength) & MAXWINMASK;
+        const blockEnd = (blockStart + blockLength) & MAXWINMASK;
         if (blockStart < blockEnd || blockEnd == 0) {
           VM.setMemory(0, rBuffer.data.subarray(blockStart, blockStart + blockLength), blockLength);
         } else {
-          var firstPartLength = MAXWINSIZE - blockStart;
+          const firstPartLength = MAXWINSIZE - blockStart;
           VM.setMemory(0, rBuffer.data.subarray(blockStart, blockStart + firstPartLength), firstPartLength);
           VM.setMemory(firstPartLength, rBuffer.data, blockEnd);
         }
 
-        var parentPrg = Filters[flt.ParentFilter].Prg;
-        var prg = flt.Prg;
+        const parentPrg = Filters[flt.ParentFilter].Prg;
+        const prg = flt.Prg;
 
         if (parentPrg.GlobalData.length > VM_FIXEDGLOBALSIZE) {
           // Copy global data from previous script execution if any.
@@ -1021,7 +1024,7 @@ function RarWriteBuf() {
 
         if (prg.GlobalData.length > VM_FIXEDGLOBALSIZE) {
           // Save global data for next script execution.
-          var globalDataLen = prg.GlobalData.length;
+          const globalDataLen = prg.GlobalData.length;
           if (parentPrg.GlobalData.length < globalDataLen) {
             parentPrg.GlobalData = new Uint8Array(globalDataLen);
           }
@@ -1032,11 +1035,11 @@ function RarWriteBuf() {
           parentPrg.GlobalData = new Uint8Array(0);
         }
 
-        var filteredData = prg.FilteredData;
+        let filteredData = prg.FilteredData;
 
         PrgStack[i] = null;
         while (i + 1 < PrgStack.length) {
-          var nextFilter = PrgStack[i + 1];
+          const nextFilter = PrgStack[i + 1];
           if (nextFilter == null || nextFilter.BlockStart != blockStart ||
               nextFilter.BlockLength != filteredData.length || nextFilter.NextWindow) {
             break;
@@ -1046,29 +1049,29 @@ function RarWriteBuf() {
 
           VM.setMemory(0, filteredData, filteredData.length);
 
-          var parentPrg = Filters[nextFilter.ParentFilter].Prg;
-          var nextPrg = nextFilter.Prg;
+          const innerParentPrg = Filters[nextFilter.ParentFilter].Prg;
+          const nextPrg = nextFilter.Prg;
 
-          var globalDataLen = parentPrg.GlobalData.length;
+          const globalDataLen = innerParentPrg.GlobalData.length;
           if (globalDataLen > VM_FIXEDGLOBALSIZE) {
             // Copy global data from previous script execution if any.
             nextPrg.GlobalData = new Uint8Array(globalDataLen);
-            nextPrg.GlobalData.set(parentPrg.GlobalData.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen), VM_FIXEDGLOBALSIZE);
+            nextPrg.GlobalData.set(innerParentPrg.GlobalData.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen), VM_FIXEDGLOBALSIZE);
           }
 
           RarExecuteCode(nextPrg);
 
           if (nextPrg.GlobalData.length > VM_GLOBALMEMSIZE) {
             // Save global data for next script execution.
-            var globalDataLen = nextPrg.GlobalData.length;
-            if (parentPrg.GlobalData.length < globalDataLen) {
-              parentPrg.GlobalData = new Uint8Array(globalDataLen);
+            const globalDataLen = nextPrg.GlobalData.length;
+            if (innerParentPrg.GlobalData.length < globalDataLen) {
+              innerParentPrg.GlobalData = new Uint8Array(globalDataLen);
             }
-            parentPrg.GlobalData.set(
+            innerParentPrg.GlobalData.set(
                 this.mem_.subarray(VM_FIXEDGLOBALSIZE, VM_FIXEDGLOBALSIZE + globalDataLen),
                 VM_FIXEDGLOBALSIZE);
           } else {
-            parentPrg.GlobalData = new Uint8Array(0);
+            innerParentPrg.GlobalData = new Uint8Array(0);
           }
 
           filteredData = nextPrg.FilteredData;
@@ -1076,23 +1079,22 @@ function RarWriteBuf() {
           PrgStack[i] = null;
         } // while (i + 1 < PrgStack.length)
 
-        for (var j = 0; j < filteredData.length; ++j) {
+        for (let j = 0; j < filteredData.length; ++j) {
           wBuffer.insertByte(filteredData[j]);
         }
         writeSize = (rBuffer.ptr - wBuffer.ptr) & MAXWINMASK;
       } // if (blockLength <= writeSize)
       else {
-        for (var j = i; j < PrgStack.length; ++j) {
-          var flt = PrgStack[j];
-          if (flt != null && flt.NextWindow) {
-            flt.NextWindow = false;
+        for (let j = i; j < PrgStack.length; ++j) {
+          const theFlt = PrgStack[j];
+          if (theFlt != null && theFlt.NextWindow) {
+            theFlt.NextWindow = false;
           }
         }
-        //WrPtr=WrittenBorder;
         return;
       }
     } // if (((blockStart - wBuffer.ptr) & MAXWINMASK) < writeSize)
-  } // for (var i = 0; i < PrgStack.length; ++i)
+  } // for (let i = 0; i < PrgStack.length; ++i)
 
   // Write any remaining bytes from rBuffer to wBuffer;
   RarWriteArea(wBuffer.ptr, rBuffer.ptr);
@@ -1126,11 +1128,11 @@ function RarWriteData(offset, numBytes) {
   if (wBuffer.ptr >= rBuffer.data.length) {
     return;
   }
-  var leftToWrite = rBuffer.data.length - wBuffer.ptr;
+  const leftToWrite = rBuffer.data.length - wBuffer.ptr;
   if (numBytes > leftToWrite) {
     numBytes = leftToWrite;
   }
-  for (var i = 0; i < numBytes; ++i) {
+  for (let i = 0; i < numBytes; ++i) {
     wBuffer.insertByte(rBuffer.data[offset + i]);
   }
 }
@@ -1141,7 +1143,7 @@ function RarWriteData(offset, numBytes) {
 function RarExecuteCode(prg)
 {
   if (prg.GlobalData.length > 0) {
-    var writtenFileSize = wBuffer.ptr;
+    const writtenFileSize = wBuffer.ptr;
     prg.InitR[6] = writtenFileSize;
     VM.setLowEndianValue(prg.GlobalData, writtenFileSize, 0x24);
     VM.setLowEndianValue(prg.GlobalData, (writtenFileSize >>> 32) >> 0, 0x28);
@@ -1152,7 +1154,8 @@ function RarExecuteCode(prg)
 function RarReadEndOfBlock(bstream) {
   RarUpdateProgress();
 
-  var NewTable = false, NewFile = false;
+  let NewTable = false;
+  let NewFile = false;
   if (bstream.readBits(1)) {
     NewTable = true;
   } else {
@@ -1181,9 +1184,9 @@ function RarInsertOldDist(distance) {
  *     pointer to start copying from.
  */
 function RarCopyString(len, distance) {
-  var srcPtr = rBuffer.ptr - distance;
+  let srcPtr = rBuffer.ptr - distance;
   if (srcPtr < 0) {
-    var l = rOldBuffers.length;
+    let l = rOldBuffers.length;
     while (srcPtr < 0) {
       srcPtr = rOldBuffers[--l].data.length + srcPtr;
     }
@@ -1206,9 +1209,9 @@ function RarCopyString(len, distance) {
  */
 function unpack(v) {
   // TODO: implement what happens when unpVer is < 15
-  var Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
-  var Solid = v.header.LHD_SOLID;
-  var bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
+  const Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
+  const Solid = v.header.LHD_SOLID;
+  const bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
   
   rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
 
@@ -1235,7 +1238,7 @@ function unpack(v) {
 }
 
 // bstream is a bit stream
-var RarLocalFile = function(bstream) {
+const RarLocalFile = function(bstream) {
   this.header = new RarVolumeHeader(bstream);
   this.filename = this.header.filename;
   
@@ -1264,8 +1267,8 @@ RarLocalFile.prototype.unrar = function() {
       currentBytesUnarchived += this.fileData.length;
 
       // Create a new buffer and copy it over.
-      var len = this.header.packSize;
-      var newBuffer = new bitjs.io.ByteBuffer(len);
+      const len = this.header.packSize;
+      const newBuffer = new bitjs.io.ByteBuffer(len);
       newBuffer.insertBytes(this.fileData);
       this.fileData = newBuffer.data;
     } else {
@@ -1275,7 +1278,7 @@ RarLocalFile.prototype.unrar = function() {
   }
 }
 
-var unrar = function(arrayBuffer) {
+const unrar = function(arrayBuffer) {
   currentFilename = "";
   currentFileNumber = 0;
   currentBytesUnarchivedInFile = 0;
@@ -1284,22 +1287,22 @@ var unrar = function(arrayBuffer) {
   totalFilesInArchive = 0;
 
   postMessage(new bitjs.archive.UnarchiveStartEvent());
-  var bstream = new bitjs.io.BitStream(arrayBuffer, false /* rtl */);
+  const bstream = new bitjs.io.BitStream(arrayBuffer, false /* rtl */);
   
-  var header = new RarVolumeHeader(bstream);
+  const header = new RarVolumeHeader(bstream);
   if (header.crc == 0x6152 && 
     header.headType == 0x72 && 
     header.flags.value == 0x1A21 &&
     header.headSize == 7) {
     info("Found RAR signature");
 
-    var mhead = new RarVolumeHeader(bstream);
+    const mhead = new RarVolumeHeader(bstream);
     if (mhead.headType != MAIN_HEAD) {
       info("Error! RAR did not include a MAIN_HEAD header");
     }
     else {
-      var localFiles = [],
-        localFile = null;
+      let localFiles = [];
+      let localFile = null;
       do {
         try {
           localFile = new RarLocalFile(bstream);
@@ -1320,14 +1323,12 @@ var unrar = function(arrayBuffer) {
       // now we have all information but things are unpacked
       // TODO: unpack
       localFiles = localFiles.sort(function(a,b) {
-        var aname = a.filename.toLowerCase();
-        var bname = b.filename.toLowerCase();
-        return aname > bname ? 1 : -1;
+        return a.filename.toLowerCase() > b.filename.toLowerCase() ? 1 : -1;
 		  });
 
       info(localFiles.map(function(a){return a.filename}).join(', '));
-      for (var i = 0; i < localFiles.length; ++i) {
-        var localfile = localFiles[i];
+      for (let i = 0; i < localFiles.length; ++i) {
+        const localfile = localFiles[i];
         
         // update progress 
         currentFilename = localfile.header.filename;
@@ -1335,7 +1336,7 @@ var unrar = function(arrayBuffer) {
         
         // actually do the unzipping
         localfile.unrar();
-        
+
         if (localfile.isValid) {
           postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
           postProgress();
@@ -1353,6 +1354,6 @@ var unrar = function(arrayBuffer) {
 
 // event.data.file has the ArrayBuffer.
 onmessage = function(event) {
-  var ab = event.data.file;
+  const ab = event.data.file;
   unrar(ab, true);
 };
