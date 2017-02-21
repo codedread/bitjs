@@ -62,7 +62,7 @@ class TarLocalFile {
     this.typeflag = readCleanString(bstream, 1);
     this.linkname = readCleanString(bstream, 100);
     this.maybeMagic = readCleanString(bstream, 6);
-
+debugger;
     if (this.maybeMagic == "ustar") {
       this.version = readCleanString(bstream, 2);
       this.uname = readCleanString(bstream, 32);
@@ -91,7 +91,7 @@ class TarLocalFile {
     if (this.typeflag == 0) {
       info("  This is a regular file.");
       const sizeInBytes = parseInt(this.size);
-      this.fileData = new Uint8Array(bstream.bytes.buffer, bstream.ptr, this.size);
+      this.fileData = new Uint8Array(bstream.readBytes(sizeInBytes));
       if (this.name.length > 0 && this.size > 0 && this.fileData && this.fileData.buffer) {
         this.isValid = true;
       }

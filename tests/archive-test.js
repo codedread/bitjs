@@ -16,6 +16,9 @@ const testInputs = {
     'testUnrarM4': 'archive-testfiles/test-unrar-m4.json',
     'testUnrarM5': 'archive-testfiles/test-unrar-m5.json',
     'testUnrarMA4': 'archive-testfiles/test-unrar-ma4.json',
+    // On a Mac, tar files contain hidden files.  To disable this do:
+    // $ COPYFILE_DISABLE=1 tar cvf lorem.tar lorem.txt
+    'testUntar': 'archive-testfiles/test-untar-1.json',
 };
 
 const testSuite = {tests: {}};
