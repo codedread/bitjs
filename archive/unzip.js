@@ -103,8 +103,7 @@ class ZipLocalFile {
     // read in the compressed data
     this.fileData = null;
     if (this.compressedSize > 0) {
-        this.fileData = new Uint8Array(bstream.bytes.buffer, bstream.ptr, this.compressedSize);
-        bstream.ptr += this.compressedSize;
+        this.fileData = new Uint8Array(bstream.readBytes(this.compressedSize));
     }
 
     // TODO: deal with data descriptor if present (we currently assume no data descriptor!)

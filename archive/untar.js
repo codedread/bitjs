@@ -62,7 +62,7 @@ class TarLocalFile {
     this.typeflag = readCleanString(bstream, 1);
     this.linkname = readCleanString(bstream, 100);
     this.maybeMagic = readCleanString(bstream, 6);
-debugger;
+
     if (this.maybeMagic == "ustar") {
       this.version = readCleanString(bstream, 2);
       this.uname = readCleanString(bstream, 32);
