@@ -21,7 +21,6 @@ bitjs.archive.UnarchiveEvent = class {
   constructor(type) {
     /**
      * The event type.
-     *
      * @type {string}
      */
     this.type = type;
@@ -52,7 +51,6 @@ bitjs.archive.UnarchiveInfoEvent = class extends bitjs.archive.UnarchiveEvent {
 
     /**
      * The information message.
-     *
      * @type {string}
      */
     this.msg = msg;
@@ -71,7 +69,6 @@ bitjs.archive.UnarchiveErrorEvent = class extends bitjs.archive.UnarchiveEvent {
 
     /**
      * The information message.
-     *
      * @type {string}
      */
     this.msg = msg;

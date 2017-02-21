@@ -40,8 +40,9 @@ bitjs.io.ByteStream = class {
    */
   peekNumber(n) {
     // TODO: return error if n would go past the end of the stream?
-    if (n <= 0 || typeof n != typeof 1)
+    if (n <= 0 || typeof n != typeof 1) {
       return -1;
+    }
 
     let result = 0;
     // read from last byte to first byte and roll them in

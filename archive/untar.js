@@ -135,9 +135,7 @@ const untar = function(arrayBuffer) {
   totalFilesInArchive = localFiles.length;
 
   // got all local files, now sort them
-  localFiles.sort(function(a,b) {
-      return a.filename > b.filename ? 1 : -1;
-  });
+  localFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
 
   // report # files and total length
   if (localFiles.length > 0) {
