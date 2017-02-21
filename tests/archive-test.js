@@ -21,42 +21,40 @@ const testInputs = {
 const testSuite = {tests: {}};
 for (let testName in testInputs) {
   const testInputFilename = testInputs[testName];
-  testSuite.tests[testName] = new Promise(function(resolve, reject) {
+  testSuite.tests[testName] = function() {
+    return new Promise((resolve, reject) => {
       const scriptEl = document.createElement('script');
       scriptEl.setAttribute('src', testInputFilename);
-      scriptEl.addEventListener('load', function(evt) {
-        // document.body.removeChild(scriptEl);
+      scriptEl.addEventListener('load', evt => {
         const testFile = window.archiveTestFile;
-        const archivedFile = new Uint8Array(
-            atob(testFile.archivedFile)
-                .split(',')
-                .map(function(str) { return parseInt(str); })
-        );
-        const unarchivedFile = new Uint8Array(
-            atob(testFile.unarchivedFile)
-                .split(',')
-                .map(function(str) { return parseInt(str); })
-        );
-
-        const unarchiver = bitjs.archive.GetUnarchiver(archivedFile.buffer, '../');
-        unarchiver.addEventListener(bitjs.archive.UnarchiveEvent.Type.EXTRACT, function(evt) {
-            const theUnarchivedFile = evt.unarchivedFile.fileData;
-            try {
-              assertEquals(theUnarchivedFile.length, unarchivedFile.length,
-                  'The unarchived buffer was not the right length');
-              for (let i = 0; i < theUnarchivedFile.length; ++i) {
-                assertEquals(theUnarchivedFile[i], unarchivedFile[i],
-                    'Byte #' + i + ' did not match');
+        try {
+          const archivedFile = new Uint8Array(
+              atob(testFile.archivedFile).split(',').map(str => parseInt(str)));
+          const unarchivedFile = new Uint8Array(
+              atob(testFile.unarchivedFile).split(',').map(str => parseInt(str)));
+          const unarchiver = bitjs.archive.GetUnarchiver(archivedFile.buffer, '../');
+          unarchiver.addEventListener(bitjs.archive.UnarchiveEvent.Type.EXTRACT, evt => {
+              const theUnarchivedFile = evt.unarchivedFile.fileData;
+              try {
+                assertEquals(theUnarchivedFile.length, unarchivedFile.length,
+                    'The unarchived buffer was not the right length');
+                for (let i = 0; i < theUnarchivedFile.length; ++i) {
+                  assertEquals(theUnarchivedFile[i], unarchivedFile[i],
+                      'Byte #' + i + ' did not match');
+                }
+                resolve();
+              } catch (err) {
+                reject(err);
               }
-              resolve();
-            } catch (err) {
-              reject(err);
-            }
-        });
-        unarchiver.start();
+          });
+          unarchiver.start();
+        } catch (err) {
+          reject(err);
+        }
       });
       document.body.appendChild(scriptEl);
-  });
+    });
+  }
 }
 
 muther.go(testSuite);

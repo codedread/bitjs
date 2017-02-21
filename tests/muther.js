@@ -5,36 +5,41 @@
  *
  * Copyright(c) 2014, Google Inc.
  */
-var muther = muther || {};
+var muther = {};
 
-muther.$ = function(s) { return document.querySelector(s) || {}; }
 muther.assert = function(cond, err) { if (!cond) { throw err; } };
 muther.assertEquals = function(a, b, err) { muther.assert(a === b, err); };
 
+muther.$ = function(id) {
+  let el = document.querySelector('#' + id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    document.body.appendChild(el);
+  }
+  return el;
+};
+
 muther.set_ = function(id, style, innerHTML) {
-  muther.$('#' + id).innerHTML = '';
-  document.body.innerHTML += '<div id="' + id + '" style="' + style + '">' + innerHTML + '</div>';
+  muther.$(id).setAttribute('style', style);
+  muther.$(id).innerHTML = innerHTML;
 };
 
 muther.go = function(spec) {
-  Object.keys(spec['tests']).forEach(function(testName) {
-    const test = spec['tests'][testName];
-    if (test instanceof Promise) {
-      muther.set_(testName, 'color:#F90', 'RUNNING: ' + testName);
-      test.then(function() {
-        muther.set_(testName, 'color:#090', 'PASS: ' + testName);
-      }, function(err) {
-        muther.set_(testName, 'color:#900', 'FAIL: ' + testName + ': ' + err);
-      });
-    } else if (test instanceof Function) {
-      const setup = spec['setUp'] || function(){};
-      const tearDown = spec['tearDown'] || function(){};
-      try {
-        setup(); test(); tearDown();
-        muther.set_(testName, 'color:#090', 'PASS: ' + testName);
-      } catch (err) {
-        muther.set_(testName, 'color:#900', 'FAIL: ' + testName + ': ' + err);
-      }
+  let prevResult = Promise.resolve(true);
+  for (let testName in spec['tests']) {
+    muther.set_(testName, 'color:#F90', 'RUNNING: ' + testName);
+    try {
+      prevResult = prevResult.then(() => {
+        if (spec['setUp']) spec['setUp']();
+        const thisResult = spec['tests'][testName]() || Promise.resolve(true);
+        return thisResult.then(() => {
+          if (spec['tearDown']) spec['tearDown']();
+          muther.set_(testName, 'color:#090', 'PASS: ' + testName);
+        });
+      }).catch(err => muther.set_(testName, 'color:#900', 'FAIL: ' + testName + ': ' + err));
+    } catch (err) {
+      muther.set_(testName, 'color:#900', 'FAIL: ' + testName + ': ' + err);
     }
-  });
+  }
 };
