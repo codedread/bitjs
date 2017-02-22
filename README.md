@@ -16,9 +16,21 @@ var bstream = new bitjs.io.BitStream(someArrayBuffer, true, offset, length); var
 
 This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchive code depends on browser support of Web Workers. See the design doc.
 
-``` function updateProgressBar(e) { ... update UI element ... } function displayZipContents(e) { ... display contents of the extracted zip file ... }
+```
+function updateProgressBar(e) { ... update UI element ... }
+function displayZipContents(e) { ... display contents of the extracted zip file ... }
 
-var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer); unzipper.addEventListener("progress", updateProgressBar); unzipper.addEventListener("finish", displayZipContents); unzipper.start(); ```
+var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer); unzipper.addEventListener("progress", updateProgressBar); unzipper.addEventListener("finish", displayZipContents); unzipper.start();
+```
+
+## Tests
+
+* [bitjs.io tests](https://codedread.github.io/bitjs/tests/io-test.html)
+* [bitjs.archive tests](https://codedread.github.io/bitjs/tests/archive-test.html)
+
+## Reference
+
+* [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): An work-in-progress description of the RAR file format.
 
 ## History
 
