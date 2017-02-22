@@ -10,7 +10,11 @@ A set of tools to handle binary data in JS (using Typed Arrays).
 
 This namespace includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
-var bstream = new bitjs.io.BitStream(someArrayBuffer, true, offset, length); var crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
+```
+var bstream = new bitjs.io.BitStream(someArrayBuffer, true, offset, length);
+var crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
+var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
+```
 
 ### bitjs.archive
 
