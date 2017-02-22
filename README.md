@@ -38,4 +38,4 @@ var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer); unzipper.addEvent
 
 ## History
 
-This repository was automatically exported from code.google.com/p/bitjs and then I cherry-picked some commits from antimatter15's fork.
+This repository was automatically exported from [my original repository on GoogleCode] (https://code.google.com/p/bitjs) and then I cherry-picked some commits from antimatter15's fork.  I've also fixed a bunch of bugs, added starter RarVM support, added tests and updated to ES6.
