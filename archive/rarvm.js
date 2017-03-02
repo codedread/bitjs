@@ -579,7 +579,63 @@ class RarVM {
    */
   executeStandardFilter(filterType) {
     switch (filterType) {
-      case VM_StandardFilters.VMSF_DELTA:
+      case VM_StandardFilters.VMSF_RGB: {
+        const dataSize = this.R_[4];
+        const width = this.R_[0] - 3;
+        const posR = this.R_[1];
+        const Channels = 3;
+        let srcOffset = 0;
+        let destOffset = dataSize;
+
+        // byte *SrcData=Mem,*DestData=SrcData+DataSize;
+        // SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
+        const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR /* offset */);
+        dataView.setUint32(0x20 /* byte offset */,
+            dataSize /* value */,
+            true /* little endian */);
+
+        if (dataSize >= (VM_GLOBALMEMADDR / 2) || posR < 0) {
+          break;
+        }
+
+        for (let curChannel = 0; curChannel < Channels; ++curChannel) {
+          let prevByte=0;
+
+          for (let i = curChannel; i < dataSize; i += Channels) {
+            let predicted;
+            const upperPos = i - width;
+            if (upperPos >= 3) {
+              const upperByte = this.mem_[destOffset + upperPos];
+              const upperLeftByte = this.mem_[destOffset + upperPos - 3];
+              predicted = prevByte + upperByte - upperLeftByte;
+
+              const pa = Math.abs(predicted - prevByte);
+              const pb = Math.abs(predicted - upperByte);
+              const pc = Math.abs(predicted - upperLeftByte);
+              if (pa <= pb && pa <= pc) {
+                predicted = prevByte;
+              } else if (pb <= pc) {
+                predicted = upperByte;
+              } else {
+                predicted = upperLeftByte;
+              }
+            } else {
+              predicted = prevByte;
+            }
+            //DestData[I]=PrevByte=(byte)(Predicted-*(SrcData++));
+            prevByte = (predicted - this.mem_[srcOffset++]) & 0xff;
+            this.mem_[destOffset + i] = prevByte;
+          }
+        }
+        for (let i = posR, border = dataSize - 2; i < border; i += 3) {
+          const g = this.mem_[destOffset + i + 1];
+          this.mem_[destOffset + i] += g;
+          this.mem_[destOffset + i + 2] += g;
+        }
+
+        break;
+      }
+      case VM_StandardFilters.VMSF_DELTA: {
         const dataSize = this.R_[4];
         const channels = this.R_[0];
         let srcPos = 0;
@@ -587,7 +643,9 @@ class RarVM {
 
         //SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
         const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
-        dataView.setUint32(0x20, dataSize, true /* little endian */);
+        dataView.setUint32(0x20 /* byte offset */,
+            dataSize /* value */,
+            true /* little endian */);
 
         if (dataSize >= VM_GLOBALMEMADDR / 2) {
           break;
@@ -604,6 +662,7 @@ class RarVM {
         }
 
         break;
+      }
 
       default:
         console.error('RarVM Standard Filter not supported: ' + getDebugString(VM_StandardFilters, filterType));
