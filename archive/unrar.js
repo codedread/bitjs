@@ -467,7 +467,7 @@ function Unpack20(bstream, Solid) {
   
   RarReadTables20(bstream);
   while (destUnpSize > rBuffer.ptr) {
-    const num = RarDecodeNumber(bstream, LD);
+    let num = RarDecodeNumber(bstream, LD);
     if (num < 256) {
       rBuffer.insertByte(num);
       continue;
