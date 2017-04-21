@@ -24,7 +24,10 @@ This namespace includes objects for unarchiving binary data in popular archive f
 function updateProgressBar(e) { ... update UI element ... }
 function displayZipContents(e) { ... display contents of the extracted zip file ... }
 
-var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer); unzipper.addEventListener("progress", updateProgressBar); unzipper.addEventListener("finish", displayZipContents); unzipper.start();
+var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
+unzipper.addEventListener("progress", updateProgressBar);
+unzipper.addEventListener("finish", displayZipContents);
+unzipper.start();
 ```
 
 ## Tests
