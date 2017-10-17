@@ -464,8 +464,10 @@ function Unpack15(bstream, Solid) {
 function Unpack20(bstream, Solid) {
   const destUnpSize = rBuffer.data.length;
   let oldDistPtr = 0;
-  
-  RarReadTables20(bstream);
+
+  if (!Solid) {
+    RarReadTables20(bstream);
+  }
   while (destUnpSize > rBuffer.ptr) {
     let num = RarDecodeNumber(bstream, LD);
     if (num < 256) {
@@ -554,6 +556,7 @@ const rMC20 = 257;
 
 const UnpOldTable20 = new Array(rMC20 * 4);
 
+// TODO: This function should return a boolean value, see unpack20.cpp.
 function RarReadTables20(bstream) {
   const BitLength = new Array(rBC20);
   const Table = new Array(rMC20 * 4);
@@ -1187,12 +1190,13 @@ function RarInsertOldDist(distance) {
  */
 function RarCopyString(len, distance) {
   let srcPtr = rBuffer.ptr - distance;
+  // If we need to go back to previous buffers, then seek back.
   if (srcPtr < 0) {
     let l = rOldBuffers.length;
     while (srcPtr < 0) {
       srcPtr = rOldBuffers[--l].data.length + srcPtr;
     }
-    // TODO: lets hope that it never needs to read beyond file boundaries
+    // TODO: lets hope that it never needs to read across buffer boundaries
     while (len--) {
       rBuffer.insertByte(rOldBuffers[l].data[srcPtr++]);
     }
@@ -1212,7 +1216,7 @@ function RarCopyString(len, distance) {
 function unpack(v) {
   // TODO: implement what happens when unpVer is < 15
   const Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
-  const Solid = v.header.LHD_SOLID;
+  const Solid = v.header.flags.LHD_SOLID;
   const bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength );
 
   rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
@@ -1233,7 +1237,7 @@ function unpack(v) {
       Unpack29(bstream, Solid);
       break;
   } // switch(method)
-  
+
   rOldBuffers.push(rBuffer);
   // TODO: clear these old buffers when there's over 4MB of history
   return rBuffer.data;
