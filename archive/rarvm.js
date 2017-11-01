@@ -11,6 +11,36 @@
  */
 const CRCTab = new Array(256).fill(0);
 
+// Helper functions between signed and unsigned integers.
+
+/**
+ * -1 becomes 0xffffffff
+ */
+function fromSigned32ToUnsigned32(val) {
+  return (val < 0) ? (val += 0x100000000) : val;
+}
+
+/**
+ * 0xffffffff becomes -1
+ */
+function fromUnsigned32ToSigned32(val) {
+  return (val >= 0x80000000) ? (val -= 0x100000000) : val;
+}
+
+/**
+ * -1 becomes 0xff
+ */
+function fromSigned8ToUnsigned8(val) {
+  return (val < 0) ? (val += 0x100) : val;
+}
+
+/**
+ * 0xff becomes -1
+ */
+function fromUnsigned8ToSigned8(val) {
+  return (val >= 0x80) ? (val -= 0x100) : val;
+}
+
 function InitCRC() {
   for (let i = 0; i < 256; ++i) {
     let c = i;
@@ -635,6 +665,105 @@ class RarVM {
 
         break;
       }
+
+      // The C++ version of this standard filter uses an odd mixture of
+      // signed and unsigned integers, bytes and various casts.  Careful!
+      case VM_StandardFilters.VMSF_AUDIO: {
+        const dataSize = this.R_[4];
+        const channels = this.R_[0];
+        let srcOffset = 0;
+        let destOffset = dataSize;
+
+        //SET_VALUE(false,&Mem[VM_GLOBALMEMADDR+0x20],DataSize);
+        const dataView = new DataView(this.mem_.buffer, VM_GLOBALMEMADDR);
+        dataView.setUint32(0x20 /* byte offset */,
+            dataSize /* value */,
+            true /* little endian */);
+
+        if (dataSize >= VM_GLOBALMEMADDR / 2) {
+          break;
+        }
+
+        for (let curChannel = 0; curChannel < channels; ++curChannel) {
+          let prevByte = 0; // uint
+          let prevDelta = 0; // uint
+          let dif = [0, 0, 0, 0, 0, 0, 0];
+          let d1 = 0, d2 = 0, d3; // ints
+          let k1 = 0, k2 = 0, k3 = 0; // ints
+
+          for (var i = curChannel, byteCount = 0;
+              i < dataSize;
+              i += channels, ++byteCount) {
+            d3 = d2;
+            d2 = fromUnsigned32ToSigned32(prevDelta - d1);
+            d1 = fromUnsigned32ToSigned32(prevDelta);
+
+            let predicted = fromSigned32ToUnsigned32(8*prevByte + k1*d1 + k2*d2 + k3*d3); // uint
+            predicted = (predicted >>> 3) & 0xff;
+
+            let curByte = this.mem_[srcOffset++]; // uint
+
+            // Predicted-=CurByte;
+            predicted = fromSigned32ToUnsigned32(predicted - curByte);
+            this.mem_[destOffset + i] = (predicted & 0xff);
+
+            // PrevDelta=(signed char)(Predicted-PrevByte);
+            // where Predicted, PrevByte, PrevDelta are all unsigned int (32)
+            // casting this subtraction to a (signed char) is kind of invalid
+            // but it does the following:
+            // - do the subtraction
+            // - get the bottom 8 bits of the result
+            // - if it was >= 0x80, then the value is negative (subtract 0x100)
+            // - if the value is now negative, add 0x100000000 to make unsigned
+            //
+            // Example:
+            //   predicted = 101
+            //   prevByte = 4294967158
+            //   (predicted - prevByte) = -4294967057
+            //   take lower 8 bits:  1110 1111 = 239
+            //   since > 127, subtract 256 = -17
+            //   since < 0, add 0x100000000 = 4294967279
+            prevDelta = fromSigned32ToUnsigned32(
+                            fromUnsigned8ToSigned8((predicted - prevByte) & 0xff));
+            prevByte = predicted;
+
+            // int D=((signed char)CurByte)<<3;
+            let curByteAsSignedChar = fromUnsigned8ToSigned8(curByte); // signed char
+            let d = (curByteAsSignedChar << 3);
+
+            dif[0] += Math.abs(d);
+            dif[1] += Math.abs(d-d1);
+            dif[2] += Math.abs(d+d1);
+            dif[3] += Math.abs(d-d2);
+            dif[4] += Math.abs(d+d2);
+            dif[5] += Math.abs(d-d3);
+            dif[6] += Math.abs(d+d3);
+
+            if ((byteCount & 0x1f) == 0) {
+              let minDif = dif[0], numMinDif = 0;
+              dif[0] = 0;
+              for (let j = 1; j < 7; ++j) {
+                if (dif[j] < minDif) {
+                  minDif = dif[j];
+                  numMinDif = j;
+                }
+                dif[j] = 0;
+              }
+              switch (numMinDif) {
+                case 1: if (k1>=-16) k1--; break;
+                case 2: if (k1 < 16) k1++; break;
+                case 3: if (k2>=-16) k2--; break;
+                case 4: if (k2 < 16) k2++; break;
+                case 5: if (k3>=-16) k3--; break;
+                case 6: if (k3 < 16) k3++; break;
+              }
+            }
+          }
+        }
+
+        break;
+      }
+
       case VM_StandardFilters.VMSF_DELTA: {
         const dataSize = this.R_[4];
         const channels = this.R_[0];
