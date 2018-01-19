@@ -53,7 +53,7 @@ bitjs.io.ByteBuffer = class {
    * @param {number} numBytes The number of bytes to write the number into.
    */
   writeNumber(num, numBytes) {
-    if (numBytes < 1) {
+    if (numBytes < 1 || !numBytes) {
       throw 'Trying to write into too few bytes: ' + numBytes;
     }
     if (num < 0) {
