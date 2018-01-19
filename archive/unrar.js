@@ -187,12 +187,13 @@ class RarVolumeHeader {
           if ((rmode & 8) == 0) {
             continue;
           }
-          if (I != 0)
+          if (I != 0) {
             bstream.readBits(16);
-            const count = (rmode & 3);
-            for (let J = 0; J < count; ++J) {
-              bstream.readBits(8);
-            }
+          }
+          const count = (rmode & 3);
+          for (let J = 0; J < count; ++J) {
+            bstream.readBits(8);
+          }
         }
       }
 
@@ -330,15 +331,14 @@ function RarReadTables(bstream) {
       let ZeroCount = bstream.readBits(4);
       if (ZeroCount == 0) {
         BitLength[I] = 15;
-      }
-      else {
+      } else {
         ZeroCount += 2;
-        while (ZeroCount-- > 0 && I < rBC)
+        while (ZeroCount-- > 0 && I < rBC) {
           BitLength[I++] = 0;
+        }
         --I;
       }
-    }
-    else {
+    } else {
       BitLength[I] = Length;
     }
   }
@@ -1303,9 +1303,9 @@ const unrar = function(arrayBuffer) {
   
   const header = new RarVolumeHeader(bstream);
   if (header.crc == 0x6152 && 
-    header.headType == 0x72 && 
-    header.flags.value == 0x1A21 &&
-    header.headSize == 7) {
+      header.headType == 0x72 && 
+      header.flags.value == 0x1A21 &&
+      header.headSize == 7) {
     info("Found RAR signature");
 
     const mhead = new RarVolumeHeader(bstream);

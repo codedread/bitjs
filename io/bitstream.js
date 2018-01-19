@@ -25,8 +25,8 @@ bitjs.io.BitStream = class {
    * @param {Number} opt_length The length of this BitStream
    */
   constructor(ab, rtl, opt_offset, opt_length) {
-    if (!ab || !ab.toString || ab.toString() !== "[object ArrayBuffer]") {
-      throw "Error! BitArray constructed with an invalid ArrayBuffer object";
+    if (!ab || !ab.toString || ab.toString() !== '[object ArrayBuffer]') {
+      throw 'Error! BitArray constructed with an invalid ArrayBuffer object';
     }
 
     const offset = opt_offset || 0;
@@ -65,8 +65,8 @@ bitjs.io.BitStream = class {
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (n > 0) {
       if (bytePtr >= bytes.length) {
-        throw "Error!  Overflowed the bit stream! n=" + n + ", bytePtr=" + bytePtr + ", bytes.length=" +
-          bytes.length + ", bitPtr=" + bitPtr;
+        throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
+          bytes.length + ', bitPtr=' + bitPtr;
         return -1;
       }
 
@@ -125,8 +125,8 @@ bitjs.io.BitStream = class {
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (n > 0) {
       if (bytePtr >= bytes.length) {
-        throw "Error!  Overflowed the bit stream! n=" + n + ", bytePtr=" + bytePtr + ", bytes.length=" +
-          bytes.length + ", bitPtr=" + bitPtr;
+        throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
+          bytes.length + ', bitPtr=' + bitPtr;
         return -1;
       }
 
