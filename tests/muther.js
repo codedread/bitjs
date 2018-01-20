@@ -9,6 +9,11 @@ var muther = {};
 
 muther.assert = function(cond, err) { if (!cond) { throw err; } };
 muther.assertEquals = function(a, b, err) { muther.assert(a === b, err); };
+muther.assertThrows = function(fn, err) {
+  let threw = false;
+  try { fn(); } catch (e) { threw = true; }
+  muther.assert(threw, err);
+};
 
 muther.$ = function(id) {
   let el = document.querySelector('#' + id);

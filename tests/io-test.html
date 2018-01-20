@@ -17,13 +17,8 @@
     tests: {
       testByteStreamReadBytesPastEnd() {
         const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        let passed = false;
-        try {
-          stream.readBytes(5);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw when trying to readBytes past end of stream');
+        muther.assertThrows(() => stream.readBytes(5),
+            'Did not throw when trying to readBytes past end of stream');
       },
 
       testWriteNumberThenPeekRead() {
@@ -31,24 +26,14 @@
         const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(1234, stream.peekNumber(4));
         muther.assertEquals(1234, stream.readNumber(4));
-        let passed = false;
-        try {
-          stream.readNumber(1);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw when trying to readNumber past end of stream');
+        muther.assertThrows(() => stream.readNumber(1),
+            'Did not throw when trying to readNumber past end of stream');
       },
 
       testReadStringPastEnd() {
         const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        let passed = false;
-        try {
-          stream.readString(5);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw when trying to readString past end of stream');
+        muther.assertThrows(() => stream.readString(5),
+            'Did not throw when trying to readString past end of stream');
       },
 
       testWriteUnsignedByteThenRead() {
@@ -76,33 +61,18 @@
       },
 
       testWriteOverflowUnsigned() {
-        let passed = false;
-        try {
-          buffer.writeNumber(256, 1);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed);
+        muther.assertThrows(() => buffer.writeNumber(256, 1),
+            'Did not throw when trying to write a number into too-few bytes');
       },
 
       testWriteOverflowSignedPositive() {
-        let passed = false;
-        try {
-          buffer.writeSignedNumber(128, 1);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed);
+        muther.assertThrows(() => buffer.writeSignedNumber(128, 1),
+            'Did not throw when trying to write a signed number into too-few bytes');
       },
 
       testWriteOverflowSignedNegative() {
-        let passed = false;
-        try {
-          buffer.writeSignedNumber(-129, 1);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed);
+        muther.assertThrows(() => buffer.writeSignedNumber(-129, 1),
+            'Did not throw when trying to write a negative signed number into too-few bytes');
       },
 
       testBitPeekAndRead_RTL() {
@@ -122,13 +92,8 @@
         muther.assertEquals(18, stream.readBits(5));
 
         // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        let passed = false;
-        try {
-          stream.readBits(2);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw');
+        muther.assertThrows(() => stream.readBits(2),
+            'Did not throw when trying to read bits past the end of the stream during RTL');
       },
 
       testBitPeekAndRead_LTR() {
@@ -150,13 +115,8 @@
         muther.assertEquals(25, stream.readBits(5));
 
         // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        let passed = false;
-        try {
-          stream.readBits(2);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw');
+        muther.assertThrows(() => stream.readBits(2),
+            'Did not throw when trying to read bits past the end of the stream during LTR');
       },
 
       testBitStreamReadBytes() {
@@ -177,13 +137,8 @@
         muther.assertEquals(Number('0b01100101'), twoBytes[0]);
         muther.assertEquals(Number('0b01010110'), twoBytes[1]);
 
-        let passed = false;
-        try {
-          stream.readBytes(3);
-        } catch (e) {
-          passed = true;
-        }
-        muther.assert(passed, 'Did not throw');
+        muther.assertThrows(() => stream.readBytes(3),
+            'Did not throw when trying to read bytes past the end of the stream');
       }
     },
   });
