@@ -15,33 +15,63 @@
       buffer = new bitjs.io.ByteBuffer(4);
     },
     tests: {
-      testWriteNumberThenRead() {
+      testByteStreamReadBytesPastEnd() {
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
+        let passed = false;
+        try {
+          stream.readBytes(5);
+        } catch (e) {
+          passed = true;
+        }
+        muther.assert(passed, 'Did not throw when trying to readBytes past end of stream');
+      },
+
+      testWriteNumberThenPeekRead() {
         buffer.writeNumber(1234, 4);
-        const stream = new bitjs.io.ByteStream(buffer.data);
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(1234, stream.peekNumber(4));
+        muther.assertEquals(1234, stream.readNumber(4));
+        let passed = false;
+        try {
+          stream.readNumber(1);
+        } catch (e) {
+          passed = true;
+        }
+        muther.assert(passed, 'Did not throw when trying to readNumber past end of stream');
+      },
+
+      testReadStringPastEnd() {
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
+        let passed = false;
+        try {
+          stream.readString(5);
+        } catch (e) {
+          passed = true;
+        }
+        muther.assert(passed, 'Did not throw when trying to readString past end of stream');
       },
 
       testWriteUnsignedByteThenRead() {
         buffer.writeNumber(192, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data);
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(192, stream.readNumber(1));
       },
 
       testWriteSignedByteThenRead() {
         buffer.writeSignedNumber(-120, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data);
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(-120, stream.readSignedNumber(1));
       },
 
       testWriteSignedPositiveNumberThenRead() {
         buffer.writeSignedNumber(1234, 4);
-        const stream = new bitjs.io.ByteStream(buffer.data);
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(1234, stream.readSignedNumber(4));
       },
 
       testWriteSignedNegativeNumberThenRead() {
         buffer.writeSignedNumber(-128, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data);
+        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
         muther.assertEquals(-128, stream.readSignedNumber(1));
       },
 
@@ -108,7 +138,9 @@
         buffer.writeNumber(Number('0b01100101'), 1);
 
         const stream = new bitjs.io.BitStream(buffer.data.buffer, false /* rtl */);
+
         // 0101 = 2 + 4 = 6
+        muther.assertEquals(5, stream.peekBits(4));
         muther.assertEquals(5, stream.readBits(4));
         // 101 0110 = 2 + 4 + 16 + 64 = 86
         muther.assertEquals(86, stream.readBits(7));
@@ -126,6 +158,33 @@
         }
         muther.assert(passed, 'Did not throw');
       },
+
+      testBitStreamReadBytes() {
+        buffer.writeNumber(Number('0b01100101'), 1);
+        buffer.writeNumber(Number('0b01010110'), 1);
+
+        const stream = new bitjs.io.BitStream(buffer.data.buffer);
+
+        let twoBytes = stream.peekBytes(2);
+        muther.assert(twoBytes instanceof Uint8Array);
+        muther.assertEquals(2, twoBytes.byteLength);
+        muther.assertEquals(Number('0b01100101'), twoBytes[0]);
+        muther.assertEquals(Number('0b01010110'), twoBytes[1]);
+
+        twoBytes = stream.readBytes(2);
+        muther.assert(twoBytes instanceof Uint8Array);
+        muther.assertEquals(2, twoBytes.byteLength);
+        muther.assertEquals(Number('0b01100101'), twoBytes[0]);
+        muther.assertEquals(Number('0b01010110'), twoBytes[1]);
+
+        let passed = false;
+        try {
+          stream.readBytes(3);
+        } catch (e) {
+          passed = true;
+        }
+        muther.assert(passed, 'Did not throw');
+      }
     },
   });
 </script>

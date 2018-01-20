@@ -13,6 +13,8 @@ var bitjs = bitjs || {};
 bitjs.io = bitjs.io || {};
 
 
+// TODO: Add method for pushing bits (multiple arrays) and have tests.
+// TODO: Add method for tee-ing off the stream with tests.
 /**
  * This bit stream peeks and consumes bits out of a binary stream.
  */
@@ -25,7 +27,7 @@ bitjs.io.BitStream = class {
    * @param {Number} opt_length The length of this BitStream
    */
   constructor(ab, rtl, opt_offset, opt_length) {
-    if (!ab || !ab.toString || ab.toString() !== '[object ArrayBuffer]') {
+    if (!(ab instanceof ArrayBuffer)) {
       throw 'Error! BitArray constructed with an invalid ArrayBuffer object';
     }
 
@@ -43,13 +45,14 @@ bitjs.io.BitStream = class {
    *
    * The bit pointer starts at bit0 of byte0 and moves left until it reaches
    * bit7 of byte0, then jumps to bit0 of byte1, etc.
-   * @param {number} n The number of bits to peek.
+   * @param {number} n The number of bits to peek, must be a positive integer.
    * @param {boolean=} movePointers Whether to move the pointer, defaults false.
    * @return {number} The peeked bits, as an unsigned number.
    */
   peekBits_ltr(n, opt_movePointers) {
-    if (n <= 0 || typeof n != typeof 1) {
-      return 0;
+    let num = parseInt(n, 10);
+    if (n !== num || num <= 0) {
+      throw 'Error!  Called peekBits_ltr() with a non-positive integer';
     }
 
     const movePointers = opt_movePointers || false;
@@ -63,30 +66,29 @@ bitjs.io.BitStream = class {
     // TODO: Consider putting all bits from bytes we will need into a variable and then
     //       shifting/masking it to just extract the bits we want.
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
-    while (n > 0) {
+    while (num > 0) {
       if (bytePtr >= bytes.length) {
         throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
           bytes.length + ', bitPtr=' + bitPtr;
-        return -1;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
-      if (n >= numBitsLeftInThisByte) {
+      if (num >= numBitsLeftInThisByte) {
         const mask = (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] << bitPtr);
         result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
         bytePtr++;
         bitPtr = 0;
         bitsIn += numBitsLeftInThisByte;
-        n -= numBitsLeftInThisByte;
+        num -= numBitsLeftInThisByte;
       }
       else {
-        const mask = (bitjs.io.BitStream.BITMASK[n] << bitPtr);
+        const mask = (bitjs.io.BitStream.BITMASK[num] << bitPtr);
         result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
-        bitPtr += n;
-        bitsIn += n;
-        n = 0;
+        bitPtr += num;
+        bitsIn += num;
+        num = 0;
       }
     }
 
@@ -104,13 +106,14 @@ bitjs.io.BitStream = class {
    *
    * The bit pointer starts at bit7 of byte0 and moves right until it reaches
    * bit0 of byte0, then goes to bit7 of byte1, etc.
-   * @param {number} n The number of bits to peek.
+   * @param {number} n The number of bits to peek.  Must be a positive integer.
    * @param {boolean=} movePointers Whether to move the pointer, defaults false.
    * @return {number} The peeked bits, as an unsigned number.
    */
   peekBits_rtl(n, opt_movePointers) {
-    if (n <= 0 || typeof n != typeof 1) {
-      return 0;
+    let num = parseInt(n, 10);
+    if (n !== num || num <= 0) {
+      throw 'Error!  Called peekBits_rtl() with a non-positive integer';
     }
 
     const movePointers = opt_movePointers || false;
@@ -123,27 +126,27 @@ bitjs.io.BitStream = class {
     // TODO: Consider putting all bits from bytes we will need into a variable and then
     //       shifting/masking it to just extract the bits we want.
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
-    while (n > 0) {
+    while (num > 0) {
       if (bytePtr >= bytes.length) {
         throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
           bytes.length + ', bitPtr=' + bitPtr;
-        return -1;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
-      if (n >= numBitsLeftInThisByte) {
+      if (num >= numBitsLeftInThisByte) {
         result <<= numBitsLeftInThisByte;
         result |= (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] & bytes[bytePtr]);
         bytePtr++;
         bitPtr = 0;
-        n -= numBitsLeftInThisByte;
+        num -= numBitsLeftInThisByte;
       }
       else {
-        result <<= n;
-        result |= ((bytes[bytePtr] & (bitjs.io.BitStream.BITMASK[n] << (8 - n - bitPtr))) >> (8 - n - bitPtr));
+        result <<= num;
+        const numBits = 8 - num - bitPtr;
+        result |= ((bytes[bytePtr] & (bitjs.io.BitStream.BITMASK[num] << numBits)) >> numBits);
 
-        bitPtr += n;
-        n = 0;
+        bitPtr += num;
+        num = 0;
       }
     }
 
@@ -169,7 +172,7 @@ bitjs.io.BitStream = class {
 
   /**
    * Reads n bits out of the stream, consuming them (moving the bit pointer).
-   * @param {number} n The number of bits to read.
+   * @param {number} n The number of bits to read.  Must be a positive integer.
    * @return {number} The read bits, as an unsigned number.
    */
   readBits(n) {
@@ -180,29 +183,33 @@ bitjs.io.BitStream = class {
    * This returns n bytes as a sub-array, advancing the pointer if movePointers
    * is true.  Only use this for uncompressed blocks as this throws away remaining
    * bits in the current byte.
-   * @param {number} n The number of bytes to peek.
+   * @param {number} n The number of bytes to peek.  Must be a positive integer.
    * @param {boolean=} movePointers Whether to move the pointer, defaults false.
    * @return {Uint8Array} The subarray.
    */
   peekBytes(n, opt_movePointers) {
-    if (n <= 0 || typeof n != typeof 1) {
-      return 0;
+    const num = parseInt(n, 10);
+    if (n !== num || num <= 0) {
+      throw 'Error!  Called peekBytes() with a non-positive integer';
     }
 
+    // Flush bits until we are byte-aligned.
     // from http://tools.ietf.org/html/rfc1951#page-11
     // "Any bits of input up to the next byte boundary are ignored."
     while (this.bitPtr != 0) {
       this.readBits(1);
     }
 
+    if (this.bytePtr + num > this.bytes.byteLength) {
+      throw 'Error!  Overflowed the bit stream! n=' + num + ', bytePtr=' + this.bytePtr +
+          ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
+    }
+
+    const result = this.bytes.subarray(this.bytePtr, this.bytePtr + num);
+
     const movePointers = opt_movePointers || false;
-    let bytePtr = this.bytePtr;
-    let bitPtr = this.bitPtr;
-
-    const result = this.bytes.subarray(bytePtr, bytePtr + n);
-
     if (movePointers) {
-      this.bytePtr += n;
+      this.bytePtr += num;
     }
 
     return result;
