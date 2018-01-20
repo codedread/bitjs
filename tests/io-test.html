@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Unit tests for bitjs.io.ByteBuffer, bitjs.io.ByteStream, and bitjs.io.BitStream</title>
+    <title>Unit tests for bitjs.io.ByteBufferBitStream</title>
     <script src="muther.js"></script>
     <script src="../io/bitstream.js"></script>
     <script src="../io/bytebuffer.js"></script>
@@ -13,55 +13,32 @@
   const assertEquals = muther.assertEquals;
   const assertThrows = muther.assertThrows;
 
+  // TODO: Only test ByteBuffer here.
   let buffer;
   muther.go({
     setUp: function() {
       buffer = new bitjs.io.ByteBuffer(4);
     },
     tests: {
-      testByteStreamReadBytesPastEnd() {
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertThrows(() => stream.readBytes(5),
-            'Did not throw when trying to readBytes past end of stream');
+      testWrite_SingleByte() {
+        buffer.writeNumber(192, 1);
+        assertEquals(1, buffer.ptr);
       },
 
-      testWriteNumberThenPeekRead() {
+      testWrite_SingleByteNegativeNumber() {
+        buffer.writeSignedNumber(-120, 1);
+        assertEquals(1, buffer.ptr);
+      },
+
+      testWrite_MultiByteNumber() {
         buffer.writeNumber(1234, 4);
         const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertEquals(1234, stream.peekNumber(4));
-        assertEquals(1234, stream.readNumber(4));
-        assertThrows(() => stream.readNumber(1),
-            'Did not throw when trying to readNumber past end of stream');
+        assertEquals(4, buffer.ptr);
       },
 
-      testReadStringPastEnd() {
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertThrows(() => stream.readString(5),
-            'Did not throw when trying to readString past end of stream');
-      },
-
-      testWriteUnsignedByteThenRead() {
-        buffer.writeNumber(192, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertEquals(192, stream.readNumber(1));
-      },
-
-      testWriteSignedByteThenRead() {
-        buffer.writeSignedNumber(-120, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertEquals(-120, stream.readSignedNumber(1));
-      },
-
-      testWriteSignedPositiveNumberThenRead() {
-        buffer.writeSignedNumber(1234, 4);
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertEquals(1234, stream.readSignedNumber(4));
-      },
-
-      testWriteSignedNegativeNumberThenRead() {
-        buffer.writeSignedNumber(-128, 1);
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
-        assertEquals(-128, stream.readSignedNumber(1));
+      testWrite_MultiByteNegativeNumber() {
+        buffer.writeSignedNumber(-1234, 4);
+        assertEquals(4, buffer.ptr);
       },
 
       testWriteOverflowUnsigned() {
@@ -78,72 +55,6 @@
         assertThrows(() => buffer.writeSignedNumber(-129, 1),
             'Did not throw when trying to write a negative signed number into too-few bytes');
       },
-
-      testBitPeekAndRead_RTL() {
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-
-        const stream = new bitjs.io.BitStream(buffer.data.buffer, true /* rtl */);
-        // 0110 = 2 + 4 = 6
-        assertEquals(6, stream.readBits(4));
-        // 0101 011 = 1 + 2 + 8 + 32 = 43
-        assertEquals(43, stream.readBits(7));
-        // 00101 01100101 01 = 1 + 4 + 16 + 128 + 256 + 1024 + 4096 = 5525
-        assertEquals(5525, stream.readBits(15));
-        // 10010 = 2 + 16 = 18
-        assertEquals(18, stream.readBits(5));
-
-        // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        assertThrows(() => stream.readBits(2),
-            'Did not throw when trying to read bits past the end of the stream during RTL');
-      },
-
-      testBitPeekAndRead_LTR() {
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01100101'), 1);
-
-        const stream = new bitjs.io.BitStream(buffer.data.buffer, false /* rtl */);
-
-        // 0101 = 2 + 4 = 6
-        assertEquals(5, stream.peekBits(4));
-        assertEquals(5, stream.readBits(4));
-        // 101 0110 = 2 + 4 + 16 + 64 = 86
-        assertEquals(86, stream.readBits(7));
-        // 01 01100101 01100 = 4 + 8 + 32 + 128 + 1024 + 2048 + 8192 = 11436
-        assertEquals(11436, stream.readBits(15));
-        // 11001 = 1 + 8 + 16 = 25
-        assertEquals(25, stream.readBits(5));
-
-        // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        assertThrows(() => stream.readBits(2),
-            'Did not throw when trying to read bits past the end of the stream during LTR');
-      },
-
-      testBitStreamReadBytes() {
-        buffer.writeNumber(Number('0b01100101'), 1);
-        buffer.writeNumber(Number('0b01010110'), 1);
-
-        const stream = new bitjs.io.BitStream(buffer.data.buffer);
-
-        let twoBytes = stream.peekBytes(2);
-        assert(twoBytes instanceof Uint8Array);
-        assertEquals(2, twoBytes.byteLength);
-        assertEquals(Number('0b01100101'), twoBytes[0]);
-        assertEquals(Number('0b01010110'), twoBytes[1]);
-
-        twoBytes = stream.readBytes(2);
-        assert(twoBytes instanceof Uint8Array);
-        assertEquals(2, twoBytes.byteLength);
-        assertEquals(Number('0b01100101'), twoBytes[0]);
-        assertEquals(Number('0b01010110'), twoBytes[1]);
-
-        assertThrows(() => stream.readBytes(3),
-            'Did not throw when trying to read bytes past the end of the stream');
-      }
     },
   });
 </script>

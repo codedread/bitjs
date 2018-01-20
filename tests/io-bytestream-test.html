@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unit tests for bitjs.io.ByteStreamBitStream</title>
+    <script src="muther.js"></script>
+    <script src="../io/bytestream.js"></script>
+</head>
+<body>
+<script>
+  const assert = muther.assert;
+  const assertEquals = muther.assertEquals;
+  const assertThrows = muther.assertThrows;
+
+  let array;
+  muther.go({
+    setUp: function() {
+      array = new Uint8Array(4);
+    },
+    tests: {
+      testPeekAndRead_SingleByte() {
+        array[0] = 192;
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(192, stream.peekNumber(1));
+        assertEquals(192, stream.readNumber(1));
+      },
+
+      testPeekAndRead_MultiByteNumber() {
+        array[0] = (1234 & 0xff);
+        array[1] = ((1234 >> 8) & 0xff);
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(1234, stream.peekNumber(4));
+        assertEquals(1234, stream.readNumber(4));
+        assertThrows(() => stream.readNumber(1),
+            'Did not throw when trying to readNumber past end of stream');
+      },
+
+      testPeekAndRead_SingleByteSignedNumber() {
+        array[0] = -120;
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(-120, stream.peekSignedNumber(1));
+        assertEquals(-120, stream.readSignedNumber(1));
+      },
+
+      testPeekAndRead_SingleByteNegativeNumber() {
+        array[0] = -128;
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(-128, stream.peekSignedNumber(1));
+        assertEquals(-128, stream.readSignedNumber(1));
+      },
+
+      testPeekAndRead_MultiByteSignedNumber() {
+        array[0] = (1234 & 0xff);
+        array[1] = ((1234 >> 8) & 0xff);
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(1234, stream.peekSignedNumber(2));
+        assertEquals(1234, stream.readSignedNumber(2));
+      },
+
+      testPeekAndRead_MultiByteNegativeNumber() {
+        array[0] = (-1234 & 0xff);
+        array[1] = ((-1234 >> 8) & 0xff);
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertEquals(-1234, stream.peekSignedNumber(2));
+        assertEquals(-1234, stream.readSignedNumber(2));
+      },
+
+      testByteStreamReadBytesPastEnd() {
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertThrows(() => stream.readBytes(5),
+            'Did not throw when trying to readBytes past end of stream');
+      },
+
+      testReadStringPastEnd() {
+        const stream = new bitjs.io.ByteStream(array.buffer);
+        assertThrows(() => stream.readString(5),
+            'Did not throw when trying to readString past end of stream');
+      },
+    },
+  });
+</script>
+</body>
+</html>
