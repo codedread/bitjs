@@ -36,6 +36,13 @@ bitjs.io.ByteStream = class {
     this.ptr = 0;
   }
 
+  /**
+   * Returns how many bytes are currently in the stream left to be read.
+   * @private
+   */
+  getBytesLeft_() {
+    return (this.bytes.byteLength - this.ptr);
+  }
 
   /**
    * Peeks at the next n bytes as an unsigned number but does not advance the
@@ -46,8 +53,10 @@ bitjs.io.ByteStream = class {
    */
   peekNumber(n) {
     let num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekNumber() with a non-positive integer';
+    } else if (num === 0) {
+      return 0;
     }
 
     let result = 0;
@@ -120,9 +129,12 @@ bitjs.io.ByteStream = class {
     let num = parseInt(n, 10);
     if (n !== num || num <= 0) {
       throw 'Error!  Called peekBytes() with a non-positive integer';
+    } else if (num === 0) {
+      return new Uint8Array();
     }
 
-    if (this.ptr + num > this.bytes.byteLength) {
+    if (num > this.getBytesLeft_()) {
+    //if (this.ptr + num > this.bytes.byteLength) {
       throw 'Error!  Overflowed the byte stream! n=' + num + ', ptr=' + this.ptr +
           ', bytes.length=' + this.bytes.length;
     }
@@ -152,8 +164,10 @@ bitjs.io.ByteStream = class {
    */
   peekString(n) {
     let num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekString() with a non-positive integer';
+    } else if (num === 0) {
+      return '';
     }
 
     // TODO: return error if n would go past the end of the stream.

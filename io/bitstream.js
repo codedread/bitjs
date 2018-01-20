@@ -51,8 +51,10 @@ bitjs.io.BitStream = class {
    */
   peekBits_ltr(n, opt_movePointers) {
     let num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekBits_ltr() with a non-positive integer';
+    } else if (num === 0) {
+      return 0;
     }
 
     const movePointers = opt_movePointers || false;
@@ -112,8 +114,10 @@ bitjs.io.BitStream = class {
    */
   peekBits_rtl(n, opt_movePointers) {
     let num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekBits_rtl() with a non-positive integer';
+    } else if (num === 0) {
+      return 0;
     }
 
     const movePointers = opt_movePointers || false;
@@ -189,8 +193,10 @@ bitjs.io.BitStream = class {
    */
   peekBytes(n, opt_movePointers) {
     const num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekBytes() with a non-positive integer';
+    } else if (num === 0) {
+      return new Uint8Array();
     }
 
     // Flush bits until we are byte-aligned.
