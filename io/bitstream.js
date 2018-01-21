@@ -13,7 +13,6 @@ var bitjs = bitjs || {};
 bitjs.io = bitjs.io || {};
 
 
-// TODO: Add method for pushing bits (multiple arrays) and have tests.
 // TODO: Add method for tee-ing off the stream with tests.
 /**
  * This bit stream peeks and consumes bits out of a binary stream.
