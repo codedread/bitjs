@@ -34,6 +34,7 @@ bitjs.io.ByteStream = class {
     const length = opt_length || ab.byteLength;
     this.bytes = new Uint8Array(ab, offset, length);
     this.ptr = 0;
+    this.pages_ = [];
   }
 
   /**
@@ -41,7 +42,23 @@ bitjs.io.ByteStream = class {
    * @private
    */
   getBytesLeft_() {
-    return (this.bytes.byteLength - this.ptr);
+    const bytesInCurrentPage = (this.bytes.byteLength - this.ptr);
+    return this.pages_.reduce((acc, arr) => acc + arr.length, bytesInCurrentPage);
+  }
+
+  /**
+   * Move the pointer ahead n bytes.  If the pointer is at the end of the current array
+   * of bytes and we have another page of bytes, point at the new page.  This is a private
+   * method, no validation is done.
+   * @param {number} n Number of bytes to increment.
+   * @private
+   */
+  movePointer_(n) {
+    this.ptr += n;
+    while (this.ptr >= this.bytes.length && this.pages_.length > 0) {
+      this.ptr -= this.bytes.length;
+      this.bytes = this.pages_.shift();
+    }
   }
 
   /**
@@ -52,26 +69,33 @@ bitjs.io.ByteStream = class {
    * @return {number} The n bytes interpreted as an unsigned number.
    */
   peekNumber(n) {
-    let num = parseInt(n, 10);
+    const num = parseInt(n, 10);
     if (n !== num || num < 0) {
       throw 'Error!  Called peekNumber() with a non-positive integer';
     } else if (num === 0) {
       return 0;
     }
 
-    let result = 0;
-    // read from last byte to first byte and roll them in
-    let curByte = this.ptr + num - 1;
-    while (curByte >= this.ptr) {
-      if (curByte >= this.bytes.byteLength) {
-        throw 'Error!  Overflowed the byte stream while peekNumber()! n=' + num +
-            ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
-      }
+    // TODO: Throw an error if n > 4.
 
-      result <<= 8;
-      result |= this.bytes[curByte];
-      --curByte;
+    if (this.getBytesLeft_() < num) {
+      throw 'Error!  Overflowed the byte stream while peekNumber()! n=' + num +
+      ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
     }
+
+    let result = 0;
+    let curPage = this.bytes;
+    let pageIndex = 0;
+    let ptr = this.ptr;
+    for (let i = 0; i < num; ++i) {
+      result |= (curPage[ptr++] << (i * 8));
+
+      if (ptr >= curPage.length) {
+        curPage = this.pages_[pageIndex++];
+        ptr = 0;
+      }
+    }
+
     return result;
   }
 
@@ -84,7 +108,7 @@ bitjs.io.ByteStream = class {
    */
   readNumber(n) {
     const num = this.peekNumber(n);
-    this.ptr += n;
+    this.movePointer_(n);
     return num;
   }
 
@@ -113,7 +137,7 @@ bitjs.io.ByteStream = class {
    */
   readSignedNumber(n) {
     const num = this.peekSignedNumber(n);
-    this.ptr += n;
+    this.movePointer_(n);
     return num;
   }
 
@@ -126,23 +150,33 @@ bitjs.io.ByteStream = class {
    * @return {Uint8Array} The subarray.
    */
   peekBytes(n, movePointers) {
-    let num = parseInt(n, 10);
+    const num = parseInt(n, 10);
     if (n !== num || num <= 0) {
       throw 'Error!  Called peekBytes() with a non-positive integer';
     } else if (num === 0) {
       return new Uint8Array();
     }
 
-    if (num > this.getBytesLeft_()) {
-    //if (this.ptr + num > this.bytes.byteLength) {
+    const totalBytesLeft = this.getBytesLeft_();
+    if (num > totalBytesLeft) {
       throw 'Error!  Overflowed the byte stream! n=' + num + ', ptr=' + this.ptr +
           ', bytes.length=' + this.bytes.length;
     }
 
-    const result = this.bytes.subarray(this.ptr, this.ptr + num);
+    const result = new Uint8Array(num);
+    let curPage = this.bytes;
+    let pageIndex = 0;
+    let ptr = this.ptr;
+    for (let i = 0; i < num; ++i) {
+      result[i] = curPage[ptr++];
+      if (ptr >= curPage.length) {
+        curPage = this.pages_[pageIndex++];
+        ptr = 0;
+      }
+    }
 
     if (movePointers) {
-      this.ptr += num;
+      this.movePointer_(num);
     }
 
     return result;
@@ -163,25 +197,32 @@ bitjs.io.ByteStream = class {
    * @return {string} The next n bytes as a string.
    */
   peekString(n) {
-    let num = parseInt(n, 10);
+    const num = parseInt(n, 10);
     if (n !== num || num < 0) {
       throw 'Error!  Called peekString() with a non-positive integer';
     } else if (num === 0) {
       return '';
     }
 
-    // TODO: return error if n would go past the end of the stream.
-
-    let result = "";
-    for (let p = this.ptr, end = this.ptr + n; p < end; ++p) {
-      if (p >= this.bytes.byteLength) {
-        throw 'Error!  Overflowed the byte stream while peekString()! n=' + num +
-            ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
-      }
-
-      result += String.fromCharCode(this.bytes[p]);
+    const totalBytesLeft = this.getBytesLeft_();
+    if (num > totalBytesLeft) {
+      throw 'Error!  Overflowed the byte stream while peekString()! n=' + num +
+      ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
     }
-    return result;
+
+    let result = new Array(num);
+    let curPage = this.bytes;
+    let pageIndex = 0;
+    let ptr = this.ptr;
+    for (let i = 0; i < num; ++i) {
+      result[i] = String.fromCharCode(curPage[ptr++]);
+      if (ptr >= curPage.length) {
+        curPage = this.pages_[pageIndex++];
+        ptr = 0;
+      }
+    }
+
+    return result.join('');
   }
 
   /**
@@ -192,7 +233,22 @@ bitjs.io.ByteStream = class {
    */
   readString(n) {
     const strToReturn = this.peekString(n);
-    this.ptr += n;
+    this.movePointer_(n);
     return strToReturn;
+  }
+
+  /**
+   * Feeds more bytes into the back of the stream.
+   * @param {ArrayBuffer} ab 
+   */
+  push(ab) {
+    if (!(ab instanceof ArrayBuffer)) {
+      throw 'Error! push() called with an invalid ArrayBuffer object';
+    }
+
+    this.pages_.push(new Uint8Array(ab));
+    // If the pointer is at the end of the current page of bytes, this will advance
+    // to the next page.
+    this.movePointer_(0);
   }
 }
