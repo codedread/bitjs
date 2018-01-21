@@ -13,7 +13,6 @@ var bitjs = bitjs || {};
 bitjs.io = bitjs.io || {};
 
 
-// TODO: Add method for pushing bits (multiple arrays) and have tests.
 // TODO: Add method for tee-ing off the stream with tests.
 /**
  * This object allows you to peek and consume bytes as numbers and strings
@@ -41,7 +40,7 @@ bitjs.io.ByteStream = class {
    * Returns how many bytes are currently in the stream left to be read.
    * @private
    */
-  getBytesLeft_() {
+  getNumBytesLeft_() {
     const bytesInCurrentPage = (this.bytes.byteLength - this.ptr);
     return this.pages_.reduce((acc, arr) => acc + arr.length, bytesInCurrentPage);
   }
@@ -78,7 +77,7 @@ bitjs.io.ByteStream = class {
 
     // TODO: Throw an error if n > 4.
 
-    if (this.getBytesLeft_() < num) {
+    if (this.getNumBytesLeft_() < num) {
       throw 'Error!  Overflowed the byte stream while peekNumber()! n=' + num +
       ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
     }
@@ -157,7 +156,7 @@ bitjs.io.ByteStream = class {
       return new Uint8Array();
     }
 
-    const totalBytesLeft = this.getBytesLeft_();
+    const totalBytesLeft = this.getNumBytesLeft_();
     if (num > totalBytesLeft) {
       throw 'Error!  Overflowed the byte stream! n=' + num + ', ptr=' + this.ptr +
           ', bytes.length=' + this.bytes.length;
@@ -204,7 +203,7 @@ bitjs.io.ByteStream = class {
       return '';
     }
 
-    const totalBytesLeft = this.getBytesLeft_();
+    const totalBytesLeft = this.getNumBytesLeft_();
     if (num > totalBytesLeft) {
       throw 'Error!  Overflowed the byte stream while peekString()! n=' + num +
       ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
@@ -243,7 +242,7 @@ bitjs.io.ByteStream = class {
    */
   push(ab) {
     if (!(ab instanceof ArrayBuffer)) {
-      throw 'Error! push() called with an invalid ArrayBuffer object';
+      throw 'Error! ByteStream.push() called with an invalid ArrayBuffer object';
     }
 
     this.pages_.push(new Uint8Array(ab));

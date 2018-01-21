@@ -73,7 +73,45 @@
 
         assertThrows(() => stream.readBytes(3),
             'Did not throw when trying to read bytes past the end of the stream');
-      }
+      },
+
+      testBitStreamReadAfterPush_RTL() {
+        array = new Uint8Array(1);
+        array[0] = Number('0b01010110');
+        const stream = new bitjs.io.BitStream(array.buffer, true /* rtl */);
+        const readBits = stream.readBits(8);
+        assertEquals(0x56, readBits, 'Could not read 8 bits: ' + readBits);
+        assertThrows(() => stream.readBits(4),
+            'Did not throw when trying to read a bit past the end of the stream');
+
+        const anotherArray = new Uint8Array(1);
+        anotherArray[0] = Number('0b01010110');
+        stream.push(anotherArray.buffer);
+
+        assertEquals(0x5, stream.readBits(4),
+            'Could not read in next 4 bits after pushing in RTL');
+        assertEquals(0x6, stream.readBits(4),
+            'Could not read in next 4 bits after pushing in RTL');
+      },
+
+      testBitStreamReadAfterPush_LTR() {
+        array = new Uint8Array(1);
+        array[0] = Number('0b01010110');
+        const stream = new bitjs.io.BitStream(array.buffer, false /* rtl */);
+        const readBits = stream.readBits(8);
+        assertEquals(0x56, readBits, 'Could not read 8 bits: ' + readBits);
+        assertThrows(() => stream.readBits(4),
+            'Did not throw when trying to read a bit past the end of the stream');
+
+        const anotherArray = new Uint8Array(1);
+        anotherArray[0] = Number('0b01010110');
+        stream.push(anotherArray.buffer);
+
+        assertEquals(0x6, stream.readBits(4),
+            'Could not read in next 4 bits after pushing in LTR');
+        assertEquals(0x5, stream.readBits(4),
+            'Could not read in next 4 bits after pushing in LTR');
+      },
     },
   });
 </script>

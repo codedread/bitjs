@@ -34,9 +34,39 @@ bitjs.io.BitStream = class {
     const offset = opt_offset || 0;
     const length = opt_length || ab.byteLength;
     this.bytes = new Uint8Array(ab, offset, length);
+    this.pages_ = [];
     this.bytePtr = 0; // tracks which byte we are on
     this.bitPtr = 0; // tracks which bit we are on (can have values 0 through 7)
     this.peekBits = rtl ? this.peekBits_rtl : this.peekBits_ltr;
+  }
+
+
+  /**
+   * Returns how many bytes are currently in the stream left to be read.
+   * @private
+   */
+  getNumBitsLeft_() {
+    const bitsLeftInByte = 8 - this.bitPtr;
+    const bitsLeftInCurrentPage = (this.bytes.byteLength - this.bytePtr - 1) * 8 + bitsLeftInByte;
+    return this.pages_.reduce((acc, arr) => acc + arr.length * 8, bitsLeftInCurrentPage);
+  }
+
+  /**
+   * Move the pointer ahead n bits.  The bytePtr and current page are updated as needed.
+   * This is a private method, no validation is done.
+   * @param {number} n Number of bits to increment.
+   * @private
+   */
+  movePointer_(n) {
+    this.bitPtr += n;
+    while (this.bitPtr >= 8) {
+      this.bitPtr -= 8;
+      this.bytePtr++;
+      while (this.bytePtr >= this.bytes.length && this.pages_.length > 0) {
+        this.bytePtr -= this.bytes.length;
+        this.bytes = this.pages_.shift();
+      }
+    }
   }
 
   /**
@@ -50,15 +80,22 @@ bitjs.io.BitStream = class {
    * @return {number} The peeked bits, as an unsigned number.
    */
   peekBits_ltr(n, opt_movePointers) {
-    let num = parseInt(n, 10);
+    const NUM = parseInt(n, 10);
+    let num = NUM;
     if (n !== num || num < 0) {
       throw 'Error!  Called peekBits_ltr() with a non-positive integer';
     } else if (num === 0) {
       return 0;
     }
 
+    if (num > this.getNumBitsLeft_()) {
+      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
+          ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
+    }
+
     const movePointers = opt_movePointers || false;
-    const bytes = this.bytes;
+    let curPage = this.bytes;
+    let pageIndex = 0;
     let bytePtr = this.bytePtr;
     let bitPtr = this.bitPtr;
     let result = 0;
@@ -69,24 +106,23 @@ bitjs.io.BitStream = class {
     //       shifting/masking it to just extract the bits we want.
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (num > 0) {
-      if (bytePtr >= bytes.length) {
-        throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
-          bytes.length + ', bitPtr=' + bitPtr;
+      if (bytePtr >= curPage.length && this.pages_.length > 0) {
+        curPage = this.pages_[pageIndex++];
+        bytePtr = 0;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
       if (num >= numBitsLeftInThisByte) {
         const mask = (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] << bitPtr);
-        result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
+        result |= (((curPage[bytePtr] & mask) >> bitPtr) << bitsIn);
 
         bytePtr++;
         bitPtr = 0;
         bitsIn += numBitsLeftInThisByte;
         num -= numBitsLeftInThisByte;
-      }
-      else {
+      } else {
         const mask = (bitjs.io.BitStream.BITMASK[num] << bitPtr);
-        result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
+        result |= (((curPage[bytePtr] & mask) >> bitPtr) << bitsIn);
 
         bitPtr += num;
         bitsIn += num;
@@ -95,8 +131,7 @@ bitjs.io.BitStream = class {
     }
 
     if (movePointers) {
-      this.bitPtr = bitPtr;
-      this.bytePtr = bytePtr;
+      this.movePointer_(NUM);
     }
 
     return result;
@@ -113,15 +148,22 @@ bitjs.io.BitStream = class {
    * @return {number} The peeked bits, as an unsigned number.
    */
   peekBits_rtl(n, opt_movePointers) {
-    let num = parseInt(n, 10);
+    const NUM = parseInt(n, 10);
+    let num = NUM;
     if (n !== num || num < 0) {
       throw 'Error!  Called peekBits_rtl() with a non-positive integer';
     } else if (num === 0) {
       return 0;
     }
 
+    if (num > this.getNumBitsLeft_()) {
+      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
+          ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
+    }
+
     const movePointers = opt_movePointers || false;
-    const bytes = this.bytes;
+    let curPage = this.bytes;
+    let pageIndex = 0;
     let bytePtr = this.bytePtr;
     let bitPtr = this.bitPtr;
     let result = 0;
@@ -131,23 +173,22 @@ bitjs.io.BitStream = class {
     //       shifting/masking it to just extract the bits we want.
     //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (num > 0) {
-      if (bytePtr >= bytes.length) {
-        throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr + ', bytes.length=' +
-          bytes.length + ', bitPtr=' + bitPtr;
+      if (bytePtr >= curPage.length && this.pages_.length > 0) {
+        curPage = this.pages_[pageIndex++];
+        bytePtr = 0;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
       if (num >= numBitsLeftInThisByte) {
         result <<= numBitsLeftInThisByte;
-        result |= (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] & bytes[bytePtr]);
+        result |= (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] & curPage[bytePtr]);
         bytePtr++;
         bitPtr = 0;
         num -= numBitsLeftInThisByte;
-      }
-      else {
+      } else {
         result <<= num;
         const numBits = 8 - num - bitPtr;
-        result |= ((bytes[bytePtr] & (bitjs.io.BitStream.BITMASK[num] << numBits)) >> numBits);
+        result |= ((curPage[bytePtr] & (bitjs.io.BitStream.BITMASK[num] << numBits)) >> numBits);
 
         bitPtr += num;
         num = 0;
@@ -155,8 +196,7 @@ bitjs.io.BitStream = class {
     }
 
     if (movePointers) {
-      this.bitPtr = bitPtr;
-      this.bytePtr = bytePtr;
+      this.movePointer_(NUM);
     }
 
     return result;
@@ -206,14 +246,25 @@ bitjs.io.BitStream = class {
       this.readBits(1);
     }
 
-    if (this.bytePtr + num > this.bytes.byteLength) {
+    const numBytesLeft = this.getNumBitsLeft_() / 8;
+    if (num > numBytesLeft) {
       throw 'Error!  Overflowed the bit stream! n=' + num + ', bytePtr=' + this.bytePtr +
           ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
     }
 
-    const result = this.bytes.subarray(this.bytePtr, this.bytePtr + num);
-
     const movePointers = opt_movePointers || false;
+    const result = new Uint8Array(num);
+    let curPage = this.bytes;
+    let pageIndex = 0;
+    let bytePtr = this.bytePtr;
+    for (let i = 0; i < num; ++i) {
+      result[i] = curPage[bytePtr++];
+      if (bytePtr >= curPage.length) {
+        curPage = this.pages_[pageIndex++];
+        bytePtr = 0;
+      }
+    }
+
     if (movePointers) {
       this.bytePtr += num;
     }
@@ -227,6 +278,18 @@ bitjs.io.BitStream = class {
    */
   readBytes(n) {
     return this.peekBytes(n, true);
+  }
+
+  /**
+   * Feeds more bytes into the back of the stream.
+   * @param {ArrayBuffer} ab 
+   */
+  push(ab) {
+    if (!(ab instanceof ArrayBuffer)) {
+      throw 'Error! BitStream.push() called with an invalid ArrayBuffer object';
+    }
+
+    this.pages_.push(new Uint8Array(ab));
   }
 }
 
