@@ -15,7 +15,8 @@ bitjs.io = bitjs.io || {};
 
 // TODO: Add method for tee-ing off the stream with tests.
 /**
- * This bit stream peeks and consumes bits out of a binary stream.
+ * This object allows you to peek and consume bits and bytes out of a stream.
+ * More bits can be pushed into the back of the stream via the push() method.
  */
 bitjs.io.BitStream = class {
   /**
@@ -101,9 +102,6 @@ bitjs.io.BitStream = class {
     let bitsIn = 0;
 
     // keep going until we have no more bits left to peek at
-    // TODO: Consider putting all bits from bytes we will need into a variable and then
-    //       shifting/masking it to just extract the bits we want.
-    //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (num > 0) {
       if (bytePtr >= curPage.length && this.pages_.length > 0) {
         curPage = this.pages_[pageIndex++];
@@ -168,9 +166,6 @@ bitjs.io.BitStream = class {
     let result = 0;
 
     // keep going until we have no more bits left to peek at
-    // TODO: Consider putting all bits from bytes we will need into a variable and then
-    //       shifting/masking it to just extract the bits we want.
-    //       This could be considerably faster when reading more than 3 or 4 bits at a time.
     while (num > 0) {
       if (bytePtr >= curPage.length && this.pages_.length > 0) {
         curPage = this.pages_[pageIndex++];

@@ -15,8 +15,9 @@ bitjs.io = bitjs.io || {};
 
 // TODO: Add method for tee-ing off the stream with tests.
 /**
- * This object allows you to peek and consume bytes as numbers and strings
- * out of an ArrayBuffer.  In this buffer, everything must be byte-aligned.
+ * This object allows you to peek and consume bytes as numbers and strings out
+ * of a stream.  More bytes can be pushed into the back of the stream via the
+ * push() method.
  */
 bitjs.io.ByteStream = class {
   /**
@@ -62,8 +63,7 @@ bitjs.io.ByteStream = class {
 
   /**
    * Peeks at the next n bytes as an unsigned number but does not advance the
-   * pointer
-   * TODO: This apparently cannot read more than 4 bytes as a number?
+   * pointer.
    * @param {number} n The number of bytes to peek at.  Must be a positive integer.
    * @return {number} The n bytes interpreted as an unsigned number.
    */
@@ -75,7 +75,10 @@ bitjs.io.ByteStream = class {
       return 0;
     }
 
-    // TODO: Throw an error if n > 4.
+    if (n > 4) {
+      throw 'Error!  Called peekNumber(' + n +
+          ') but this method can only reliably read numbers up to 4 bytes long';
+    }
 
     if (this.getNumBytesLeft_() < num) {
       throw 'Error!  Overflowed the byte stream while peekNumber()! n=' + num +
