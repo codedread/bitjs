@@ -250,4 +250,16 @@ bitjs.io.ByteStream = class {
     // to the next page.
     this.movePointer_(0);
   }
+
+  /**
+   * Creates a new ByteStream from this ByteStream that can be read / peeked.
+   * @return {ByteStream} A clone of this ByteStream.
+   */
+  tee() {
+    const clone = new ByteStream(this.bytes.buffer);
+    clone.bytes = this.bytes;
+    clone.ptr = this.ptr;
+    clone.pages_ = this.pages_.slice();
+    return clone;
+  }
 }

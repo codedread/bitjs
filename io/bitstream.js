@@ -290,8 +290,21 @@ bitjs.io.BitStream = class {
 
     this.pages_.push(new Uint8Array(ab));
   }
+
+  /**
+   * Creates a new BitStream from this BitStream that can be read / peeked.
+   * @return {BitStream} A clone of this BitStream.
+   */
+  tee() {
+    const clone = new BitStream(this.bytes.buffer);
+    clone.bytes = this.bytes;
+    clone.pages_ = this.pages_.slice();
+    clone.bytePtr = this.bytePtr;
+    clone.bitPtr = this.bitPtr;
+    clone.peekBits = this.peekBits;
+    return clone;
+  }
 }
 
 // mask for getting N number of bits (0-8)
 bitjs.io.BitStream.BITMASK = [0, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF ];
-
