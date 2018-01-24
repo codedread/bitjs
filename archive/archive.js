@@ -272,6 +272,15 @@ bitjs.archive.Unarchiver = class {
   }
 
   /**
+   * Adds more bytes to the unarchiver's Worker thread.
+   */
+  update(ab) {
+    if (this.worker_) {
+      this.worker_.postMessage({bytes: ab});
+    }
+  }
+
+  /**
    * Terminates the Web Worker for this Unarchiver and returns immediately.
    */
   stop() {

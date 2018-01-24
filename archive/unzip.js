@@ -18,6 +18,18 @@ importScripts('../io/bytebuffer.js');
 importScripts('../io/bytestream.js');
 importScripts('archive.js');
 
+const UnarchiveState = {
+  NOT_STARTED: 0,
+  UNARCHIVING: 1,
+  WAITING: 2,
+  FINISHED: 3,
+};
+
+// State - consider putting these into a class.
+let unarchiveState = UnarchiveState.NOT_STARTED;
+let bytestream = null;
+let allLocalFiles = null;
+
 // Progress variables.
 let currentFilename = "";
 let currentFileNumber = 0;
@@ -81,23 +93,10 @@ class ZipLocalFile {
       this.filename = bstream.readString(this.fileNameLength);
     }
 
-    info("Zip Local File Header:");
-    info(" version=" + this.version);
-    info(" general purpose=" + this.generalPurpose);
-    info(" compression method=" + this.compressionMethod);
-    info(" last mod file time=" + this.lastModFileTime);
-    info(" last mod file date=" + this.lastModFileDate);
-    info(" crc32=" + this.crc32);
-    info(" compressed size=" + this.compressedSize);
-    info(" uncompressed size=" + this.uncompressedSize);
-    info(" file name length=" + this.fileNameLength);
-    info(" extra field length=" + this.extraFieldLength);
-    info(" filename = '" + this.filename + "'");
-
     this.extraField = null;
     if (this.extraFieldLength > 0) {
       this.extraField = bstream.readString(this.extraFieldLength);
-      info(" extra field=" + this.extraField);
+      //info(" extra field=" + this.extraField);
     }
 
     // read in the compressed data
@@ -115,6 +114,20 @@ class ZipLocalFile {
       this.compressedSize = bstream.readNumber(4);
       this.uncompressedSize = bstream.readNumber(4);
     }
+
+    // Now that we have all the bytes for this file, we can print out some information.
+    info("Zip Local File Header:");
+    info(" version=" + this.version);
+    info(" general purpose=" + this.generalPurpose);
+    info(" compression method=" + this.compressionMethod);
+    info(" last mod file time=" + this.lastModFileTime);
+    info(" last mod file date=" + this.lastModFileDate);
+    info(" crc32=" + this.crc32);
+    info(" compressed size=" + this.compressedSize);
+    info(" uncompressed size=" + this.uncompressedSize);
+    info(" file name length=" + this.fileNameLength);
+    info(" extra field length=" + this.extraFieldLength);
+    info(" filename = '" + this.filename + "'");
   }
 
   // determine what kind of compressed data we have and decompress
@@ -134,115 +147,6 @@ class ZipLocalFile {
       err("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
       this.fileData = null;
     }
-  }
-}
-
-// Takes an ArrayBuffer of a zip file in
-// returns null on error
-// returns an array of DecompressedFile objects on success
-const unzip = function(arrayBuffer) {
-  postMessage(new bitjs.archive.UnarchiveStartEvent());
-
-  currentFilename = "";
-  currentFileNumber = 0;
-  currentBytesUnarchivedInFile = 0;
-  currentBytesUnarchived = 0;
-  totalUncompressedBytesInArchive = 0;
-  totalFilesInArchive = 0;
-  currentBytesUnarchived = 0;
-
-  const bstream = new bitjs.io.ByteStream(arrayBuffer);
-  // detect local file header signature or return null
-  if (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
-    const localFiles = [];
-    // loop until we don't see any more local files
-    while (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
-      const oneLocalFile = new ZipLocalFile(bstream);
-      // this should strip out directories/folders
-      if (oneLocalFile && oneLocalFile.uncompressedSize > 0 && oneLocalFile.fileData) {
-        localFiles.push(oneLocalFile);
-        totalUncompressedBytesInArchive += oneLocalFile.uncompressedSize;
-      }
-    }
-    totalFilesInArchive = localFiles.length;
-
-    // got all local files, now sort them
-    localFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
-
-    // archive extra data record
-    if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
-      info(" Found an Archive Extra Data Signature");
-
-      // skipping this record for now
-      bstream.readNumber(4);
-      const archiveExtraFieldLength = bstream.readNumber(4);
-      bstream.readString(archiveExtraFieldLength);
-    }
-
-    // central directory structure
-    // TODO: handle the rest of the structures (Zip64 stuff)
-    if (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
-      info(" Found a Central File Header");
-
-      // read all file headers
-      while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
-        bstream.readNumber(4); // signature
-        bstream.readNumber(2); // version made by
-        bstream.readNumber(2); // version needed to extract
-        bstream.readNumber(2); // general purpose bit flag
-        bstream.readNumber(2); // compression method
-        bstream.readNumber(2); // last mod file time
-        bstream.readNumber(2); // last mod file date
-        bstream.readNumber(4); // crc32
-        bstream.readNumber(4); // compressed size
-        bstream.readNumber(4); // uncompressed size
-        const fileNameLength = bstream.readNumber(2); // file name length
-        const extraFieldLength = bstream.readNumber(2); // extra field length
-        const fileCommentLength = bstream.readNumber(2); // file comment length
-        bstream.readNumber(2); // disk number start
-        bstream.readNumber(2); // internal file attributes
-        bstream.readNumber(4); // external file attributes
-        bstream.readNumber(4); // relative offset of local header
-
-        bstream.readString(fileNameLength); // file name
-        bstream.readString(extraFieldLength); // extra field
-        bstream.readString(fileCommentLength); // file comment
-      }
-    }
-
-    // digital signature
-    if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
-      info(" Found a Digital Signature");
-
-      bstream.readNumber(4);
-      const sizeOfSignature = bstream.readNumber(2);
-      bstream.readString(sizeOfSignature); // digital signature data
-    }
-
-    // report # files and total length
-    if (localFiles.length > 0) {
-      postProgress();
-    }
-
-    // now do the unzipping of each file
-    for (let i = 0; i < localFiles.length; ++i) {
-      const localfile = localFiles[i];
-
-      // update progress
-      currentFilename = localfile.filename;
-      currentFileNumber = i;
-      currentBytesUnarchivedInFile = 0;
-
-      // actually do the unzipping
-      localfile.unzip();
-
-      if (localfile.fileData != null) {
-        postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
-        postProgress();
-      }
-    }
-    postProgress();
-    postMessage(new bitjs.archive.UnarchiveFinishEvent());
   }
 }
 
@@ -612,7 +516,131 @@ function inflate(compressedData, numDecompressedBytes) {
   return buffer.data;
 }
 
-// event.data.file has the ArrayBuffer.
+function unzip() {
+  let bstream = bytestream.tee();
+
+  // loop until we don't see any more local files
+  while (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
+    const oneLocalFile = new ZipLocalFile(bstream);
+    // this should strip out directories/folders
+    if (oneLocalFile && oneLocalFile.uncompressedSize > 0 && oneLocalFile.fileData) {
+      // If we make it to this point and haven't thrown an error, we have successfully
+      // read in the data for a local file, so we can update the actual bytestream.
+      bytestream = bstream.tee();
+
+      allLocalFiles.push(oneLocalFile);
+      totalUncompressedBytesInArchive += oneLocalFile.uncompressedSize;
+
+      // update progress
+      currentFilename = oneLocalFile.filename;
+      currentFileNumber = allLocalFiles.length - 1;
+      currentBytesUnarchivedInFile = 0;
+
+      // Actually do the unzipping.
+      oneLocalFile.unzip();
+
+      if (oneLocalFile.fileData != null) {
+        postMessage(new bitjs.archive.UnarchiveExtractEvent(oneLocalFile));
+        postProgress();
+      }
+    }
+  }
+  totalFilesInArchive = allLocalFiles.length;
+
+  // got all local files, now sort them
+  allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
+
+  // archive extra data record
+  if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
+    info(" Found an Archive Extra Data Signature");
+
+    // skipping this record for now
+    bstream.readNumber(4);
+    const archiveExtraFieldLength = bstream.readNumber(4);
+    bstream.readString(archiveExtraFieldLength);
+  }
+
+  // central directory structure
+  // TODO: handle the rest of the structures (Zip64 stuff)
+  if (bytestream.peekNumber(4) == zCentralFileHeaderSignature) {
+    info(" Found a Central File Header");
+
+    // read all file headers
+    while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
+      bstream.readNumber(4); // signature
+      bstream.readNumber(2); // version made by
+      bstream.readNumber(2); // version needed to extract
+      bstream.readNumber(2); // general purpose bit flag
+      bstream.readNumber(2); // compression method
+      bstream.readNumber(2); // last mod file time
+      bstream.readNumber(2); // last mod file date
+      bstream.readNumber(4); // crc32
+      bstream.readNumber(4); // compressed size
+      bstream.readNumber(4); // uncompressed size
+      const fileNameLength = bstream.readNumber(2); // file name length
+      const extraFieldLength = bstream.readNumber(2); // extra field length
+      const fileCommentLength = bstream.readNumber(2); // file comment length
+      bstream.readNumber(2); // disk number start
+      bstream.readNumber(2); // internal file attributes
+      bstream.readNumber(4); // external file attributes
+      bstream.readNumber(4); // relative offset of local header
+
+      bstream.readString(fileNameLength); // file name
+      bstream.readString(extraFieldLength); // extra field
+      bstream.readString(fileCommentLength); // file comment
+    }
+  }
+
+  // digital signature
+  if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
+    info(" Found a Digital Signature");
+
+    bstream.readNumber(4);
+    const sizeOfSignature = bstream.readNumber(2);
+    bstream.readString(sizeOfSignature); // digital signature data
+  }
+
+  postProgress();
+
+  bytestream = bstream.tee();
+}
+
+// event.data.file has the first ArrayBuffer.
+// event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
-  unzip(event.data.file, true);
+  const bytes = event.data.file || event.data.bytes;
+
+  // This is the very first time we have been called. Initialize the bytestream.
+  if (!bytestream) {
+    bytestream = new bitjs.io.ByteStream(bytes);
+  } else {
+    bytestream.push(bytes);
+  }
+
+  if (unarchiveState === UnarchiveState.NOT_STARTED) {
+    currentFilename = "";
+    currentFileNumber = 0;
+    currentBytesUnarchivedInFile = 0;
+    currentBytesUnarchived = 0;
+    totalUncompressedBytesInArchive = 0;
+    totalFilesInArchive = 0;
+    currentBytesUnarchived = 0;
+    allLocalFiles = [];
+
+    postMessage(new bitjs.archive.UnarchiveStartEvent());
+
+    unarchiveState = UnarchiveState.UNARCHIVING;
+  }
+
+  if (unarchiveState === UnarchiveState.UNARCHIVING ||
+      unarchiveState === UnarchiveState.WAITING) {
+    try {
+      unzip();
+      unarchiveState = UnarchiveState.FINISHED;
+      postMessage(new bitjs.archive.UnarchiveFinishEvent());
+    } catch (e) {
+      // Probably overrun the buffer...
+      unarchiveState = UnarchiveState.WAITING;
+    }
+  }
 };
