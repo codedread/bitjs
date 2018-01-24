@@ -13,6 +13,18 @@ importScripts('../io/bytebuffer.js');
 importScripts('archive.js');
 importScripts('rarvm.js');
 
+const UnarchiveState = {
+  NOT_STARTED: 0,
+  UNARCHIVING: 1,
+  WAITING: 2,
+  FINISHED: 3,
+};
+
+// State - consider putting these into a class.
+let unarchiveState = UnarchiveState.NOT_STARTED;
+let bitstream = null;
+let allLocalFiles = null;
+
 // Progress variables.
 let currentFilename = "";
 let currentFileNumber = 0;
@@ -69,23 +81,19 @@ class RarVolumeHeader {
    * @param {bitjs.io.BitStream} bstream
    */
   constructor(bstream) {
-    const headPos = bstream.bytePtr;
-    // byte 1,2
-    info("Rar Volume Header @"+bstream.bytePtr);
+    let headBytesRead = 0;
 
+    // byte 1,2
     this.crc = bstream.readBits(16);
-    info("  crc=" + this.crc);
 
     // byte 3
     this.headType = bstream.readBits(8);
-    info("  headType=" + this.headType);
 
     // Get flags
     // bytes 4,5
     this.flags = {};
     this.flags.value = bstream.peekBits(16);
     
-    info("  flags=" + twoByteValueToHexString(this.flags.value));
     switch (this.headType) {
     case MAIN_HEAD:
       this.flags.MHD_VOLUME = !!bstream.readBits(1);
@@ -115,23 +123,26 @@ class RarVolumeHeader {
       this.flags.LHD_EXTTIME = !!bstream.readBits(1); // 0x1000
       this.flags.LHD_EXTFLAGS = !!bstream.readBits(1); // 0x2000
       bstream.readBits(2); // unused
-      info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
+      //info("  LHD_SPLIT_BEFORE = " + this.flags.LHD_SPLIT_BEFORE);
       break;
     default:
       bstream.readBits(16);
     }
-    
+
     // byte 6,7
     this.headSize = bstream.readBits(16);
-    info("  headSize=" + this.headSize);
+    headBytesRead += 7;
+
     switch (this.headType) {
     case MAIN_HEAD:
       this.highPosAv = bstream.readBits(16);
       this.posAv = bstream.readBits(32);
+      headBytesRead += 6;
       if (this.flags.MHD_ENCRYPTVER) {
         this.encryptVer = bstream.readBits(8);
+        headBytesRead += 1;
       }
-      info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
+      //info("Found MAIN_HEAD with highPosAv=" + this.highPosAv + ", posAv=" + this.posAv);
       break;
     case FILE_HEAD:
       this.packSize = bstream.readBits(32);
@@ -143,11 +154,13 @@ class RarVolumeHeader {
       this.method = bstream.readBits(8);
       this.nameSize = bstream.readBits(16);
       this.fileAttr = bstream.readBits(32);
+      headBytesRead += 25;
       
       if (this.flags.LHD_LARGE) {
-        info("Warning: Reading in LHD_LARGE 64-bit size values");
+        //info("Warning: Reading in LHD_LARGE 64-bit size values");
         this.HighPackSize = bstream.readBits(32);
         this.HighUnpSize = bstream.readBits(32);
+        headBytesRead += 8;
       } else {
         this.HighPackSize = 0;
         this.HighUnpSize = 0;
@@ -165,6 +178,7 @@ class RarVolumeHeader {
       // read in filename
 
       this.filename = bstream.readBytes(this.nameSize);
+      headBytesRead += this.nameSize;
       let _s = '';
       for (let _i = 0; _i < this.filename.length; _i++) {
         _s += String.fromCharCode(this.filename[_i]);
@@ -173,14 +187,16 @@ class RarVolumeHeader {
       this.filename = _s;
 
       if (this.flags.LHD_SALT) {
-        info("Warning: Reading in 64-bit salt value");
+        //info("Warning: Reading in 64-bit salt value");
         this.salt = bstream.readBits(64); // 8 bytes
+        headBytesRead += 8;
       }
 
       if (this.flags.LHD_EXTTIME) {
         // 16-bit flags
         const extTimeFlags = bstream.readBits(16);
-        
+        headBytesRead += 2;
+
         // this is adapted straight out of arcread.cpp, Archive::ReadHeader()
         for (let I = 0; I < 4; ++I) {
           const rmode = extTimeFlags >> ((3 - I) * 4);
@@ -189,23 +205,23 @@ class RarVolumeHeader {
           }
           if (I != 0) {
             bstream.readBits(16);
+            headBytesRead += 2;
           }
           const count = (rmode & 3);
           for (let J = 0; J < count; ++J) {
             bstream.readBits(8);
+            headBytesRead += 1;
           }
         }
       }
 
       if (this.flags.LHD_COMMENT) {
-        info("Found a LHD_COMMENT");
+        //info("Found a LHD_COMMENT");
       }
 
-      while (headPos + this.headSize > bstream.bytePtr) {
-        bstream.readBits(1);
+      if (headBytesRead < this.headSize) {
+        bstream.readBytes(this.headSize - headBytesRead);
       }
-
-      info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " + this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" + this.method + ", filename=" + this.filename);
 
       break;
     default:
@@ -213,6 +229,18 @@ class RarVolumeHeader {
       // skip the rest of the header bytes (for now)
       bstream.readBytes(this.headSize - 7);
       break;
+    }
+  }
+
+  dump() {
+    info("  crc=" + this.crc);
+    info("  headType=" + this.headType);
+    info("  flags=" + twoByteValueToHexString(this.flags.value));
+    info("  headSize=" + this.headSize);
+    if (this.headType == FILE_HEAD) {
+      info("Found FILE_HEAD with packSize=" + this.packSize + ", unpackedSize= " +
+          this.unpackedSize + ", hostOS=" + this.hostOS + ", unpVer=" + this.unpVer + ", method=" +
+          this.method + ", filename=" + this.filename);
     }
   }
 }
@@ -1290,17 +1318,9 @@ class RarLocalFile {
   }
 }
 
-const unrar = function(arrayBuffer) {
-  currentFilename = "";
-  currentFileNumber = 0;
-  currentBytesUnarchivedInFile = 0;
-  currentBytesUnarchived = 0;
-  totalUncompressedBytesInArchive = 0;
-  totalFilesInArchive = 0;
-
-  postMessage(new bitjs.archive.UnarchiveStartEvent());
-  const bstream = new bitjs.io.BitStream(arrayBuffer, false /* rtl */);
-  
+// Reads in the volume and main header.
+function unrar_start() {
+  let bstream = bitstream.tee();
   const header = new RarVolumeHeader(bstream);
   if (header.crc == 0x6152 && 
       header.headType == 0x72 && 
@@ -1311,58 +1331,122 @@ const unrar = function(arrayBuffer) {
     const mhead = new RarVolumeHeader(bstream);
     if (mhead.headType != MAIN_HEAD) {
       info("Error! RAR did not include a MAIN_HEAD header");
+    } else {
+      bitstream = bstream.tee();
     }
-    else {
-      let localFiles = [];
-      let localFile = null;
-      do {
-        try {
-          localFile = new RarLocalFile(bstream);
-          info("RAR localFile isValid=" + localFile.isValid + ", volume packSize=" + localFile.header.packSize);
-          if (localFile && localFile.isValid && localFile.header.packSize > 0) {
-            totalUncompressedBytesInArchive += localFile.header.unpackedSize;
-            localFiles.push(localFile);
-          } else if (localFile.header.packSize == 0 && localFile.header.unpackedSize == 0) {
-            localFile.isValid = true;
-          }
-        } catch(err) {
-          break;
-        }
-        //info("bstream" + bstream.bytePtr+"/"+bstream.bytes.length);
-      } while (localFile.isValid);
-      totalFilesInArchive = localFiles.length;
-      
-      // now we have all information but things are unpacked
-      localFiles = localFiles.sort((a,b) => a.filename.toLowerCase() > b.filename.toLowerCase() ? 1 : -1);
+  }
+}
 
-      info(localFiles.map(function(a){return a.filename}).join(', '));
-      for (let i = 0; i < localFiles.length; ++i) {
-        const localfile = localFiles[i];
-        
-        // update progress 
-        currentFilename = localfile.header.filename;
-        currentBytesUnarchivedInFile = 0;
-        
-        // actually do the unzipping
-        localfile.unrar();
+function unrar() {
+  let bstream = bitstream.tee();
 
-        if (localfile.isValid) {
-          postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
-          postProgress();
-        }
+  let localFile = null;
+  do {
+    localFile = new RarLocalFile(bstream);
+    info("RAR localFile isValid=" + localFile.isValid + ", volume packSize=" + localFile.header.packSize);
+    localFile.header.dump();
+
+    if (localFile && localFile.isValid && localFile.header.packSize > 0) {
+      bitstream = bstream.tee();
+      totalUncompressedBytesInArchive += localFile.header.unpackedSize;
+      allLocalFiles.push(localFile);
+
+      currentFilename = localFile.header.filename;
+      currentBytesUnarchivedInFile = 0;
+      localFile.unrar();
+
+      if (localFile.isValid) {
+        postMessage(new bitjs.archive.UnarchiveExtractEvent(localFile));
+        postProgress();
       }
-      
+    } else if (localFile.header.packSize == 0 && localFile.header.unpackedSize == 0) {
+      // Skip this file.
+      localFile.isValid = true;
+    }
+  } while (localFile.isValid);
+
+  totalFilesInArchive = allLocalFiles.length;
+
+  // TODO: Fix this.  Now that we are unarchiving while bytes are streaming, we cannot wait until
+  // all local files are seeked and then sort.  This seems to be a problem with cbr files.
+  /*
+  localFiles = localFiles.sort((a,b) => a.filename.toLowerCase() > b.filename.toLowerCase() ? 1 : -1);
+  info(localFiles.map(function(a){return a.filename}).join(', '));
+
+  for (let i = 0; i < localFiles.length; ++i) {
+    const localfile = localFiles[i];
+    
+    // update progress 
+    currentFilename = localfile.header.filename;
+    currentBytesUnarchivedInFile = 0;
+    
+    // actually do the unzipping
+    localfile.unrar();
+
+    if (localfile.isValid) {
+      postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
       postProgress();
     }
   }
-  else {
-    err("Invalid RAR file");
-  }
-  postMessage(new bitjs.archive.UnarchiveFinishEvent());
+  */
+  
+  postProgress();
+
+  bitstream = bstream.tee();
 };
 
-// event.data.file has the ArrayBuffer.
+// event.data.file has the first ArrayBuffer.
+// event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
-  const ab = event.data.file;
-  unrar(ab, true);
+  const bytes = event.data.file || event.data.bytes;
+
+  // This is the very first time we have been called. Initialize the bytestream.
+  if (!bitstream) {
+    bitstream = new bitjs.io.BitStream(bytes);
+
+    currentFilename = "";
+    currentFileNumber = 0;
+    currentBytesUnarchivedInFile = 0;
+    currentBytesUnarchived = 0;
+    totalUncompressedBytesInArchive = 0;
+    totalFilesInArchive = 0;
+    allLocalFiles = [];
+    postMessage(new bitjs.archive.UnarchiveStartEvent());
+  } else {
+    bitstream.push(bytes);
+  }
+
+  if (unarchiveState === UnarchiveState.NOT_STARTED) {
+    try {
+      unrar_start();
+      unarchiveState = UnarchiveState.UNARCHIVING;
+    } catch (e) {
+      if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
+        // Overrun the buffer.
+        unarchiveState = UnarchiveState.WAITING;
+      } else {
+        console.error('Found an error while unrarring');
+        console.dir(e);
+        throw e;
+      }
+    }
+  }
+
+  if (unarchiveState === UnarchiveState.UNARCHIVING ||
+      unarchiveState === UnarchiveState.WAITING) {
+    try {
+      unrar();
+      unarchiveState = UnarchiveState.FINISHED;
+      postMessage(new bitjs.archive.UnarchiveFinishEvent());
+    } catch (e) {
+      if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
+        // Overrun the buffer.
+        unarchiveState = UnarchiveState.WAITING;
+      } else {
+        console.error('Found an error while unrarring');
+        console.dir(e);
+        throw e;
+      }
+    }
+  }
 };

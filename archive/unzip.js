@@ -547,8 +547,9 @@ function unzip() {
   }
   totalFilesInArchive = allLocalFiles.length;
 
-  // got all local files, now sort them
-  allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
+  // Now that we are unarchiving while bytes are streaming, we cannot wait until
+  // all local files are seeked and then sort.
+  //allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
 
   // archive extra data record
   if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
@@ -639,8 +640,14 @@ onmessage = function(event) {
       unarchiveState = UnarchiveState.FINISHED;
       postMessage(new bitjs.archive.UnarchiveFinishEvent());
     } catch (e) {
-      // Probably overrun the buffer...
-      unarchiveState = UnarchiveState.WAITING;
+      if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
+        // Overrun the buffer.
+        unarchiveState = UnarchiveState.WAITING;
+      } else {
+        console.error('Found an error while unrarring');
+        console.dir(e);
+        throw e;
+      }
     }
   }
 };
