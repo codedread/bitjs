@@ -153,7 +153,21 @@
 
         const str = stream.readString(12);
         assertEquals('ABCDEFGHIJKL', str, 'String was ' + str);
-      }
+      },
+
+      testTee() {
+        for (let i = 0; i < 4; ++i) array[i] = 65 + i;
+        const stream = new bitjs.io.ByteStream(array.buffer);
+
+        const anotherArray = new Uint8Array(4);
+        for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;
+        stream.push(anotherArray.buffer);
+
+        const teed = stream.tee();
+        teed.readBytes(5);
+        assertEquals(8, stream.getNumBytesLeft());
+        assertEquals(3, teed.getNumBytesLeft());
+      },
     },
   });
 </script>

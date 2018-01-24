@@ -112,6 +112,22 @@
         assertEquals(0x5, stream.readBits(4),
             'Could not read in next 4 bits after pushing in LTR');
       },
+
+      testTee() {
+        for (let i = 0; i < 4; ++i) array[i] = 65 + i;
+        const stream = new bitjs.io.BitStream(array.buffer);
+        stream.readBits(1);
+
+        const anotherArray = new Uint8Array(4);
+        for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;
+        stream.push(anotherArray.buffer);
+
+        const teed = stream.tee();
+        teed.readBytes(5);
+        assertEquals(8 * 8 - 1, stream.getNumBitsLeft());
+        // readBytes() throws away any unused bits.
+        assertEquals(2 * 8, teed.getNumBitsLeft());
+      },
     },
   });
 </script>

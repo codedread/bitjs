@@ -6,12 +6,12 @@
  * Copyright(c) 2014, Google Inc.
  */
 var muther = {
-  assert(cond, err) { if (!cond) { throw err; } },
-  assertEquals(a, b, err) { muther.assert(a === b, err); },
+  assert(cond, err) { if (!cond) { throw err || 'Undefined error'; } },
+  assertEquals(a, b, err) { muther.assert(a === b, err || (a + '!=' + b)); },
   assertThrows(fn, err) {
     let threw = false;
     try { fn(); } catch (e) { threw = true; }
-    muther.assert(threw, err);
+    muther.assert(threw, err || 'Code did not throw');
   },
 
   $(id) {

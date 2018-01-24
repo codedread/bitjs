@@ -39,9 +39,8 @@ bitjs.io.ByteStream = class {
 
   /**
    * Returns how many bytes are currently in the stream left to be read.
-   * @private
    */
-  getNumBytesLeft_() {
+  getNumBytesLeft() {
     const bytesInCurrentPage = (this.bytes.byteLength - this.ptr);
     return this.pages_.reduce((acc, arr) => acc + arr.length, bytesInCurrentPage);
   }
@@ -80,9 +79,9 @@ bitjs.io.ByteStream = class {
           ') but this method can only reliably read numbers up to 4 bytes long';
     }
 
-    if (this.getNumBytesLeft_() < num) {
+    if (this.getNumBytesLeft() < num) {
       throw 'Error!  Overflowed the byte stream while peekNumber()! n=' + num +
-      ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
+      ', ptr=' + this.ptr + ', bytes.length=' + this.getNumBytesLeft();
     }
 
     let result = 0;
@@ -159,10 +158,10 @@ bitjs.io.ByteStream = class {
       return new Uint8Array();
     }
 
-    const totalBytesLeft = this.getNumBytesLeft_();
+    const totalBytesLeft = this.getNumBytesLeft();
     if (num > totalBytesLeft) {
-      throw 'Error!  Overflowed the byte stream! n=' + num + ', ptr=' + this.ptr +
-          ', bytes.length=' + this.bytes.length;
+      throw 'Error!  Overflowed the byte stream during peekBytes! n=' + num +
+          ', ptr=' + this.ptr + ', bytes.length=' + this.getNumBytesLeft();
     }
 
     const result = new Uint8Array(num);
@@ -206,10 +205,10 @@ bitjs.io.ByteStream = class {
       return '';
     }
 
-    const totalBytesLeft = this.getNumBytesLeft_();
+    const totalBytesLeft = this.getNumBytesLeft();
     if (num > totalBytesLeft) {
       throw 'Error!  Overflowed the byte stream while peekString()! n=' + num +
-      ', ptr=' + this.ptr + ', bytes.length=' + this.bytes.length;
+      ', ptr=' + this.ptr + ', bytes.length=' + this.getNumBytesLeft();
     }
 
     let result = new Array(num);
@@ -256,10 +255,10 @@ bitjs.io.ByteStream = class {
 
   /**
    * Creates a new ByteStream from this ByteStream that can be read / peeked.
-   * @return {ByteStream} A clone of this ByteStream.
+   * @return {bitjs.io.ByteStream} A clone of this ByteStream.
    */
   tee() {
-    const clone = new ByteStream(this.bytes.buffer);
+    const clone = new bitjs.io.ByteStream(this.bytes.buffer);
     clone.bytes = this.bytes;
     clone.ptr = this.ptr;
     clone.pages_ = this.pages_.slice();

@@ -43,9 +43,8 @@ bitjs.io.BitStream = class {
 
   /**
    * Returns how many bytes are currently in the stream left to be read.
-   * @private
    */
-  getNumBitsLeft_() {
+  getNumBitsLeft() {
     const bitsLeftInByte = 8 - this.bitPtr;
     const bitsLeftInCurrentPage = (this.bytes.byteLength - this.bytePtr - 1) * 8 + bitsLeftInByte;
     return this.pages_.reduce((acc, arr) => acc + arr.length * 8, bitsLeftInCurrentPage);
@@ -88,7 +87,7 @@ bitjs.io.BitStream = class {
       return 0;
     }
 
-    if (num > this.getNumBitsLeft_()) {
+    if (num > this.getNumBitsLeft()) {
       throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
           ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
     }
@@ -153,7 +152,7 @@ bitjs.io.BitStream = class {
       return 0;
     }
 
-    if (num > this.getNumBitsLeft_()) {
+    if (num > this.getNumBitsLeft()) {
       throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
           ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
     }
@@ -240,7 +239,7 @@ bitjs.io.BitStream = class {
       this.readBits(1);
     }
 
-    const numBytesLeft = this.getNumBitsLeft_() / 8;
+    const numBytesLeft = this.getNumBitsLeft() / 8;
     if (num > numBytesLeft) {
       throw 'Error!  Overflowed the bit stream! n=' + num + ', bytePtr=' + this.bytePtr +
           ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
@@ -288,10 +287,10 @@ bitjs.io.BitStream = class {
 
   /**
    * Creates a new BitStream from this BitStream that can be read / peeked.
-   * @return {BitStream} A clone of this BitStream.
+   * @return {bitjs.io.BitStream} A clone of this BitStream.
    */
   tee() {
-    const clone = new BitStream(this.bytes.buffer);
+    const clone = new bitjs.io.BitStream(this.bytes.buffer);
     clone.bytes = this.bytes;
     clone.pages_ = this.pages_.slice();
     clone.bytePtr = this.bytePtr;
