@@ -1368,7 +1368,7 @@ function unrar() {
   totalFilesInArchive = allLocalFiles.length;
 
   // TODO: Fix this.  Now that we are unarchiving while bytes are streaming, we cannot wait until
-  // all local files are seeked and then sort.  This seems to be a problem with cbr files.
+  // all local files are seeked and then sort.
   /*
   localFiles = localFiles.sort((a,b) => a.filename.toLowerCase() > b.filename.toLowerCase() ? 1 : -1);
   info(localFiles.map(function(a){return a.filename}).join(', '));
@@ -1424,6 +1424,7 @@ onmessage = function(event) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         // Overrun the buffer.
         unarchiveState = UnarchiveState.WAITING;
+        postProgress();
       } else {
         console.error('Found an error while unrarring');
         console.dir(e);

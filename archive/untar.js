@@ -14,6 +14,18 @@
 importScripts('../io/bytestream.js');
 importScripts('archive.js');
 
+const UnarchiveState = {
+  NOT_STARTED: 0,
+  UNARCHIVING: 1,
+  WAITING: 2,
+  FINISHED: 3,
+};
+
+// State - consider putting these into a class.
+let unarchiveState = UnarchiveState.NOT_STARTED;
+let bytestream = null;
+let allLocalFiles = null;
+
 // Progress variables.
 let currentFilename = "";
 let currentFileNumber = 0;
@@ -51,6 +63,8 @@ class TarLocalFile {
   constructor(bstream) {
     this.isValid = false;
 
+    let bytesRead = 0;
+
     // Read in the header block
     this.name = readCleanString(bstream, 100);
     this.mode = readCleanString(bstream, 8);
@@ -79,6 +93,8 @@ class TarLocalFile {
       bstream.readBytes(255); // 512 - 257
     }
 
+    bytesRead += 512;
+
     // Done header, now rest of blocks are the file contents.
     this.filename = this.name;
     this.fileData = null;
@@ -92,14 +108,13 @@ class TarLocalFile {
       info("  This is a regular file.");
       const sizeInBytes = parseInt(this.size);
       this.fileData = new Uint8Array(bstream.readBytes(sizeInBytes));
+      bytesRead += sizeInBytes;
       if (this.name.length > 0 && this.size > 0 && this.fileData && this.fileData.buffer) {
         this.isValid = true;
       }
 
-      bstream.readBytes(this.size);
-
       // Round up to 512-byte blocks.
-      const remaining = 512 - bstream.ptr % 512;
+      const remaining = 512 - bytesRead % 512;
       if (remaining > 0 && remaining < 512) {
         bstream.readBytes(remaining);
       }
@@ -109,42 +124,45 @@ class TarLocalFile {
   }
 }
 
-// Takes an ArrayBuffer of a tar file in
-// returns null on error
-// returns an array of DecompressedFile objects on success
-const untar = function(arrayBuffer) {
-  currentFilename = "";
-  currentFileNumber = 0;
-  currentBytesUnarchivedInFile = 0;
-  currentBytesUnarchived = 0;
-  totalUncompressedBytesInArchive = 0;
-  totalFilesInArchive = 0;
-
-  postMessage(new bitjs.archive.UnarchiveStartEvent());
-  const bstream = new bitjs.io.ByteStream(arrayBuffer);
-  const localFiles = [];
+const untar = function() {
+  let bstream = bytestream.tee();
 
   // While we don't encounter an empty block, keep making TarLocalFiles.
   while (bstream.peekNumber(4) != 0) {
     const oneLocalFile = new TarLocalFile(bstream);
     if (oneLocalFile && oneLocalFile.isValid) {
-      localFiles.push(oneLocalFile);
+      // If we make it to this point and haven't thrown an error, we have successfully
+      // read in the data for a local file, so we can update the actual bytestream.
+      bytestream = bstream.tee();
+
+      allLocalFiles.push(oneLocalFile);
       totalUncompressedBytesInArchive += oneLocalFile.size;
+
+      // update progress
+      currentFilename = oneLocalFile.filename;
+      currentFileNumber = totalFilesInArchive++;
+      currentBytesUnarchivedInFile = oneLocalFile.size;
+      currentBytesUnarchived += oneLocalFile.size;
+      postMessage(new bitjs.archive.UnarchiveExtractEvent(oneLocalFile));
+      postProgress();
     }
   }
-  totalFilesInArchive = localFiles.length;
+  totalFilesInArchive = allLocalFiles.length;
 
+  // TODO: Fix this.  Now that we are unarchiving while bytes are streaming, we cannot wait until
+  // all local files are seeked and then sort.
+  /*
   // got all local files, now sort them
-  localFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
+  allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
 
   // report # files and total length
-  if (localFiles.length > 0) {
+  if (allLocalFiles.length > 0) {
     postProgress();
   }
 
   // now do the shipping of each file
-  for (let i = 0; i < localFiles.length; ++i) {
-    const localfile = localFiles[i];
+  for (let i = 0; i < allLocalFiles.length; ++i) {
+    const localfile = allLocalFiles[i];
     info("Sending file '" + localfile.filename + "' up");
 
     // update progress
@@ -155,14 +173,56 @@ const untar = function(arrayBuffer) {
     postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
     postProgress();
   }
+  */
 
   postProgress();
 
-  postMessage(new bitjs.archive.UnarchiveFinishEvent());
+  bytestream = bstream.tee();
 };
 
-// event.data.file has the ArrayBuffer.
+// event.data.file has the first ArrayBuffer.
+// event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
-  const ab = event.data.file;
-  untar(ab);
+  const bytes = event.data.file || event.data.bytes;
+
+  // This is the very first time we have been called. Initialize the bytestream.
+  if (!bytestream) {
+    bytestream = new bitjs.io.ByteStream(bytes);
+  } else {
+    bytestream.push(bytes);
+  }
+
+  if (unarchiveState === UnarchiveState.NOT_STARTED) {
+    currentFilename = "";
+    currentFileNumber = 0;
+    currentBytesUnarchivedInFile = 0;
+    currentBytesUnarchived = 0;
+    totalUncompressedBytesInArchive = 0;
+    totalFilesInArchive = 0;
+    allLocalFiles = [];
+  
+    postMessage(new bitjs.archive.UnarchiveStartEvent());
+
+    unarchiveState = UnarchiveState.UNARCHIVING;
+
+    postProgress();
+  }
+
+  if (unarchiveState === UnarchiveState.UNARCHIVING ||
+    unarchiveState === UnarchiveState.WAITING) {
+    try {
+      untar();
+      unarchiveState = UnarchiveState.FINISHED;
+      postMessage(new bitjs.archive.UnarchiveFinishEvent());
+    } catch (e) {
+      if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
+        // Overrun the buffer.
+        unarchiveState = UnarchiveState.WAITING;
+      } else {
+        console.error('Found an error while untarring');
+        console.dir(e);
+        throw e;
+      }
+    }
+  }
 };

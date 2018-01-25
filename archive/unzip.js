@@ -631,6 +631,8 @@ onmessage = function(event) {
     postMessage(new bitjs.archive.UnarchiveStartEvent());
 
     unarchiveState = UnarchiveState.UNARCHIVING;
+
+    postProgress();
   }
 
   if (unarchiveState === UnarchiveState.UNARCHIVING ||
@@ -644,7 +646,7 @@ onmessage = function(event) {
         // Overrun the buffer.
         unarchiveState = UnarchiveState.WAITING;
       } else {
-        console.error('Found an error while unrarring');
+        console.error('Found an error while unzipping');
         console.dir(e);
         throw e;
       }
