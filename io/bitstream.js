@@ -33,13 +33,43 @@ bitjs.io.BitStream = class {
 
     const offset = opt_offset || 0;
     const length = opt_length || ab.byteLength;
+
+    /**
+     * The current page of bytes in the stream.
+     * @type {Uint8Array}
+     * @private
+     */
     this.bytes = new Uint8Array(ab, offset, length);
+
+    /**
+     * The next pages of bytes in the stream.
+     * @type {Array<Uint8Array>}
+     * @private
+     */
     this.pages_ = [];
-    this.bytePtr = 0; // tracks which byte we are on
+
+    /**
+     * The byte in the current page that we are currently on.
+     * @type {Number}
+     * @private
+     */
+    this.bytePtr = 0;
+
+    /**
+     * The bit in the current byte that we will read next (can have values 0 through 7).
+     * @type {Number}
+     * @private
+     */
     this.bitPtr = 0; // tracks which bit we are on (can have values 0 through 7)
-    this.peekBits = rtl ? this.peekBits_rtl : this.peekBits_ltr;
-    // An ever-increasing number.
+
+    /**
+     * An ever-increasing number.
+     * @type {Number}
+     * @private
+     */
     this.bitsRead_ = 0;
+
+    this.peekBits = rtl ? this.peekBits_rtl : this.peekBits_ltr;
   }
 
   /**
@@ -257,14 +287,22 @@ bitjs.io.BitStream = class {
     const movePointers = opt_movePointers || false;
     const result = new Uint8Array(num);
     let curPage = this.bytes;
+    let ptr = this.bytePtr;
+    let bytesLeftToCopy = num;
     let pageIndex = 0;
-    let bytePtr = this.bytePtr;
-    for (let i = 0; i < num; ++i) {
-      result[i] = curPage[bytePtr++];
-      if (bytePtr >= curPage.length) {
+    while (bytesLeftToCopy > 0) {
+      const bytesLeftInPage = curPage.length - ptr;
+      const sourceLength = Math.min(bytesLeftToCopy, bytesLeftInPage);
+
+      result.set(curPage.subarray(ptr, ptr + sourceLength), num - bytesLeftToCopy);
+
+      ptr += sourceLength;
+      if (ptr >= curPage.length) {
         curPage = this.pages_[pageIndex++];
-        bytePtr = 0;
+        ptr = 0;
       }
+
+      bytesLeftToCopy -= sourceLength;
     }
 
     if (movePointers) {

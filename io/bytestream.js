@@ -32,10 +32,33 @@ bitjs.io.ByteStream = class {
 
     const offset = opt_offset || 0;
     const length = opt_length || ab.byteLength;
+
+    /**
+     * The current page of bytes in the stream.
+     * @type {Uint8Array}
+     * @private
+     */
     this.bytes = new Uint8Array(ab, offset, length);
-    this.ptr = 0;
+
+    /**
+     * The next pages of bytes in the stream.
+     * @type {Array<Uint8Array>}
+     * @private
+     */
     this.pages_ = [];
-    // An ever-increasing number.
+
+    /**
+     * The byte in the current page that we will read next.
+     * @type {Number}
+     * @private
+     */
+    this.ptr = 0;
+
+    /**
+     * An ever-increasing number.
+     * @type {Number}
+     * @private
+     */
     this.bytesRead_ = 0;
   }
 
@@ -176,14 +199,22 @@ bitjs.io.ByteStream = class {
 
     const result = new Uint8Array(num);
     let curPage = this.bytes;
-    let pageIndex = 0;
     let ptr = this.ptr;
-    for (let i = 0; i < num; ++i) {
-      result[i] = curPage[ptr++];
+    let bytesLeftToCopy = num;
+    let pageIndex = 0;
+    while (bytesLeftToCopy > 0) {
+      const bytesLeftInPage = curPage.length - ptr;
+      const sourceLength = Math.min(bytesLeftToCopy, bytesLeftInPage);
+
+      result.set(curPage.subarray(ptr, ptr + sourceLength), num - bytesLeftToCopy);
+
+      ptr += sourceLength;
       if (ptr >= curPage.length) {
         curPage = this.pages_[pageIndex++];
         ptr = 0;
       }
+
+      bytesLeftToCopy -= sourceLength;
     }
 
     if (movePointers) {
