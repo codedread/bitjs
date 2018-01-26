@@ -48,7 +48,9 @@ const postProgress = function() {
       currentBytesUnarchivedInFile,
       currentBytesUnarchived,
       totalUncompressedBytesInArchive,
-      totalFilesInArchive));
+      totalFilesInArchive,
+      bytestream.getNumBytesRead(),
+  ));
 };
 
 // Removes all characters from the first zero-byte in the string onwards.

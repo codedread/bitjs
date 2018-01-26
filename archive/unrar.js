@@ -47,7 +47,9 @@ const postProgress = function() {
       currentBytesUnarchivedInFile,
       currentBytesUnarchived,
       totalUncompressedBytesInArchive,
-      totalFilesInArchive));
+      totalFilesInArchive,
+      parseInt(bitstream.getNumBitsRead() / 8, 10),
+  ));
 };
 
 // shows a byte value as its hex representation

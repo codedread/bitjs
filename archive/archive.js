@@ -104,9 +104,11 @@ bitjs.archive.UnarchiveProgressEvent = class extends bitjs.archive.UnarchiveEven
    * @param {number} currentBytesUnarchived
    * @param {number} totalUncompressedBytesInArchive
    * @param {number} totalFilesInArchive
+   * @param {number} totalCompressedBytesRead
    */
   constructor(currentFilename, currentFileNumber, currentBytesUnarchivedInFile,
-      currentBytesUnarchived, totalUncompressedBytesInArchive, totalFilesInArchive) {
+      currentBytesUnarchived, totalUncompressedBytesInArchive, totalFilesInArchive,
+      totalCompressedBytesRead) {
     super(bitjs.archive.UnarchiveEvent.Type.PROGRESS);
 
     this.currentFilename = currentFilename;
@@ -115,6 +117,7 @@ bitjs.archive.UnarchiveProgressEvent = class extends bitjs.archive.UnarchiveEven
     this.totalFilesInArchive = totalFilesInArchive;
     this.currentBytesUnarchived = currentBytesUnarchived;
     this.totalUncompressedBytesInArchive = totalUncompressedBytesInArchive;
+    this.totalCompressedBytesRead = totalCompressedBytesRead;
   }
 }
 

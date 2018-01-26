@@ -52,7 +52,9 @@ const postProgress = function() {
       currentBytesUnarchivedInFile,
       currentBytesUnarchived,
       totalUncompressedBytesInArchive,
-      totalFilesInArchive));
+      totalFilesInArchive,
+      bytestream.getNumBytesRead(),
+  ));
 };
 
 const zLocalFileHeaderSignature = 0x04034b50;
