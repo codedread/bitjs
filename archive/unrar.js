@@ -1366,29 +1366,6 @@ function unrar() {
   } while (localFile.isValid);
 
   totalFilesInArchive = allLocalFiles.length;
-
-  // TODO: Fix this.  Now that we are unarchiving while bytes are streaming, we cannot wait until
-  // all local files are seeked and then sort.
-  /*
-  localFiles = localFiles.sort((a,b) => a.filename.toLowerCase() > b.filename.toLowerCase() ? 1 : -1);
-  info(localFiles.map(function(a){return a.filename}).join(', '));
-
-  for (let i = 0; i < localFiles.length; ++i) {
-    const localfile = localFiles[i];
-    
-    // update progress 
-    currentFilename = localfile.header.filename;
-    currentBytesUnarchivedInFile = 0;
-    
-    // actually do the unzipping
-    localfile.unrar();
-
-    if (localfile.isValid) {
-      postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
-      postProgress();
-    }
-  }
-  */
   
   postProgress();
 

@@ -547,10 +547,6 @@ function unzip() {
   }
   totalFilesInArchive = allLocalFiles.length;
 
-  // Now that we are unarchiving while bytes are streaming, we cannot wait until
-  // all local files are seeked and then sort.
-  //allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
-
   // archive extra data record
   if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
     info(" Found an Archive Extra Data Signature");

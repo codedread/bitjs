@@ -149,32 +149,6 @@ const untar = function() {
   }
   totalFilesInArchive = allLocalFiles.length;
 
-  // TODO: Fix this.  Now that we are unarchiving while bytes are streaming, we cannot wait until
-  // all local files are seeked and then sort.
-  /*
-  // got all local files, now sort them
-  allLocalFiles.sort((a,b) => a.filename > b.filename ? 1 : -1);
-
-  // report # files and total length
-  if (allLocalFiles.length > 0) {
-    postProgress();
-  }
-
-  // now do the shipping of each file
-  for (let i = 0; i < allLocalFiles.length; ++i) {
-    const localfile = allLocalFiles[i];
-    info("Sending file '" + localfile.filename + "' up");
-
-    // update progress
-    currentFilename = localfile.filename;
-    currentFileNumber = i;
-    currentBytesUnarchivedInFile = localfile.size;
-    currentBytesUnarchived += localfile.size;
-    postMessage(new bitjs.archive.UnarchiveExtractEvent(localfile));
-    postProgress();
-  }
-  */
-
   postProgress();
 
   bytestream = bstream.tee();
