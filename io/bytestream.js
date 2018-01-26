@@ -35,6 +35,15 @@ bitjs.io.ByteStream = class {
     this.bytes = new Uint8Array(ab, offset, length);
     this.ptr = 0;
     this.pages_ = [];
+    // An ever-increasing number.
+    this.bytesRead_ = 0;
+  }
+
+  /**
+   * Returns how many bytes have been read in the stream since the beginning of time.
+   */
+  getNumBytesRead() {
+    return this.bytesRead_;
   }
 
   /**
@@ -54,6 +63,7 @@ bitjs.io.ByteStream = class {
    */
   movePointer_(n) {
     this.ptr += n;
+    this.bytesRead_ += n;
     while (this.ptr >= this.bytes.length && this.pages_.length > 0) {
       this.ptr -= this.bytes.length;
       this.bytes = this.pages_.shift();
@@ -262,6 +272,7 @@ bitjs.io.ByteStream = class {
     clone.bytes = this.bytes;
     clone.ptr = this.ptr;
     clone.pages_ = this.pages_.slice();
+    clone.bytesRead_ = this.bytesRead_;
     return clone;
   }
 }

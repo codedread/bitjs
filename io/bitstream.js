@@ -38,11 +38,19 @@ bitjs.io.BitStream = class {
     this.bytePtr = 0; // tracks which byte we are on
     this.bitPtr = 0; // tracks which bit we are on (can have values 0 through 7)
     this.peekBits = rtl ? this.peekBits_rtl : this.peekBits_ltr;
+    // An ever-increasing number.
+    this.bitsRead_ = 0;
   }
 
+  /**
+   * Returns how many bites have been read in the stream since the beginning of time.
+   */
+  getNumBitsRead() {
+    return this.bitsRead_;
+  }
 
   /**
-   * Returns how many bytes are currently in the stream left to be read.
+   * Returns how many bits are currently in the stream left to be read.
    */
   getNumBitsLeft() {
     const bitsLeftInByte = 8 - this.bitPtr;
@@ -58,6 +66,7 @@ bitjs.io.BitStream = class {
    */
   movePointer_(n) {
     this.bitPtr += n;
+    this.bitsRead_ += n;
     while (this.bitPtr >= 8) {
       this.bitPtr -= 8;
       this.bytePtr++;
@@ -88,8 +97,8 @@ bitjs.io.BitStream = class {
     }
 
     if (num > this.getNumBitsLeft()) {
-      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
-          ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
+      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + this.bytePtr +
+          ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
     }
 
     const movePointers = opt_movePointers || false;
@@ -153,8 +162,8 @@ bitjs.io.BitStream = class {
     }
 
     if (num > this.getNumBitsLeft()) {
-      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + bytePtr +
-          ', bytes.length=' + bytes.length + ', bitPtr=' + bitPtr;
+      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + this.bytePtr +
+          ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
     }
 
     const movePointers = opt_movePointers || false;
@@ -227,7 +236,7 @@ bitjs.io.BitStream = class {
   peekBytes(n, opt_movePointers) {
     const num = parseInt(n, 10);
     if (n !== num || num < 0) {
-      throw 'Error!  Called peekBytes() with a non-positive integer';
+      throw 'Error!  Called peekBytes() with a non-positive integer: ' + n;
     } else if (num === 0) {
       return new Uint8Array();
     }
@@ -260,6 +269,7 @@ bitjs.io.BitStream = class {
 
     if (movePointers) {
       this.bytePtr += num;
+      this.bitsRead_ += (num * 8);
     }
 
     return result;
@@ -296,6 +306,7 @@ bitjs.io.BitStream = class {
     clone.bytePtr = this.bytePtr;
     clone.bitPtr = this.bitPtr;
     clone.peekBits = this.peekBits;
+    clone.bitsRead_ = this.bitsRead_;
     return clone;
   }
 }
