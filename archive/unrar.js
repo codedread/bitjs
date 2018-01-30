@@ -7,6 +7,10 @@
  * Copyright(c) 2011 antimatter15
  */
 
+// TODO: Rewrite the RarLocalHeader parsing to use a ByteStream instead
+// of a BitStream so that it throws properly when not enough bytes are
+// present.
+
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('../io/bitstream.js');
 importScripts('../io/bytebuffer.js');
@@ -24,6 +28,7 @@ const UnarchiveState = {
 let unarchiveState = UnarchiveState.NOT_STARTED;
 let bitstream = null;
 let allLocalFiles = null;
+let logToConsole = false;
 
 // Progress variables.
 let currentFilename = "";
@@ -1378,6 +1383,7 @@ function unrar() {
 // event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
   const bytes = event.data.file || event.data.bytes;
+  logToConsole = !!event.data.logToConsole;
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bitstream) {

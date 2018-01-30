@@ -29,6 +29,7 @@ const UnarchiveState = {
 let unarchiveState = UnarchiveState.NOT_STARTED;
 let bytestream = null;
 let allLocalFiles = null;
+let logToConsole = false;
 
 // Progress variables.
 let currentFilename = "";
@@ -118,31 +119,37 @@ class ZipLocalFile {
     }
 
     // Now that we have all the bytes for this file, we can print out some information.
-    info("Zip Local File Header:");
-    info(" version=" + this.version);
-    info(" general purpose=" + this.generalPurpose);
-    info(" compression method=" + this.compressionMethod);
-    info(" last mod file time=" + this.lastModFileTime);
-    info(" last mod file date=" + this.lastModFileDate);
-    info(" crc32=" + this.crc32);
-    info(" compressed size=" + this.compressedSize);
-    info(" uncompressed size=" + this.uncompressedSize);
-    info(" file name length=" + this.fileNameLength);
-    info(" extra field length=" + this.extraFieldLength);
-    info(" filename = '" + this.filename + "'");
+    if (logToConsole) {
+      info("Zip Local File Header:");
+      info(" version=" + this.version);
+      info(" general purpose=" + this.generalPurpose);
+      info(" compression method=" + this.compressionMethod);
+      info(" last mod file time=" + this.lastModFileTime);
+      info(" last mod file date=" + this.lastModFileDate);
+      info(" crc32=" + this.crc32);
+      info(" compressed size=" + this.compressedSize);
+      info(" uncompressed size=" + this.uncompressedSize);
+      info(" file name length=" + this.fileNameLength);
+      info(" extra field length=" + this.extraFieldLength);
+      info(" filename = '" + this.filename + "'");
+    }
   }
 
   // determine what kind of compressed data we have and decompress
   unzip() {
     // Zip Version 1.0, no compression (store only)
     if (this.compressionMethod == 0 ) {
-      info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+      if (logToConsole) {
+        info("ZIP v"+this.version+", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+      }
       currentBytesUnarchivedInFile = this.compressedSize;
       currentBytesUnarchived += this.compressedSize;
     }
     // version == 20, compression method == 8 (DEFLATE)
     else if (this.compressionMethod == 8) {
-      info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+      if (logToConsole) {
+        info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+      }
       this.fileData = inflate(this.fileData, this.uncompressedSize);
     }
     else {
@@ -415,7 +422,6 @@ function inflate(compressedData, numDecompressedBytes) {
       compressedData.byteOffset,
       compressedData.byteLength);
   const buffer = new bitjs.io.ByteBuffer(numDecompressedBytes);
-  let numBlocks = 0;
   let blockSize = 0;
 
   // block format: http://tools.ietf.org/html/rfc1951#page-9
@@ -424,7 +430,6 @@ function inflate(compressedData, numDecompressedBytes) {
     bFinal = bstream.readBits(1);
     let bType = bstream.readBits(2);
     blockSize = 0;
-    ++numBlocks;
     // no compression
     if (bType == 0) {
       // skip remaining bits in this byte
@@ -436,11 +441,11 @@ function inflate(compressedData, numDecompressedBytes) {
       blockSize = len;
     }
     // fixed Huffman codes
-    else if(bType == 1) {
+    else if (bType == 1) {
       blockSize = inflateBlockData(bstream, getFixedLiteralTable(), getFixedDistanceTable(), buffer);
     }
     // dynamic Huffman codes
-    else if(bType == 2) {
+    else if (bType == 2) {
       const numLiteralLengthCodes = bstream.readBits(5) + 257;
       const numDistanceCodes = bstream.readBits(5) + 1;
       const numCodeLengthCodes = bstream.readBits(4) + 4;
@@ -551,7 +556,9 @@ function unzip() {
 
   // archive extra data record
   if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
-    info(" Found an Archive Extra Data Signature");
+    if (logToConsole) {
+      info(" Found an Archive Extra Data Signature");
+    }
 
     // skipping this record for now
     bstream.readNumber(4);
@@ -562,7 +569,9 @@ function unzip() {
   // central directory structure
   // TODO: handle the rest of the structures (Zip64 stuff)
   if (bytestream.peekNumber(4) == zCentralFileHeaderSignature) {
-    info(" Found a Central File Header");
+    if (logToConsole) {
+      info(" Found a Central File Header");
+    }
 
     // read all file headers
     while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
@@ -592,7 +601,9 @@ function unzip() {
 
   // digital signature
   if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
-    info(" Found a Digital Signature");
+    if (logToConsole) {
+      info(" Found a Digital Signature");
+    }
 
     bstream.readNumber(4);
     const sizeOfSignature = bstream.readNumber(2);
@@ -608,6 +619,7 @@ function unzip() {
 // event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
   const bytes = event.data.file || event.data.bytes;
+  logToConsole = !!event.data.logToConsole;
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bytestream) {

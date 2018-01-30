@@ -270,7 +270,12 @@ bitjs.archive.Unarchiver = class {
         }
       };
 
-      this.worker_.postMessage({file: this.ab});
+      const ab = this.ab;
+      this.worker_.postMessage({
+        file: ab,
+        logToConsole: false,
+      });
+      this.ab = null;
     }
   }
 

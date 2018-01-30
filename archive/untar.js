@@ -25,6 +25,7 @@ const UnarchiveState = {
 let unarchiveState = UnarchiveState.NOT_STARTED;
 let bytestream = null;
 let allLocalFiles = null;
+let logToConsole = false;
 
 // Progress variables.
 let currentFilename = "";
@@ -160,6 +161,7 @@ const untar = function() {
 // event.data.bytes has all subsequent ArrayBuffers.
 onmessage = function(event) {
   const bytes = event.data.file || event.data.bytes;
+  logToConsole = !!event.data.logToConsole;
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bytestream) {
