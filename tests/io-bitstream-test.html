@@ -32,9 +32,8 @@
         // 10010 = 2 + 16 = 18
         assertEquals(18, stream.readBits(5));
 
-        // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        assertThrows(() => stream.readBits(2),
-            'Did not throw when trying to read bits past the end of the stream during RTL');
+        // Ensure the last bit is read, even if we flow past the end of the stream.
+        assertEquals(1, stream.readBits(2));
       },
 
       testBitPeekAndRead_LTR() {
@@ -50,9 +49,8 @@
         // 11001 = 1 + 8 + 16 = 25
         assertEquals(25, stream.readBits(5));
 
-        // Only 1 bit left in the buffer, make sure it throws an error if we try to read more.
-        assertThrows(() => stream.readBits(2),
-            'Did not throw when trying to read bits past the end of the stream during LTR');
+        // Only 1 bit left in the buffer, make sure it reads in, even if we over-read.
+        assertEquals(0, stream.readBits(2));
       },
 
       testBitStreamReadBytes() {
@@ -73,60 +71,6 @@
 
         assertThrows(() => stream.readBytes(3),
             'Did not throw when trying to read bytes past the end of the stream');
-      },
-
-      testBitStreamReadAfterPush_RTL() {
-        array = new Uint8Array(1);
-        array[0] = Number('0b01010110');
-        const stream = new bitjs.io.BitStream(array.buffer, true /* rtl */);
-        const readBits = stream.readBits(8);
-        assertEquals(0x56, readBits, 'Could not read 8 bits: ' + readBits);
-        assertThrows(() => stream.readBits(4),
-            'Did not throw when trying to read a bit past the end of the stream');
-
-        const anotherArray = new Uint8Array(1);
-        anotherArray[0] = Number('0b01010110');
-        stream.push(anotherArray.buffer);
-
-        assertEquals(0x5, stream.readBits(4),
-            'Could not read in next 4 bits after pushing in RTL');
-        assertEquals(0x6, stream.readBits(4),
-            'Could not read in next 4 bits after pushing in RTL');
-      },
-
-      testBitStreamReadAfterPush_LTR() {
-        array = new Uint8Array(1);
-        array[0] = Number('0b01010110');
-        const stream = new bitjs.io.BitStream(array.buffer, false /* rtl */);
-        const readBits = stream.readBits(8);
-        assertEquals(0x56, readBits, 'Could not read 8 bits: ' + readBits);
-        assertThrows(() => stream.readBits(4),
-            'Did not throw when trying to read a bit past the end of the stream');
-
-        const anotherArray = new Uint8Array(1);
-        anotherArray[0] = Number('0b01010110');
-        stream.push(anotherArray.buffer);
-
-        assertEquals(0x6, stream.readBits(4),
-            'Could not read in next 4 bits after pushing in LTR');
-        assertEquals(0x5, stream.readBits(4),
-            'Could not read in next 4 bits after pushing in LTR');
-      },
-
-      testTee() {
-        for (let i = 0; i < 4; ++i) array[i] = 65 + i;
-        const stream = new bitjs.io.BitStream(array.buffer);
-        stream.readBits(1);
-
-        const anotherArray = new Uint8Array(4);
-        for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;
-        stream.push(anotherArray.buffer);
-
-        const teed = stream.tee();
-        teed.readBytes(5);
-        assertEquals(8 * 8 - 1, stream.getNumBitsLeft());
-        // readBytes() throws away any unused bits.
-        assertEquals(2 * 8, teed.getNumBitsLeft());
       },
     },
   });

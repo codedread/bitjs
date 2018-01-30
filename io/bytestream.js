@@ -13,7 +13,6 @@ var bitjs = bitjs || {};
 bitjs.io = bitjs.io || {};
 
 
-// TODO: Add method for tee-ing off the stream with tests.
 /**
  * This object allows you to peek and consume bytes as numbers and strings out
  * of a stream.  More bytes can be pushed into the back of the stream via the
@@ -185,7 +184,7 @@ bitjs.io.ByteStream = class {
    */
   peekBytes(n, movePointers) {
     const num = parseInt(n, 10);
-    if (n !== num || num <= 0) {
+    if (n !== num || num < 0) {
       throw 'Error!  Called peekBytes() with a non-positive integer';
     } else if (num === 0) {
       return new Uint8Array();

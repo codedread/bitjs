@@ -13,10 +13,11 @@ var bitjs = bitjs || {};
 bitjs.io = bitjs.io || {};
 
 
-// TODO: Add method for tee-ing off the stream with tests.
 /**
  * This object allows you to peek and consume bits and bytes out of a stream.
- * More bits can be pushed into the back of the stream via the push() method.
+ * Note that this stream is optimized, and thus, will *NOT* throw an error if
+ * the end of the stream is reached.  Only use this in scenarios where you
+ * already have all the bits you need.
  */
 bitjs.io.BitStream = class {
   /**
@@ -35,21 +36,14 @@ bitjs.io.BitStream = class {
     const length = opt_length || ab.byteLength;
 
     /**
-     * The current page of bytes in the stream.
+     * The bytes in the stream.
      * @type {Uint8Array}
      * @private
      */
     this.bytes = new Uint8Array(ab, offset, length);
 
     /**
-     * The next pages of bytes in the stream.
-     * @type {Array<Uint8Array>}
-     * @private
-     */
-    this.pages_ = [];
-
-    /**
-     * The byte in the current page that we are currently on.
+     * The byte in the stream that we are currently on.
      * @type {Number}
      * @private
      */
@@ -84,27 +78,7 @@ bitjs.io.BitStream = class {
    */
   getNumBitsLeft() {
     const bitsLeftInByte = 8 - this.bitPtr;
-    const bitsLeftInCurrentPage = (this.bytes.byteLength - this.bytePtr - 1) * 8 + bitsLeftInByte;
-    return this.pages_.reduce((acc, arr) => acc + arr.length * 8, bitsLeftInCurrentPage);
-  }
-
-  /**
-   * Move the pointer ahead n bits.  The bytePtr and current page are updated as needed.
-   * This is a private method, no validation is done.
-   * @param {number} n Number of bits to increment.
-   * @private
-   */
-  movePointer_(n) {
-    this.bitPtr += n;
-    this.bitsRead_ += n;
-    while (this.bitPtr >= 8) {
-      this.bitPtr -= 8;
-      this.bytePtr++;
-      while (this.bytePtr >= this.bytes.length && this.pages_.length > 0) {
-        this.bytePtr -= this.bytes.length;
-        this.bytes = this.pages_.shift();
-      }
-    }
+    return (this.bytes.byteLength - this.bytePtr - 1) * 8 + bitsLeftInByte;
   }
 
   /**
@@ -120,20 +94,13 @@ bitjs.io.BitStream = class {
   peekBits_ltr(n, opt_movePointers) {
     const NUM = parseInt(n, 10);
     let num = NUM;
-    if (n !== num || num < 0) {
-      throw 'Error!  Called peekBits_ltr() with a non-positive integer';
-    } else if (num === 0) {
+    if (n !== num || num <= 0) {
       return 0;
     }
 
-    if (num > this.getNumBitsLeft()) {
-      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + this.bytePtr +
-          ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
-    }
-
+    const BITMASK = bitjs.io.BitStream.BITMASK;
     const movePointers = opt_movePointers || false;
-    let curPage = this.bytes;
-    let pageIndex = 0;
+    let bytes = this.bytes;
     let bytePtr = this.bytePtr;
     let bitPtr = this.bitPtr;
     let result = 0;
@@ -141,32 +108,33 @@ bitjs.io.BitStream = class {
 
     // keep going until we have no more bits left to peek at
     while (num > 0) {
-      if (bytePtr >= curPage.length && this.pages_.length > 0) {
-        curPage = this.pages_[pageIndex++];
-        bytePtr = 0;
+      // We overflowed the stream, so just return what we got.
+      if (bytePtr >= bytes.length) {
+        break;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
       if (num >= numBitsLeftInThisByte) {
-        const mask = (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] << bitPtr);
-        result |= (((curPage[bytePtr] & mask) >> bitPtr) << bitsIn);
+        const mask = (BITMASK[numBitsLeftInThisByte] << bitPtr);
+        result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
         bytePtr++;
         bitPtr = 0;
         bitsIn += numBitsLeftInThisByte;
         num -= numBitsLeftInThisByte;
       } else {
-        const mask = (bitjs.io.BitStream.BITMASK[num] << bitPtr);
-        result |= (((curPage[bytePtr] & mask) >> bitPtr) << bitsIn);
+        const mask = (BITMASK[num] << bitPtr);
+        result |= (((bytes[bytePtr] & mask) >> bitPtr) << bitsIn);
 
         bitPtr += num;
-        bitsIn += num;
-        num = 0;
+        break;
       }
     }
 
     if (movePointers) {
-      this.movePointer_(NUM);
+      this.bitPtr = bitPtr;
+      this.bytePtr = bytePtr;
+      this.bitsRead_ += NUM;
     }
 
     return result;
@@ -185,50 +153,45 @@ bitjs.io.BitStream = class {
   peekBits_rtl(n, opt_movePointers) {
     const NUM = parseInt(n, 10);
     let num = NUM;
-    if (n !== num || num < 0) {
-      throw 'Error!  Called peekBits_rtl() with a non-positive integer';
-    } else if (num === 0) {
+    if (n !== num || num <= 0) {
       return 0;
     }
 
-    if (num > this.getNumBitsLeft()) {
-      throw 'Error!  Overflowed the bit stream! n=' + n + ', bytePtr=' + this.bytePtr +
-          ', bytes.length=' + this.bytes.length + ', bitPtr=' + this.bitPtr;
-    }
-
+    const BITMASK = bitjs.io.BitStream.BITMASK;
     const movePointers = opt_movePointers || false;
-    let curPage = this.bytes;
-    let pageIndex = 0;
+    let bytes = this.bytes;
     let bytePtr = this.bytePtr;
     let bitPtr = this.bitPtr;
     let result = 0;
 
     // keep going until we have no more bits left to peek at
     while (num > 0) {
-      if (bytePtr >= curPage.length && this.pages_.length > 0) {
-        curPage = this.pages_[pageIndex++];
-        bytePtr = 0;
+      // We overflowed the stream, so just return the bits we got.
+      if (bytePtr >= bytes.length) {
+        break;
       }
 
       const numBitsLeftInThisByte = (8 - bitPtr);
       if (num >= numBitsLeftInThisByte) {
         result <<= numBitsLeftInThisByte;
-        result |= (bitjs.io.BitStream.BITMASK[numBitsLeftInThisByte] & curPage[bytePtr]);
+        result |= (BITMASK[numBitsLeftInThisByte] & bytes[bytePtr]);
         bytePtr++;
         bitPtr = 0;
         num -= numBitsLeftInThisByte;
       } else {
         result <<= num;
         const numBits = 8 - num - bitPtr;
-        result |= ((curPage[bytePtr] & (bitjs.io.BitStream.BITMASK[num] << numBits)) >> numBits);
+        result |= ((bytes[bytePtr] & (BITMASK[num] << numBits)) >> numBits);
 
         bitPtr += num;
-        num = 0;
+        break;
       }
     }
 
     if (movePointers) {
-      this.movePointer_(NUM);
+      this.bitPtr = bitPtr;
+      this.bytePtr = bytePtr;
+      this.bitsRead_ += NUM;
     }
 
     return result;
@@ -286,20 +249,19 @@ bitjs.io.BitStream = class {
 
     const movePointers = opt_movePointers || false;
     const result = new Uint8Array(num);
-    let curPage = this.bytes;
+    let bytes = this.bytes;
     let ptr = this.bytePtr;
     let bytesLeftToCopy = num;
-    let pageIndex = 0;
     while (bytesLeftToCopy > 0) {
-      const bytesLeftInPage = curPage.length - ptr;
-      const sourceLength = Math.min(bytesLeftToCopy, bytesLeftInPage);
+      const bytesLeftInStream = bytes.length - ptr;
+      const sourceLength = Math.min(bytesLeftToCopy, bytesLeftInStream);
 
-      result.set(curPage.subarray(ptr, ptr + sourceLength), num - bytesLeftToCopy);
+      result.set(bytes.subarray(ptr, ptr + sourceLength), num - bytesLeftToCopy);
 
       ptr += sourceLength;
-      if (ptr >= curPage.length) {
-        curPage = this.pages_[pageIndex++];
-        ptr = 0;
+      // Overflowed the stream, just return what we got.
+      if (ptr >= bytes.length) {
+        break;
       }
 
       bytesLeftToCopy -= sourceLength;
@@ -319,33 +281,6 @@ bitjs.io.BitStream = class {
    */
   readBytes(n) {
     return this.peekBytes(n, true);
-  }
-
-  /**
-   * Feeds more bytes into the back of the stream.
-   * @param {ArrayBuffer} ab 
-   */
-  push(ab) {
-    if (!(ab instanceof ArrayBuffer)) {
-      throw 'Error! BitStream.push() called with an invalid ArrayBuffer object';
-    }
-
-    this.pages_.push(new Uint8Array(ab));
-  }
-
-  /**
-   * Creates a new BitStream from this BitStream that can be read / peeked.
-   * @return {bitjs.io.BitStream} A clone of this BitStream.
-   */
-  tee() {
-    const clone = new bitjs.io.BitStream(this.bytes.buffer);
-    clone.bytes = this.bytes;
-    clone.pages_ = this.pages_.slice();
-    clone.bytePtr = this.bytePtr;
-    clone.bitPtr = this.bitPtr;
-    clone.peekBits = this.peekBits;
-    clone.bitsRead_ = this.bitsRead_;
-    return clone;
   }
 }
 
