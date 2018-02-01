@@ -18,16 +18,45 @@ var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not adv
 
 ### bitjs.archive
 
-This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchive code depends on browser support of Web Workers. See the design doc.
+This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
 
 ```
-function updateProgressBar(e) { ... update UI element ... }
-function displayZipContents(e) { ... display contents of the extracted zip file ... }
-
 var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
-unzipper.addEventListener("progress", updateProgressBar);
-unzipper.addEventListener("finish", displayZipContents);
+unzipper.addEventListener('progress', updateProgress);
+unzipper.addEventListener('extract', receiveOneFile);
+unzipper.addEventListener('finish', displayZipContents);
 unzipper.start();
+
+function updateProgress(e) {
+  // e.totalCompressedBytesRead has how many bytes have been unzipped so far
+}
+
+function receiveOneFile(e) {
+  // e.unarchivedFile.filename: string
+  // e.unarchivedFile.fileData: Uint8Array
+}
+
+function displayZipContents() {
+  // Now sort your received files and show them or whatever...
+}
+
+function 
+```
+
+The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
+
+```
+var unzipper = new bitjs.archive.Unzipper(anArrayBufferWithStartingBytes);
+unzipper.addEventListener('progress', updateProgress);
+unzipper.addEventListener('extract', receiveOneFile);
+unzipper.addEventListener('finish', displayZipContents);
+unzipper.start();
+...
+// after some time
+unzipper.update(anArrayBufferWithMoreBytes);
+...
+// after some more time
+unzipper.update(anArrayBufferWithYetMoreBytes);
 ```
 
 ## Tests
@@ -37,8 +66,8 @@ unzipper.start();
 
 ## Reference
 
-* [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): An work-in-progress description of the RAR file format.
+* [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): A work-in-progress description of the RAR file format.
 
 ## History
 
-This repository was automatically exported from [my original repository on GoogleCode] (https://code.google.com/p/bitjs) and then I cherry-picked some commits from antimatter15's fork.  I've also fixed a bunch of bugs, added starter RarVM support, added tests and updated to ES6.
+This repository was automatically exported from [my original repository on GoogleCode](https://code.google.com/p/bitjs) and then I cherry-picked some commits from antimatter15's fork.  I've also fixed a bunch of bugs, added starter RarVM support, added tests and updated to ES6.

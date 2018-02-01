@@ -354,6 +354,7 @@ function RarReadTables(bstream) {
   bstream.readBits( (8 - bstream.bitPtr) & 0x7 );
   
   if (bstream.readBits(1)) {
+    // TODO: Implement PPM.  07535.
     info("Error!  PPM not implemented yet");
     return;
   }
