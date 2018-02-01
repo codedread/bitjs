@@ -70,4 +70,4 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
 ## History
 
-This repository was automatically exported from [my original repository on GoogleCode](https://code.google.com/p/bitjs) and then I cherry-picked some commits from antimatter15's fork.  I've also fixed a bunch of bugs, added starter RarVM support, added tests and updated to ES6.
+This project grew out of another project of mine, [kthoom](https://github.com/codedread/kthoom) (a comic book reader implemented in the browser).  This repository was automatically exported from [my original repository on GoogleCode](https://code.google.com/p/bitjs) and has undergone considerable changes and improvements since then, including adding streaming support, starter RarVM support, tests, many bug fixes, and updating the code to ES6.
