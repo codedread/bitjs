@@ -164,7 +164,7 @@ class RarVolumeHeader {
         this.nameSize = bstream.readNumber(2);
         this.fileAttr = bstream.readNumber(4);
         headBytesRead += 25;
-
+        
         if (this.flags.LHD_LARGE) {
           //info('Warning: Reading in LHD_LARGE 64-bit size values');
           this.HighPackSize = bstream.readNumber(4);
@@ -1385,7 +1385,7 @@ function unrar() {
       // Skip this file.
       localFile.isValid = true;
     }
-  } while (localFile.isValid);
+  } while (localFile.isValid && bstream.getNumBytesLeft() > 0);
 
   totalFilesInArchive = allLocalFiles.length;
   
