@@ -343,6 +343,10 @@ bitjs.archive.Untarrer = class extends bitjs.archive.Unarchiver {
  * @return {bitjs.archive.Unarchiver}
  */
 bitjs.archive.GetUnarchiver = function(ab, opt_pathToBitJS) {
+  if (ab.byteLength < 10) {
+    return null;
+  }
+
   let unarchiver = null;
   const pathToBitJS = opt_pathToBitJS || '';
   const h = new Uint8Array(ab, 0, 10);
