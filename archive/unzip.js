@@ -62,7 +62,7 @@ const zLocalFileHeaderSignature = 0x04034b50;
 const zArchiveExtraDataSignature = 0x08064b50;
 const zCentralFileHeaderSignature = 0x02014b50;
 const zDigitalSignatureSignature = 0x05054b50;
-const zEndOfCentralDirSignature = 0x06064b50;
+const zEndOfCentralDirSignature = 0x06054b50;
 const zEndOfCentralDirLocatorSignature = 0x07064b50;
 
 // mask for getting the Nth bit (zero-based)
@@ -574,28 +574,36 @@ function unzip() {
     }
 
     // read all file headers
+    // TODO: This structure tells us the intended order of the files in the zip.
     while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
       bstream.readNumber(4); // signature
-      bstream.readNumber(2); // version made by
-      bstream.readNumber(2); // version needed to extract
-      bstream.readNumber(2); // general purpose bit flag
-      bstream.readNumber(2); // compression method
-      bstream.readNumber(2); // last mod file time
-      bstream.readNumber(2); // last mod file date
-      bstream.readNumber(4); // crc32
-      bstream.readNumber(4); // compressed size
-      bstream.readNumber(4); // uncompressed size
-      const fileNameLength = bstream.readNumber(2); // file name length
-      const extraFieldLength = bstream.readNumber(2); // extra field length
-      const fileCommentLength = bstream.readNumber(2); // file comment length
-      bstream.readNumber(2); // disk number start
-      bstream.readNumber(2); // internal file attributes
-      bstream.readNumber(4); // external file attributes
-      bstream.readNumber(4); // relative offset of local header
-
-      bstream.readString(fileNameLength); // file name
-      bstream.readString(extraFieldLength); // extra field
-      bstream.readString(fileCommentLength); // file comment
+      const cdfh = {
+        versionMadeBy: bstream.readNumber(2),
+        versionNeededToExtract: bstream.readNumber(2),
+        generalPurposeBitFlag: bstream.readNumber(2),
+        compressionMethod: bstream.readNumber(2),
+        lastModFileTime: bstream.readNumber(2),
+        lastModFileDate: bstream.readNumber(2),
+        crc32: bstream.readNumber(4),
+        compressedSize: bstream.readNumber(4),
+        uncompressedSize: bstream.readNumber(4),
+        fileNameLength: bstream.readNumber(2),
+        extraFieldLength: bstream.readNumber(2),
+        fileCommentLength: bstream.readNumber(2),
+        diskNumberStart: bstream.readNumber(2),
+        internalFileAttributes: bstream.readNumber(2),
+        externalFileAttributes: bstream.readNumber(4),
+        relativeOffset: bstream.readNumber(4),
+      };
+      cdfh.fileName = bstream.readString(cdfh.fileNameLength);
+      cdfh.extraField = bstream.readString(cdfh.extraFieldLength);
+      cdfh.fileComment = bstream.readString(cdfh.fileCommentLength);
+      if (logToConsole) {
+        console.log('Central Directory File Header:');
+        for (const field in cdfh)  {
+          console.log(`  ${field} = ${cdfh[field]}`);
+        }
+      }
     }
   }
 
@@ -608,6 +616,26 @@ function unzip() {
     bstream.readNumber(4);
     const sizeOfSignature = bstream.readNumber(2);
     bstream.readString(sizeOfSignature); // digital signature data
+  }
+
+  if (bstream.peekNumber(4) == zEndOfCentralDirSignature) {
+    bstream.readNumber(4); // signature
+    const eocds = {
+      numberOfThisDisk: bstream.readNumber(2),
+      diskWhereCentralDirectoryStarts: bstream.readNumber(2),
+      numberOfCentralDirectoryRecordsOnThisDisk: bstream.readNumber(2),
+      totalNumberOfCentralDirectoryRecords: bstream.readNumber(2),
+      sizeOfCentralDirectory: bstream.readNumber(4),
+      offsetOfStartOfCentralDirectory: bstream.readNumber(4),
+      commentLength: bstream.readNumber(2),
+    };
+    eocds.comment = bstream.readString(eocds.commentLength);
+    if (logToConsole) {
+      console.log('End of Central Dir Signature:');
+      for (const field in eocds)  {
+        console.log(`  ${field} = ${eocds[field]}`);
+      }
+    }
   }
 
   postProgress();
