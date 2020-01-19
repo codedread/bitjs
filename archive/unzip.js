@@ -574,7 +574,6 @@ function unzip() {
     }
 
     // read all file headers
-    // TODO: This structure tells us the intended order of the files in the zip.
     while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
       bstream.readNumber(4); // signature
       const cdfh = {
@@ -618,6 +617,7 @@ function unzip() {
     bstream.readString(sizeOfSignature); // digital signature data
   }
 
+  let metadata = {};
   if (bstream.peekNumber(4) == zEndOfCentralDirSignature) {
     bstream.readNumber(4); // signature
     const eocds = {
@@ -636,11 +636,15 @@ function unzip() {
         console.log(`  ${field} = ${eocds[field]}`);
       }
     }
+    metadata.comment = eocds.comment;
   }
 
   postProgress();
 
   bytestream = bstream.tee();
+
+  unarchiveState = UnarchiveState.FINISHED;
+  postMessage(new bitjs.archive.UnarchiveFinishEvent(metadata));
 }
 
 // event.data.file has the first ArrayBuffer.
@@ -677,8 +681,6 @@ onmessage = function(event) {
       unarchiveState === UnarchiveState.WAITING) {
     try {
       unzip();
-      unarchiveState = UnarchiveState.FINISHED;
-      postMessage(new bitjs.archive.UnarchiveFinishEvent());
     } catch (e) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         // Overrun the buffer.

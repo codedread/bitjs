@@ -88,8 +88,12 @@ bitjs.archive.UnarchiveStartEvent = class extends bitjs.archive.UnarchiveEvent {
  * Finish event.
  */
 bitjs.archive.UnarchiveFinishEvent = class extends bitjs.archive.UnarchiveEvent {
-  constructor() {
+  /**
+   * @param {Object} metadata A collection fo metadata about the archive file.
+   */
+  constructor(metadata = {}) {
     super(bitjs.archive.UnarchiveEvent.Type.FINISH);
+    this.metadata = metadata;
   }
 }
 
@@ -144,7 +148,7 @@ bitjs.archive.UnarchiveExtractEvent = class extends bitjs.archive.UnarchiveEvent
  *
  * interface UnarchivedFile {
  *   string filename
- *   TypedArray fileData  
+ *   TypedArray fileData
  * }
  *
  */
@@ -281,6 +285,7 @@ bitjs.archive.Unarchiver = class {
 
   /**
    * Adds more bytes to the unarchiver's Worker thread.
+   * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it.
    */
   update(ab) {
     if (this.worker_) {
