@@ -1,3 +1,14 @@
+/**
+ * webp.c
+ *
+ * Provides functionality for decoding a WebP imgae and converting it into
+ * alternative raster graphics formats (PNG/JPG).
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2020 Google Inc.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "emscripten.h"

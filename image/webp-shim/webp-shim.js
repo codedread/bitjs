@@ -1,5 +1,12 @@
 /**
- * 
+ * webp-shim.js
+ *
+ * Loads in the WASM module and exposes methods to convert a WebP image into
+ * alternative raster graphics formats (PNG/JPG).
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2020 Google Inc.
  */
 
 const url = import.meta.url;

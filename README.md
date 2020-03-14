@@ -59,6 +59,22 @@ unzipper.update(anArrayBufferWithMoreBytes);
 unzipper.update(anArrayBufferWithYetMoreBytes);
 ```
 
+### bitjs.image
+
+This namespace includes code for dealing with image formats.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
+
+```
+import {convertWebPtoPNG, convertWebPtoJPG} from './bitjs/image/webp-shim/webp-shim.js';
+
+// convertWebPtoPNG() takes in an ArrayBuffer containing the bytes of a WebP
+// image and returns a Promise that resolves with an ArrayBuffer containing the
+// bytes of an equivalent PNG image.
+convertWebPtoPNG(webpBuffer).then(pngBuf => {
+  const pngUrl = URL.createObjectURL(new Blob([pngArr], {type: 'image/png'}));
+  someImgElement.setAttribute(src, pngUrl);
+});
+```
+
 ## Tests
 
 * [bitjs.io tests](https://codedread.github.io/bitjs/tests/io-test.html)

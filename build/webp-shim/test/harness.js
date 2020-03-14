@@ -1,3 +1,12 @@
+/**
+ * harness.js
+ *
+ * Example of how to use the webp-shim functions.
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2020 Google Inc.
+ */
 import {convertWebPtoPNG, convertWebPtoJPG} from '../../../image/webp-shim/webp-shim.js';
 
 new Promise((resolve, reject) => {
