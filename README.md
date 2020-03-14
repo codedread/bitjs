@@ -10,7 +10,7 @@ A set of tools to handle binary data in JS (using Typed Arrays).
 
 This namespace includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
-```
+```javascript
 var bstream = new bitjs.io.BitStream(someArrayBuffer, true, offset, length);
 var crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
 var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
@@ -20,7 +20,7 @@ var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not adv
 
 This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
 
-```
+```javascript
 var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
@@ -45,7 +45,7 @@ function
 
 The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
 
-```
+```javascript
 var unzipper = new bitjs.archive.Unzipper(anArrayBufferWithStartingBytes);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
@@ -63,7 +63,7 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
 This namespace includes code for dealing with image formats.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
 
-```
+```javascript
 import {convertWebPtoPNG, convertWebPtoJPG} from './bitjs/image/webp-shim/webp-shim.js';
 
 // convertWebPtoPNG() takes in an ArrayBuffer containing the bytes of a WebP
