@@ -39,8 +39,6 @@ function receiveOneFile(e) {
 function displayZipContents() {
   // Now sort your received files and show them or whatever...
 }
-
-function 
 ```
 
 The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
