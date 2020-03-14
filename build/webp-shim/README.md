@@ -12,4 +12,4 @@ Assuming you have cloned the repository in /path/to/bitjs:
   * Build the WASM module: `make`
   * Exit the Docker image: `exit`
 
-The /path/to/webp-shim/lib/ directory will now contain webp-shim.js and webp-shim.wasm.
+The /path/to/bitjs/image/webp-shim/ directory will now contain update webp-shim-module.js and webp-shim-module.wasm files.
