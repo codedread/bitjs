@@ -63,7 +63,7 @@ void write_image_to_mem(void* context, void* data, int size) {
 
 uint8_t* decode_webp_to_rgba(uint8_t* webp_ptr, size_t size, int* width, int* height) {
   if (!webp_ptr) {
-    printf("webp_ptr is NULL");
+    printf("decode_webp_to_rgba() called with NULL webp_ptr");
   }
   if (!WebPGetInfo(webp_ptr, size, width, height)) {
     fprintf(stderr, "WebPGetInfo() returned an error\n");

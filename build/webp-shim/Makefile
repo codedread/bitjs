@@ -12,12 +12,15 @@ debug: ${OUT_TARGET}
 clean:
 	rm -rf ${OUT_PATH}/${OUT_NAME}.*
 
-${OUT_TARGET}: ${SHIM_SRC}
-	emcc -O3 \
+# Debug:
+# -O0
+# Optimizations:
+# -Os --llvm-lto 1
+${OUT_TARGET}: ${SHIM_SRC} Makefile
+	emcc -Os --llvm-lto 1 \
 		-s WASM=1 \
 		-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' \
 		-s ALLOW_MEMORY_GROWTH=1 \
-		-s ASSERTIONS=1 \
 		-I stb \
 		-I libwebp \
 		${LIBWEBP_SRC} \

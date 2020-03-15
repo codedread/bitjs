@@ -20,8 +20,8 @@ function loadWebPShimApi() {
   return loadingPromise = new Promise((resolve, reject) => {
     const scriptEl = document.createElement('script');
     scriptEl.onload = () => {
-      Module.print = str => console.log(str);
-      Module.printErr = str => console.error(str);
+      Module.print = str => console.log(`${Date.now()}: ${str}`);
+      Module.printErr = str => console.error(`${Date.now()}: ${str}`);
       Module.onRuntimeInitialized = () => {
         api = {
           createWASMBuffer: Module.cwrap('create_buffer', 'number', ['number', 'number']),
@@ -76,13 +76,13 @@ export function convertWebPtoJPG(webpBuffer) {
     // Create a buffer of the WebP bytes that we can send into WASM-land.
     const size = webpBuffer.byteLength;
     const webpWASMBuffer = api.createWASMBuffer(size);
-    api.heap.set(webpBuffer, webpWASMBuffer);
+    api.module.HEAPU8.set(webpBuffer, webpWASMBuffer);
 
     // Convert to JPG.
     const jpgHandle = api.getJPGHandle(webpWASMBuffer, size);
     const numJPGBytes = api.getNumBytesFromHandle(jpgHandle);
     const jpgBufPtr = api.getImageBytesFromHandle(jpgHandle);
-    const jpgBuffer = api.heap.slice(jpgBufPtr, jpgBufPtr + numJPGBytes - 1);
+    const jpgBuffer = api.module.HEAPU8.slice(jpgBufPtr, jpgBufPtr + numJPGBytes - 1);
 
     // Cleanup.
     api.releaseImageHandle(jpgHandle);
