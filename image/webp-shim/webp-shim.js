@@ -1,12 +1,5 @@
 /**
- * webp-shim.js
- *
- * Loads in the WASM module and exposes methods to convert a WebP image into
- * alternative raster graphics formats (PNG/JPG).
- *
- * Licensed under the MIT License
- *
- * Copyright(c) 2020 Google Inc.
+ * 
  */
 
 const url = import.meta.url;
@@ -37,7 +30,7 @@ function loadWebPShimApi() {
           getPNGHandle: Module.cwrap('get_png_handle_from_webp', 'number', ['number', 'number']),
           getImageBytesFromHandle: Module.cwrap('get_image_bytes_from_handle', 'number', ['number']),
           getNumBytesFromHandle: Module.cwrap('get_num_bytes_from_handle', 'number', ['number']),
-          heap: Module.HEAPU8,
+          module: Module,
           releaseImageHandle: Module.cwrap('release_image_handle', '', ['number']),
         };  
         resolve(api);
@@ -59,13 +52,13 @@ export function convertWebPtoPNG(webpBuffer) {
     const webpArray = new Uint8Array(webpBuffer);
     const size = webpArray.byteLength;
     const webpWASMBuffer = api.createWASMBuffer(size);
-    api.heap.set(webpArray, webpWASMBuffer);
+    api.module.HEAPU8.set(webpArray, webpWASMBuffer);
   
     // Convert to PNG.
     const pngHandle = api.getPNGHandle(webpWASMBuffer, size);
     const numBytes = api.getNumBytesFromHandle(pngHandle);
     const pngBufPtr = api.getImageBytesFromHandle(pngHandle);
-    const pngBuffer = api.heap.slice(pngBufPtr, pngBufPtr + numBytes - 1);
+    let pngBuffer = api.module.HEAPU8.slice(pngBufPtr, pngBufPtr + numBytes - 1);
 
     // Cleanup.
     api.releaseImageHandle(pngHandle);
