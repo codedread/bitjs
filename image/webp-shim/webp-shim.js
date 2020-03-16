@@ -56,9 +56,13 @@ export function convertWebPtoPNG(webpBuffer) {
   
     // Convert to PNG.
     const pngHandle = api.getPNGHandle(webpWASMBuffer, size);
-    const numBytes = api.getNumBytesFromHandle(pngHandle);
+    if (!pngHandle) {
+      api.destroyWASMBuffer(webpWASMBuffer);
+      return null;
+    }
+    const numPNGBytes = api.getNumBytesFromHandle(pngHandle);
     const pngBufPtr = api.getImageBytesFromHandle(pngHandle);
-    let pngBuffer = api.module.HEAPU8.slice(pngBufPtr, pngBufPtr + numBytes - 1);
+    let pngBuffer = api.module.HEAPU8.slice(pngBufPtr, pngBufPtr + numPNGBytes - 1);
 
     // Cleanup.
     api.releaseImageHandle(pngHandle);
@@ -74,12 +78,17 @@ export function convertWebPtoPNG(webpBuffer) {
 export function convertWebPtoJPG(webpBuffer) {
   return loadWebPShimApi().then((api) => {
     // Create a buffer of the WebP bytes that we can send into WASM-land.
-    const size = webpBuffer.byteLength;
+    const webpArray = new Uint8Array(webpBuffer);
+    const size = webpArray.byteLength;
     const webpWASMBuffer = api.createWASMBuffer(size);
-    api.module.HEAPU8.set(webpBuffer, webpWASMBuffer);
+    api.module.HEAPU8.set(webpArray, webpWASMBuffer);
 
     // Convert to JPG.
     const jpgHandle = api.getJPGHandle(webpWASMBuffer, size);
+    if (!jpgHandle) {
+      api.destroyWASMBuffer(webpWASMBuffer);
+      return null;
+    }
     const numJPGBytes = api.getNumBytesFromHandle(jpgHandle);
     const jpgBufPtr = api.getImageBytesFromHandle(jpgHandle);
     const jpgBuffer = api.module.HEAPU8.slice(jpgBufPtr, jpgBufPtr + numJPGBytes - 1);
