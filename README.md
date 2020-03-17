@@ -59,7 +59,7 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
 ### bitjs.image
 
-This namespace includes code for dealing with image formats.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
+This namespace includes code for dealing with binary images.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
 
 ```javascript
 import {convertWebPtoPNG, convertWebPtoJPG} from './bitjs/image/webp-shim/webp-shim.js';
@@ -68,9 +68,17 @@ import {convertWebPtoPNG, convertWebPtoJPG} from './bitjs/image/webp-shim/webp-s
 // image and returns a Promise that resolves with an ArrayBuffer containing the
 // bytes of an equivalent PNG image.
 convertWebPtoPNG(webpBuffer).then(pngBuf => {
-  const pngUrl = URL.createObjectURL(new Blob([pngArr], {type: 'image/png'}));
+  const pngUrl = URL.createObjectURL(new Blob([pngBuf], {type: 'image/png'}));
   someImgElement.setAttribute(src, pngUrl);
 });
+```
+
+### bitjs.file
+
+This namespace includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
+
+```javascript
+let mimeType = bitjs.file.findMimeType(someArrayBuffer);
 ```
 
 ## Tests

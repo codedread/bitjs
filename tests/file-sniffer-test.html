@@ -3,25 +3,31 @@
 <head>
     <title>Unit tests for bitjs.io.ByteStreamBitStream</title>
     <script src="muther.js"></script>
+    <script src="../file/sniffer.js"></script>
 </head>
 <body>
-<script type="module">
-  debugger;
-  import {findMimeType} from '../file/sniffer.js';
+<script>
   const assert = muther.assert;
   const assertEquals = muther.assertEquals;
   const assertThrows = muther.assertThrows;
 
-  let array;
+  function sniffTest(mimeType, sig) {
+    const array = new Uint8Array(16);
+    array.set(sig);
+    assertEquals(mimeType, bitjs.file.findMimeType(array.buffer));
+  }
+
   muther.go({
-    setUp: function() {
-      array = new Uint8Array(16);
-    },
+    setUp: function() {},
     tests: {
-      testPNG() {
-        array.set([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0xFF]);
-        assertEquals('image/png', findMimeType(array.buffer));
-      },
+      testBMP() { sniffTest('image/bmp', [0x42, 0x4D, 0x46]); },
+      testGIF() { sniffTest('image/gif', [0x47, 0x49, 0x46, 0x38, 0x20]); },
+      testJPG() { sniffTest('image/jpeg', [0xFF, 0xD8, 0xFF, 0x23]); },
+      testPNG() { sniffTest('image/png', [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0xFF]); },
+      testWebP() { sniffTest('image/webp', [0x52, 0x49, 0x46, 0x46, 0x01, 0x02, 0x03, 0x04, 0x57, 0x45, 0x42, 0x50, 0x81]); },
+      testZIP() { sniffTest('application/zip', [0x50, 0x4B, 0x03, 0x04]); },
+      test7Z() { sniffTest('application/x-7z-compressed', [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, 0x2B]); },
+      testRAR() { sniffTest('application/x-rar-compressed', [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x23]); },
     },
   });  
 </script>
