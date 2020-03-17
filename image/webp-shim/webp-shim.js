@@ -1,5 +1,9 @@
 /**
- * 
+ * webp-shim.js
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2020 Google Inc.
  */
 
 const url = import.meta.url;
