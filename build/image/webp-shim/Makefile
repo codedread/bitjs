@@ -1,8 +1,8 @@
-OUT_PATH=out
+OUT_PATH=/out/image/webp-shim
 OUT_NAME=webp-shim-module
 OUT_TARGET=${OUT_PATH}/${OUT_NAME}.js
 
-LIBWEBP_PATH=libwebp/src
+LIBWEBP_PATH=/libwebp/src
 LIBWEBP_SRC=$(shell find ${LIBWEBP_PATH}/ -name '*.c')
 
 SHIM_PATH=src
@@ -21,8 +21,8 @@ ${OUT_TARGET}: ${SHIM_SRC} Makefile
 		-s WASM=1 \
 		-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' \
 		-s ALLOW_MEMORY_GROWTH=1 \
-		-I stb \
-		-I libwebp \
+		-I /stb \
+		-I /libwebp \
 		${LIBWEBP_SRC} \
 		${SHIM_SRC} \
 		-o ${OUT_TARGET}
