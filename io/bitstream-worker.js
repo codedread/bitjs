@@ -1,5 +1,7 @@
 // THIS IS A GENERATED FILE!  DO NOT EDIT, INSTEAD EDIT THE FILE IN bitjs/build/io.
-export const BitStream =
+var bitjs = bitjs || {};
+bitjs.io = bitjs.io || {};
+bitjs.io.BitStream =
 /*
  * bitstream-def.js
  *
