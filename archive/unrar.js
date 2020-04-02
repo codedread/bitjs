@@ -14,7 +14,7 @@
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('../io/bitstream-worker.js');
 importScripts('../io/bytestream-worker.js');
-importScripts('../io/bytebuffer.js');
+importScripts('../io/bytebuffer-worker.js');
 importScripts('archive.js');
 importScripts('rarvm.js');
 
