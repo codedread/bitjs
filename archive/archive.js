@@ -111,8 +111,8 @@ bitjs.archive.UnarchiveProgressEvent = class extends bitjs.archive.UnarchiveEven
    * @param {number} totalCompressedBytesRead
    */
   constructor(currentFilename, currentFileNumber, currentBytesUnarchivedInFile,
-      currentBytesUnarchived, totalUncompressedBytesInArchive, totalFilesInArchive,
-      totalCompressedBytesRead) {
+    currentBytesUnarchived, totalUncompressedBytesInArchive, totalFilesInArchive,
+    totalCompressedBytesRead) {
     super(bitjs.archive.UnarchiveEvent.Type.PROGRESS);
 
     this.currentFilename = currentFilename;
@@ -232,20 +232,52 @@ bitjs.archive.Unarchiver = class {
   }
 
   /**
+   * Create an UnarchiveEvent out of the object sent back from the Worker.
+   * @param {Object} obj
+   * @return {bitjs.archive.UnarchiveEvent}
+   * @private
+   */
+  createUnarchiveEvent_(obj) {
+    switch (obj.type) {
+      case bitjs.archive.UnarchiveEvent.Type.START:
+        return new bitjs.archive.UnarchiveStartEvent();
+      case bitjs.archive.UnarchiveEvent.Type.PROGRESS:
+        return new bitjs.archive.UnarchiveProgressEvent(
+          obj.currentFilename,
+          obj.currentFileNumber,
+          obj.currentBytesUnarchivedInFile,
+          obj.currentBytesUnarchived,
+          obj.totalUncompressedBytesInArchive,
+          obj.totalFilesInArchive,
+          obj.totalCompressedBytesRead);
+      case bitjs.archive.UnarchiveEvent.Type.EXTRACT:
+        return new bitjs.archive.UnarchiveExtractEvent(obj.unarchivedFile);
+      case bitjs.archive.UnarchiveEvent.Type.FINISH:
+        return new bitjs.archive.UnarchiveFinishEvent(obj.metadata);
+      case bitjs.archive.UnarchiveEvent.Type.INFO:
+        return new bitjs.archive.UnarchiveInfoEvent(obj.msg);
+      case bitjs.archive.UnarchiveEvent.Type.ERROR:
+        return new bitjs.archive.UnarchiveErrorEvent(obj.msg);
+    }
+  }
+
+  /**
    * Receive an event and pass it to the listener functions.
    *
    * @param {bitjs.archive.UnarchiveEvent} e
    * @private
    */
-  handleWorkerEvent_(e) {
-    if ((e instanceof bitjs.archive.UnarchiveEvent || e.type) &&
-        this.listeners_[e.type] instanceof Array) {
-      this.listeners_[e.type].forEach(function (listener) { listener(e) });
-      if (e.type == bitjs.archive.UnarchiveEvent.Type.FINISH) {
-          this.worker_.terminate();
+  handleWorkerEvent_(obj) {
+    const type = obj.type;
+    if (type && Object.values(bitjs.archive.UnarchiveEvent.Type).includes(type) &&
+      this.listeners_[obj.type] instanceof Array) {
+      const evt = this.createUnarchiveEvent_(obj);
+      this.listeners_[evt.type].forEach(function (listener) { listener(evt) });
+      if (evt.type == bitjs.archive.UnarchiveEvent.Type.FINISH) {
+        this.worker_.terminate();
       }
     } else {
-      console.log(e);
+      console.log(`Unknown object received from worker: ${obj}`);
     }
   }
 
@@ -258,18 +290,16 @@ bitjs.archive.Unarchiver = class {
     if (scriptFileName) {
       this.worker_ = new Worker(scriptFileName);
 
-      this.worker_.onerror = function(e) {
+      this.worker_.onerror = function (e) {
         console.log('Worker error: message = ' + e.message);
         throw e;
       };
 
-      this.worker_.onmessage = function(e) {
+      this.worker_.onmessage = function (e) {
         if (typeof e.data == 'string') {
           // Just log any strings the workers pump our way.
           console.log(e.data);
         } else {
-          // Assume that it is an UnarchiveEvent.  Some browsers preserve the 'type'
-          // so that instanceof UnarchiveEvent returns true, but others do not.
           me.handleWorkerEvent_(e.data);
         }
       };
@@ -289,7 +319,7 @@ bitjs.archive.Unarchiver = class {
    */
   update(ab) {
     if (this.worker_) {
-      this.worker_.postMessage({bytes: ab});
+      this.worker_.postMessage({ bytes: ab });
     }
   }
 
@@ -347,7 +377,7 @@ bitjs.archive.Untarrer = class extends bitjs.archive.Unarchiver {
  * @param {string=} opt_pathToBitJS Path to the unarchiver script files.
  * @return {bitjs.archive.Unarchiver}
  */
-bitjs.archive.GetUnarchiver = function(ab, opt_pathToBitJS) {
+bitjs.archive.GetUnarchiver = function (ab, opt_pathToBitJS) {
   if (ab.byteLength < 10) {
     return null;
   }

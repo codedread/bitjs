@@ -12,7 +12,6 @@
 
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('../io/bytestream-worker.js');
-importScripts('archive.js');
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -37,21 +36,22 @@ let totalFilesInArchive = 0;
 
 // Helper functions.
 const info = function (str) {
-  postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+  postMessage({ type: 'info', msg: str });
 };
 const err = function (str) {
-  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+  postMessage({ type: 'error', msg: str });
 };
 const postProgress = function () {
-  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+  postMessage({
+    type: 'progress',
     currentFilename,
     currentFileNumber,
     currentBytesUnarchivedInFile,
     currentBytesUnarchived,
     totalUncompressedBytesInArchive,
     totalFilesInArchive,
-    bytestream.getNumBytesRead(),
-  ));
+    totalCompressedBytesRead: bytestream.getNumBytesRead(),
+  });
 };
 
 // Removes all characters from the first zero-byte in the string onwards.
@@ -146,7 +146,7 @@ const untar = function () {
       currentFileNumber = totalFilesInArchive++;
       currentBytesUnarchivedInFile = oneLocalFile.size;
       currentBytesUnarchived += oneLocalFile.size;
-      postMessage(new bitjs.archive.UnarchiveExtractEvent(oneLocalFile));
+      postMessage({ type: 'extract', unarchivedFile: oneLocalFile });
       postProgress();
     }
   }
@@ -179,7 +179,7 @@ onmessage = function (event) {
     totalFilesInArchive = 0;
     allLocalFiles = [];
 
-    postMessage(new bitjs.archive.UnarchiveStartEvent());
+    postMessage({ type: 'start' });
 
     unarchiveState = UnarchiveState.UNARCHIVING;
 
@@ -191,7 +191,7 @@ onmessage = function (event) {
     try {
       untar();
       unarchiveState = UnarchiveState.FINISHED;
-      postMessage(new bitjs.archive.UnarchiveFinishEvent());
+      postMessage({ type: 'finish', metadata: {} });
     } catch (e) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         // Overrun the buffer.

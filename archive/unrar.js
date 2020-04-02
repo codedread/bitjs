@@ -15,7 +15,6 @@
 importScripts('../io/bitstream-worker.js');
 importScripts('../io/bytestream-worker.js');
 importScripts('../io/bytebuffer-worker.js');
-importScripts('archive.js');
 importScripts('rarvm.js');
 
 const UnarchiveState = {
@@ -41,21 +40,22 @@ let totalFilesInArchive = 0;
 
 // Helper functions.
 const info = function (str) {
-  postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+  postMessage({ type: 'info', msg: str });
 };
 const err = function (str) {
-  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+  postMessage({ type: 'error', msg: str });
 };
 const postProgress = function () {
-  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+  postMessage({
+    type: 'progress',
     currentFilename,
     currentFileNumber,
     currentBytesUnarchivedInFile,
     currentBytesUnarchived,
     totalUncompressedBytesInArchive,
     totalFilesInArchive,
-    parseInt(bytestream.getNumBytesRead(), 10),
-  ));
+    totalCompressedBytesRead: bytestream.getNumBytesRead(),
+  });
 };
 
 // shows a byte value as its hex representation
@@ -1377,7 +1377,7 @@ function unrar() {
       localFile.unrar();
 
       if (localFile.isValid) {
-        postMessage(new bitjs.archive.UnarchiveExtractEvent(localFile));
+        postMessage({ type: 'extract', unarchivedFile: localFile });
         postProgress();
       }
     } else if (localFile.header.packSize == 0 && localFile.header.unpackedSize == 0) {
@@ -1410,7 +1410,7 @@ onmessage = function (event) {
     totalUncompressedBytesInArchive = 0;
     totalFilesInArchive = 0;
     allLocalFiles = [];
-    postMessage(new bitjs.archive.UnarchiveStartEvent());
+    postMessage({ type: 'start' });
   } else {
     bytestream.push(bytes);
   }
@@ -1440,7 +1440,7 @@ onmessage = function (event) {
     try {
       unrar();
       unarchiveState = UnarchiveState.FINISHED;
-      postMessage(new bitjs.archive.UnarchiveFinishEvent());
+      postMessage({ type: 'finish', metadata: {} });
     } catch (e) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         if (logToConsole) {

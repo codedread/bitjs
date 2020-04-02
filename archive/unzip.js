@@ -16,7 +16,6 @@
 importScripts('../io/bitstream-worker.js');
 importScripts('../io/bytebuffer-worker.js');
 importScripts('../io/bytestream-worker.js');
-//importScripts('archive.js');
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -41,21 +40,22 @@ let totalFilesInArchive = 0;
 
 // Helper functions.
 const info = function (str) {
-  postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
+  postMessage({ type: 'info', msg: str });
 };
 const err = function (str) {
-  postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
+  postMessage({ type: 'error', msg: str });
 };
 const postProgress = function () {
-  postMessage(new bitjs.archive.UnarchiveProgressEvent(
+  postMessage({
+    type: 'progress',
     currentFilename,
     currentFileNumber,
     currentBytesUnarchivedInFile,
     currentBytesUnarchived,
     totalUncompressedBytesInArchive,
     totalFilesInArchive,
-    bytestream.getNumBytesRead(),
-  ));
+    totalCompressedBytesRead: bytestream.getNumBytesRead(),
+  });
 };
 
 const zLocalFileHeaderSignature = 0x04034b50;
@@ -547,7 +547,7 @@ function unzip() {
       oneLocalFile.unzip();
 
       if (oneLocalFile.fileData != null) {
-        postMessage(new bitjs.archive.UnarchiveExtractEvent(oneLocalFile));
+        postMessage({ type: 'extract', unarchivedFile: oneLocalFile });
         postProgress();
       }
     }
@@ -644,7 +644,7 @@ function unzip() {
   bytestream = bstream.tee();
 
   unarchiveState = UnarchiveState.FINISHED;
-  postMessage(new bitjs.archive.UnarchiveFinishEvent(metadata));
+  postMessage({ type: 'finish', metadata });
 }
 
 // event.data.file has the first ArrayBuffer.
@@ -670,7 +670,7 @@ onmessage = function (event) {
     currentBytesUnarchived = 0;
     allLocalFiles = [];
 
-    postMessage(new bitjs.archive.UnarchiveStartEvent());
+    postMessage({ type: 'start' });
 
     unarchiveState = UnarchiveState.UNARCHIVING;
 
