@@ -11,7 +11,7 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('../io/bytestream.js');
+importScripts('../io/bytestream-worker.js');
 importScripts('archive.js');
 
 const UnarchiveState = {
@@ -36,26 +36,26 @@ let totalUncompressedBytesInArchive = 0;
 let totalFilesInArchive = 0;
 
 // Helper functions.
-const info = function(str) {
+const info = function (str) {
   postMessage(new bitjs.archive.UnarchiveInfoEvent(str));
 };
-const err = function(str) {
+const err = function (str) {
   postMessage(new bitjs.archive.UnarchiveErrorEvent(str));
 };
-const postProgress = function() {
+const postProgress = function () {
   postMessage(new bitjs.archive.UnarchiveProgressEvent(
-      currentFilename,
-      currentFileNumber,
-      currentBytesUnarchivedInFile,
-      currentBytesUnarchived,
-      totalUncompressedBytesInArchive,
-      totalFilesInArchive,
-      bytestream.getNumBytesRead(),
+    currentFilename,
+    currentFileNumber,
+    currentBytesUnarchivedInFile,
+    currentBytesUnarchived,
+    totalUncompressedBytesInArchive,
+    totalFilesInArchive,
+    bytestream.getNumBytesRead(),
   ));
 };
 
 // Removes all characters from the first zero-byte in the string onwards.
-const readCleanString = function(bstr, numBytes) {
+const readCleanString = function (bstr, numBytes) {
   const str = bstr.readString(numBytes);
   const zIndex = str.indexOf(String.fromCharCode(0));
   return zIndex != -1 ? str.substr(0, zIndex) : str;
@@ -122,12 +122,12 @@ class TarLocalFile {
         bstream.readBytes(remaining);
       }
     } else if (this.typeflag == 5) {
-       info("  This is a directory.")
+      info("  This is a directory.")
     }
   }
 }
 
-const untar = function() {
+const untar = function () {
   let bstream = bytestream.tee();
 
   // While we don't encounter an empty block, keep making TarLocalFiles.
@@ -159,7 +159,7 @@ const untar = function() {
 
 // event.data.file has the first ArrayBuffer.
 // event.data.bytes has all subsequent ArrayBuffers.
-onmessage = function(event) {
+onmessage = function (event) {
   const bytes = event.data.file || event.data.bytes;
   logToConsole = !!event.data.logToConsole;
 
@@ -178,7 +178,7 @@ onmessage = function(event) {
     totalUncompressedBytesInArchive = 0;
     totalFilesInArchive = 0;
     allLocalFiles = [];
-  
+
     postMessage(new bitjs.archive.UnarchiveStartEvent());
 
     unarchiveState = UnarchiveState.UNARCHIVING;

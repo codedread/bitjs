@@ -15,7 +15,7 @@
 // This file expects to be invoked as a Worker (see onmessage below).
 importScripts('../io/bitstream-worker.js');
 importScripts('../io/bytebuffer.js');
-importScripts('../io/bytestream.js');
+importScripts('../io/bytestream-worker.js');
 importScripts('archive.js');
 
 const UnarchiveState = {

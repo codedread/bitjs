@@ -11,9 +11,10 @@ A set of tools to handle binary data in JS (using Typed Arrays).
 This namespace includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
 ```javascript
-var bstream = new bitjs.io.BitStream(someArrayBuffer, true, offset, length);
-var crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
-var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
+import {BitStream} from './bitjs/io/bitstream.js';
+const bstream = new BitStream(someArrayBuffer, true, offset, length);
+const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
+const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
 ### bitjs.archive
@@ -21,7 +22,7 @@ var flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not adv
 This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
 
 ```javascript
-var unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
+const unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
 unzipper.addEventListener('finish', displayZipContents);
@@ -44,7 +45,7 @@ function displayZipContents() {
 The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
 
 ```javascript
-var unzipper = new bitjs.archive.Unzipper(anArrayBufferWithStartingBytes);
+const unzipper = new bitjs.archive.Unzipper(anArrayBufferWithStartingBytes);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
 unzipper.addEventListener('finish', displayZipContents);
@@ -78,7 +79,7 @@ convertWebPtoPNG(webpBuffer).then(pngBuf => {
 This namespace includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
 
 ```javascript
-let mimeType = bitjs.file.findMimeType(someArrayBuffer);
+const mimeType = bitjs.file.findMimeType(someArrayBuffer);
 ```
 
 ## Tests

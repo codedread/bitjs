@@ -287,5 +287,4 @@ bitjs.io.BitStream =
   }
 
   return BitStream;
-
 })();

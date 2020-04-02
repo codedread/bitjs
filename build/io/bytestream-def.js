@@ -1,5 +1,3 @@
-// THIS IS A GENERATED FILE!  DO NOT EDIT, INSTEAD EDIT THE FILE IN bitjs/build/io.
-export const ByteStream =
 /*
  * bytestream-def.js
  *
@@ -279,7 +277,7 @@ export const ByteStream =
 
     /**
      * Feeds more bytes into the back of the stream.
-     * @param {ArrayBuffer} ab 
+     * @param {ArrayBuffer} ab
      */
     push(ab) {
       if (!(ab instanceof ArrayBuffer)) {

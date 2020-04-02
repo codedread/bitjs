@@ -283,5 +283,4 @@
   }
 
   return BitStream;
-
 })();

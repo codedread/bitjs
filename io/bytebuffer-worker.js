@@ -1,5 +1,7 @@
 // THIS IS A GENERATED FILE!  DO NOT EDIT, INSTEAD EDIT THE FILE IN bitjs/build/io.
-export const ByteBuffer =
+var bitjs = bitjs || {};
+bitjs.io = bitjs.io || {};
+bitjs.io.ByteBuffer =
 /*
  * bytebuffer-def.js
  *

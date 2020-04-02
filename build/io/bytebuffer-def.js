@@ -1,5 +1,3 @@
-// THIS IS A GENERATED FILE!  DO NOT EDIT, INSTEAD EDIT THE FILE IN bitjs/build/io.
-export const ByteBuffer =
 /*
  * bytebuffer-def.js
  *

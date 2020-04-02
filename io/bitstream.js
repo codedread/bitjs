@@ -285,5 +285,4 @@ export const BitStream =
   }
 
   return BitStream;
-
 })();
