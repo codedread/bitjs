@@ -2,16 +2,16 @@
 
 ## Introduction
 
-A set of tools to handle binary data in JS (using Typed Arrays).
+A set of JavaScript modules to handle binary data in JS (using Typed Arrays).
 
 ## Example Usage
 
 ### bitjs.io
 
-This namespace includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
+This package includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
 ```javascript
-import {BitStream} from './bitjs/io/bitstream.js';
+import { BitStream } from './bitjs/io/bitstream.js';
 const bstream = new BitStream(someArrayBuffer, true, offset, length);
 const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
@@ -19,10 +19,11 @@ const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not a
 
 ### bitjs.archive
 
-This namespace includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
+This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
 
 ```javascript
-const unzipper = new bitjs.archive.Unzipper(zipFileArrayBuffer);
+import { Unzipper } from './bitjs/archive/archive.js';
+const unzipper = new Unzipper(zipFileArrayBuffer);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
 unzipper.addEventListener('finish', displayZipContents);
@@ -45,7 +46,8 @@ function displayZipContents() {
 The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
 
 ```javascript
-const unzipper = new bitjs.archive.Unzipper(anArrayBufferWithStartingBytes);
+import { Unzipper } from './bitjs/archive/archive.js';
+const unzipper = new Unzipper(anArrayBufferWithStartingBytes);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
 unzipper.addEventListener('finish', displayZipContents);
@@ -60,11 +62,10 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
 ### bitjs.image
 
-This namespace includes code for dealing with binary images.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
+This package includes code for dealing with binary images.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
 
 ```javascript
-import {convertWebPtoPNG, convertWebPtoJPG} from './bitjs/image/webp-shim/webp-shim.js';
-
+import { convertWebPtoPNG, convertWebPtoJPG } from './bitjs/image/webp-shim/webp-shim.js';
 // convertWebPtoPNG() takes in an ArrayBuffer containing the bytes of a WebP
 // image and returns a Promise that resolves with an ArrayBuffer containing the
 // bytes of an equivalent PNG image.
@@ -76,16 +77,18 @@ convertWebPtoPNG(webpBuffer).then(pngBuf => {
 
 ### bitjs.file
 
-This namespace includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
+This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
 
 ```javascript
-const mimeType = bitjs.file.findMimeType(someArrayBuffer);
+import { findMimeType } from './bitjs/file/sniffer.js';
+const mimeType = findMimeType(someArrayBuffer);
 ```
 
 ## Tests
 
-* [bitjs.io tests](https://codedread.github.io/bitjs/tests/io-test.html)
 * [bitjs.archive tests](https://codedread.github.io/bitjs/tests/archive-test.html)
+* [bitjs.file tests](https://codedread.github.io/bitjs/tests/file-sniifer-test.html)
+* [bitjs.io tests](https://codedread.github.io/bitjs/tests/io-test.html)
 
 ## Reference
 
