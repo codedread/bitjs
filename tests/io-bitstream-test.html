@@ -2,17 +2,14 @@
 <html>
 <head>
     <title>Unit tests for bitjs.io.BitStream</title>
-    <script src="muther.js"></script>
-    <script src="../io/bitstream-worker.js"></script>
 </head>
 <body>
-<script>
-  const assert = muther.assert;
-  const assertEquals = muther.assertEquals;
-  const assertThrows = muther.assertThrows;
+<script type="module">
+  import { BitStream } from '../io/bitstream.js';
+  import { assert, assertEquals, assertThrows, runTests } from './muther.js';
 
   let array;
-  muther.go({
+  runTests({
     setUp: function() {
       array = new Uint8Array(4);
       for (let i = 0; i < 4; ++i) {
@@ -22,7 +19,7 @@
 
     tests: {
       testBitPeekAndRead_RTL() {
-        const stream = new bitjs.io.BitStream(array.buffer, true /* rtl */);
+        const stream = new BitStream(array.buffer, true /* rtl */);
         // 0110 = 2 + 4 = 6
         assertEquals(6, stream.readBits(4));
         // 0101 011 = 1 + 2 + 8 + 32 = 43
@@ -37,7 +34,7 @@
       },
 
       testBitPeekAndRead_LTR() {
-        const stream = new bitjs.io.BitStream(array.buffer, false /* rtl */);
+        const stream = new BitStream(array.buffer, false /* rtl */);
 
         // 0101 = 2 + 4 = 6
         assertEquals(5, stream.peekBits(4));
@@ -55,7 +52,7 @@
 
       testBitStreamReadBytes() {
         array[1] = Number('0b01010110');
-        const stream = new bitjs.io.BitStream(array.buffer);
+        const stream = new BitStream(array.buffer);
 
         let twoBytes = stream.peekBytes(2);
         assert(twoBytes instanceof Uint8Array);

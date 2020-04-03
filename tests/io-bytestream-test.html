@@ -3,23 +3,21 @@
 <head>
     <title>Unit tests for bitjs.io.ByteStreamBitStream</title>
     <script src="muther.js"></script>
-    <script src="../io/bytestream-worker.js"></script>
 </head>
 <body>
-<script>
-  const assert = muther.assert;
-  const assertEquals = muther.assertEquals;
-  const assertThrows = muther.assertThrows;
+<script type="module">
+  import { ByteStream } from '../io/bytestream.js';
+  import { assertEquals, assertThrows, runTests } from './muther.js';
 
   let array;
-  muther.go({
+  runTests({
     setUp: function() {
       array = new Uint8Array(4);
     },
     tests: {
       testPeekAndRead_SingleByte() {
         array[0] = 192;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(192, stream.peekNumber(1));
         assertEquals(192, stream.readNumber(1));
       },
@@ -27,7 +25,7 @@
       testPeekAndRead_MultiByteNumber() {
         array[0] = (1234 & 0xff);
         array[1] = ((1234 >> 8) & 0xff);
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(1234, stream.peekNumber(4));
         assertEquals(1234, stream.readNumber(4));
         assertThrows(() => stream.readNumber(1),
@@ -36,14 +34,14 @@
 
       testPeekAndRead_SingleByteSignedNumber() {
         array[0] = -120;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(-120, stream.peekSignedNumber(1));
         assertEquals(-120, stream.readSignedNumber(1));
       },
 
       testPeekAndRead_SingleByteNegativeNumber() {
         array[0] = -128;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(-128, stream.peekSignedNumber(1));
         assertEquals(-128, stream.readSignedNumber(1));
       },
@@ -51,7 +49,7 @@
       testPeekAndRead_MultiByteSignedNumber() {
         array[0] = (1234 & 0xff);
         array[1] = ((1234 >> 8) & 0xff);
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(1234, stream.peekSignedNumber(2));
         assertEquals(1234, stream.readSignedNumber(2));
       },
@@ -59,19 +57,19 @@
       testPeekAndRead_MultiByteNegativeNumber() {
         array[0] = (-1234 & 0xff);
         array[1] = ((-1234 >> 8) & 0xff);
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertEquals(-1234, stream.peekSignedNumber(2));
         assertEquals(-1234, stream.readSignedNumber(2));
       },
 
       testByteStreamReadBytesPastEnd() {
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertThrows(() => stream.readBytes(5),
             'Did not throw when trying to readBytes past end of stream');
       },
 
       testReadStringPastEnd() {
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
         assertThrows(() => stream.readString(5),
             'Did not throw when trying to readString past end of stream');
       },
@@ -79,7 +77,7 @@
       testPushThenReadNumber() {
         array = new Uint8Array(1);
         array[0] = (1234 & 0xff);
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const anotherArray = new Uint8Array(1);
         anotherArray[0] = ((1234 >> 8) & 0xff);
@@ -90,7 +88,7 @@
 
       testReadBytesThenPushThenReadByte() {
         for (let i = 0; i < 4; ++i) array[i] = i;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const bytes = stream.readBytes(4);
         assertThrows(() => stream.readBytes(1),
@@ -105,7 +103,7 @@
 
       testPushThenReadBytesAcrossOnePage() {
         for (let i = 0; i < 4; ++i) array[i] = i;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const anotherArray = new Uint8Array(1);
         anotherArray[0] = 4;
@@ -120,7 +118,7 @@
 
       testPushThenReadBytesAcrossMultiplePages() {
         for (let i = 0; i < 4; ++i) array[i] = i;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const anotherArray = new Uint8Array(4);
         for (let i = 0; i < 4; ++i) anotherArray[i] = i + 4;
@@ -140,7 +138,7 @@
 
       testPushThenReadStringAcrossMultiplePages() {
         for (let i = 0; i < 4; ++i) array[i] = 65 + i;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const anotherArray = new Uint8Array(4);
         for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;
@@ -157,7 +155,7 @@
 
       testTee() {
         for (let i = 0; i < 4; ++i) array[i] = 65 + i;
-        const stream = new bitjs.io.ByteStream(array.buffer);
+        const stream = new ByteStream(array.buffer);
 
         const anotherArray = new Uint8Array(4);
         for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;

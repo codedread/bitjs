@@ -2,15 +2,11 @@
 <html>
 <head>
     <title>Unit tests for bitjs.io.ByteStreamBitStream</title>
-    <script src="muther.js"></script>
 </head>
 <body>
 <script type="module">
   import { findMimeType } from '../file/sniffer.js';
-
-  const assert = muther.assert;
-  const assertEquals = muther.assertEquals;
-  const assertThrows = muther.assertThrows;
+  import { assertEquals, runTests } from './muther.js';
 
   function sniffTest(mimeType, sig) {
     const array = new Uint8Array(16);
@@ -18,7 +14,7 @@
     assertEquals(mimeType, findMimeType(array.buffer));
   }
 
-  muther.go({
+  runTests({
     setUp: function() {},
     tests: {
       testBMP() { sniffTest('image/bmp', [0x42, 0x4D, 0x46]); },

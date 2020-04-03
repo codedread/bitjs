@@ -7,8 +7,8 @@
  */
 
 import { getUnarchiver, UnarchiveEventType } from '../archive/archive.js';
+import { assertEquals, runTests } from './muther.js';
 
-const assertEquals = muther.assertEquals;
 const testInputs = {
   'testUnzipDeflate': 'archive-testfiles/test-unzip-deflate.json',
   'testUnzipStore': 'archive-testfiles/test-unzip-store.json',
@@ -31,7 +31,6 @@ for (let testName in testInputs) {
       const scriptEl = document.createElement('script');
       scriptEl.setAttribute('src', testInputFilename);
       scriptEl.addEventListener('load', evt => {
-        debugger;
         const testFile = window.archiveTestFile;
         try {
           const archivedFile = new Uint8Array(
@@ -63,4 +62,4 @@ for (let testName in testInputs) {
   }
 }
 
-muther.go(testSuite);
+runTests(testSuite);

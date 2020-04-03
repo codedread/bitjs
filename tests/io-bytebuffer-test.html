@@ -2,21 +2,18 @@
 <html>
 <head>
     <title>Unit tests for bitjs.io.ByteBufferBitStream</title>
-    <script src="muther.js"></script>
-    <script src="../io/bytebuffer-worker.js"></script>
-    <script src="../io/bytestream-worker.js"></script>
 </head>
 <body>
-<script>
-  const assert = muther.assert;
-  const assertEquals = muther.assertEquals;
-  const assertThrows = muther.assertThrows;
+<script type="module">
+  import { ByteBuffer } from '../io/bytebuffer.js';
+  import { ByteStream } from '../io/bytestream.js';
+  import { assertEquals, assertThrows, runTests } from './muther.js';
 
   // TODO: Only test ByteBuffer here.
   let buffer;
-  muther.go({
+  runTests({
     setUp: function() {
-      buffer = new bitjs.io.ByteBuffer(4);
+      buffer = new ByteBuffer(4);
     },
     tests: {
       testWrite_SingleByte() {
@@ -31,7 +28,7 @@
 
       testWrite_MultiByteNumber() {
         buffer.writeNumber(1234, 4);
-        const stream = new bitjs.io.ByteStream(buffer.data.buffer);
+        const stream = new ByteStream(buffer.data.buffer);
         assertEquals(4, buffer.ptr);
       },
 
