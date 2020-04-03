@@ -1,0 +1,27 @@
+{
+  "name": "@codedread/bitjs",
+  "version": "0.1.0",
+  "description": "Binary Tools for JavaScript",
+  "homepage": "https://github.com/codedread/bitjs",
+  "author": "Jeff Schiller",
+  "license": "MIT",
+  "keywords": [
+    "binary",
+    "javascript",
+    "archive",
+    "pkzip",
+    "zip",
+    "rar",
+    "tar",
+    "unzip",
+    "unrar",
+    "untar"
+  ],
+  "main": "./index.js",
+  "type": "module",
+  "exports": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codedread/bitjs"
+  }
+}
