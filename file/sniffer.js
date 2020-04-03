@@ -6,11 +6,6 @@
  * Copyright(c) 2020 Google Inc.
  */
 
-var bitjs = bitjs || {};
-bitjs.file = bitjs.file || {};
-
-(function() {
-
 // A selection from https://en.wikipedia.org/wiki/List_of_file_signatures.
 // Mapping of MIME type to magic numbers.  Each file type can have multiple signatures.
 // '??' is used as a placeholder value.
@@ -79,7 +74,7 @@ for (const mimeType in fileSignatures) {
  * @param {ArrayBuffer} ab
  * @return {string} The MIME type of the buffer, or undefined.
  */
-bitjs.file.findMimeType = function(ab) {
+export function findMimeType(ab) {
   const depth = ab.byteLength < maxDepth ? ab.byteLength : maxDepth;
   const arr = new Uint8Array(ab).subarray(0, depth);
   let curNode = root;
@@ -94,5 +89,3 @@ bitjs.file.findMimeType = function(ab) {
     if (curNode.mimeType) return curNode.mimeType;
   }
 };
-
-})();
