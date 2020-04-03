@@ -22,6 +22,16 @@
   "exports": "./index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codedread/bitjs"
+    "url": "git+https://github.com/codedread/bitjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codedread/bitjs/issues"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
