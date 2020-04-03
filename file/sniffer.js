@@ -88,4 +88,4 @@ export function findMimeType(ab) {
     curNode = curNode.children[byte];
     if (curNode.mimeType) return curNode.mimeType;
   }
-};
+}

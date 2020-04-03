@@ -8,6 +8,8 @@
  * Copyright(c) 2011 Google Inc.
  */
 
+import { findMimeType } from '../file/sniffer.js';
+
 /**
  * An unarchive event.
  */
@@ -381,12 +383,10 @@ export function getUnarchiver(ab, opt_pathToBitJS) {
 
   let unarchiver = null;
   const pathToBitJS = opt_pathToBitJS || '';
-  const h = new Uint8Array(ab, 0, 10);
-
-  // TODO: Use bitjs.file.sniffer.
-  if (h[0] == 0x52 && h[1] == 0x61 && h[2] == 0x72 && h[3] == 0x21) { // Rar!
+  const mimeType = findMimeType(ab);
+  if (mimeType === 'application/x-rar-compressed') { // Rar!
     unarchiver = new Unrarrer(ab, pathToBitJS);
-  } else if (h[0] == 0x50 && h[1] == 0x4B) { // PK (Zip)
+  } else if (mimetype === 'application/zip') { // PK (Zip)
     unarchiver = new Unzipper(ab, pathToBitJS);
   } else { // Try with tar
     unarchiver = new Untarrer(ab, pathToBitJS);
