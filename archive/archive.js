@@ -154,13 +154,24 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
 /**
  * Base class for all Unarchivers.
+ * TODO: When EventTarget constructors are broadly supported, make this extend
+ *     EventTarget and remove event listener code.
+ *     https://caniuse.com/#feat=mdn-api_eventtarget_eventtarget
  */
 export class Unarchiver {
   /**
    * @param {ArrayBuffer} arrayBuffer The Array Buffer.
+   * @param {Object|string} options An optional object of options, or a string representing where
+   *     the BitJS files are located.  Available options:
+   *       'pathToBitJS': A string indicating where the BitJS files are located.
+   *       'debug': A boolean where true indicates that the archivers should log debug output.
    * @param {string} opt_pathToBitJS Optional string for where the BitJS files are located.
    */
-  constructor(arrayBuffer, opt_pathToBitJS) {
+  constructor(arrayBuffer, options = {}) {
+    if (typeof options === 'string') {
+      options = { 'pathToBitJS': options };
+    }
+
     /**
      * The ArrayBuffer object.
      * @type {ArrayBuffer}
@@ -173,7 +184,10 @@ export class Unarchiver {
      * @type {string}
      * @private
      */
-    this.pathToBitJS_ = opt_pathToBitJS || '/';
+    this.pathToBitJS_ = options.pathToBitJS || '/';
+
+    /** @orivate {boolean} */
+    this.debugMode_ = !!(options.debug);
 
     /**
      * A map from event type to an array of listeners.
@@ -306,11 +320,13 @@ export class Unarchiver {
       const ab = this.ab;
       this.worker_.postMessage({
         file: ab,
-        logToConsole: false,
+        logToConsole: this.debugMode_,
       });
       this.ab = null;
     }
   }
+
+  // TODO: Create a startSync() method that does not use a worker for Node.
 
   /**
    * Adds more bytes to the unarchiver's Worker thread.
@@ -337,8 +353,8 @@ export class Unarchiver {
  * Unzipper
  */
 export class Unzipper extends Unarchiver {
-  constructor(arrayBuffer, opt_pathToBitJS) {
-    super(arrayBuffer, opt_pathToBitJS);
+  constructor(arrayBuffer, options) {
+    super(arrayBuffer, options);
   }
 
   getScriptFileName() { return 'archive/unzip.js'; }
@@ -349,8 +365,8 @@ export class Unzipper extends Unarchiver {
  * Unrarrer
  */
 export class Unrarrer extends Unarchiver {
-  constructor(arrayBuffer, opt_pathToBitJS) {
-    super(arrayBuffer, opt_pathToBitJS);
+  constructor(arrayBuffer, options) {
+    super(arrayBuffer, options);
   }
 
   getScriptFileName() { return 'archive/unrar.js'; }
@@ -362,8 +378,8 @@ export class Unrarrer extends Unarchiver {
  * @constructor
  */
 export class Untarrer extends Unarchiver {
-  constructor(arrayBuffer, opt_pathToBitJS) {
-    super(arrayBuffer, opt_pathToBitJS);
+  constructor(arrayBuffer, options) {
+    super(arrayBuffer, options);
   }
 
   getScriptFileName() { return 'archive/untar.js'; };
@@ -373,23 +389,24 @@ export class Untarrer extends Unarchiver {
  * Factory method that creates an unarchiver based on the byte signature found
  * in the arrayBuffer.
  * @param {ArrayBuffer} ab
- * @param {string=} opt_pathToBitJS Path to the unarchiver script files.
+ * @param {Object|string} options An optional object of options, or a string representing where
+ *     the path to the unarchiver script files.
  * @return {Unarchiver}
  */
-export function getUnarchiver(ab, opt_pathToBitJS) {
+export function getUnarchiver(ab, options = {}) {
   if (ab.byteLength < 10) {
     return null;
   }
 
   let unarchiver = null;
-  const pathToBitJS = opt_pathToBitJS || '';
   const mimeType = findMimeType(ab);
+
   if (mimeType === 'application/x-rar-compressed') { // Rar!
-    unarchiver = new Unrarrer(ab, pathToBitJS);
-  } else if (mimetype === 'application/zip') { // PK (Zip)
-    unarchiver = new Unzipper(ab, pathToBitJS);
+    unarchiver = new Unrarrer(ab, options);
+  } else if (mimeType === 'application/zip') { // PK (Zip)
+    unarchiver = new Unzipper(ab, options);
   } else { // Try with tar
-    unarchiver = new Untarrer(ab, pathToBitJS);
+    unarchiver = new Untarrer(ab, options);
   }
   return unarchiver;
 }
