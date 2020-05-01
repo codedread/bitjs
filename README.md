@@ -2,20 +2,15 @@
 
 ## Introduction
 
-A set of JavaScript modules to handle binary data in JS (using Typed Arrays).
+A set of JavaScript modules to handle binary data in JS (using Typed Arrays).  Includes:
+
+  * bitjs/archive: Unarchiving files (unzip, unrar, untar) in the browser, implemented as Web Workers and allowing progressively unarchiving while streaming.
+  * bitjs/file: Detect the type of file from its binary signature.
+  * bitjs/image: Conversion of WebP images to PNG or JPEG.
+  * bitjs/io: Low-level classes for interpreting binary data (BitStream, ByteStream).  For example, reading or peeking at N bits at a time.
+
 
 ## Example Usage
-
-### bitjs.io
-
-This package includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
-
-```javascript
-import { BitStream } from './bitjs/io/bitstream.js';
-const bstream = new BitStream(someArrayBuffer, true, offset, length);
-const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
-const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
-```
 
 ### bitjs.archive
 
@@ -43,7 +38,7 @@ function displayZipContents() {
 }
 ```
 
-The unarchivers also support streaming, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
+The unarchivers also support progressively decoding while streaming the file, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
 
 ```javascript
 import { Unzipper } from './bitjs/archive/archive.js';
@@ -58,6 +53,15 @@ unzipper.update(anArrayBufferWithMoreBytes);
 ...
 // after some more time
 unzipper.update(anArrayBufferWithYetMoreBytes);
+```
+
+### bitjs.file
+
+This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
+
+```javascript
+import { findMimeType } from './bitjs/file/sniffer.js';
+const mimeType = findMimeType(someArrayBuffer);
 ```
 
 ### bitjs.image
@@ -75,13 +79,15 @@ convertWebPtoPNG(webpBuffer).then(pngBuf => {
 });
 ```
 
-### bitjs.file
+### bitjs.io
 
-This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
+This package includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
 ```javascript
-import { findMimeType } from './bitjs/file/sniffer.js';
-const mimeType = findMimeType(someArrayBuffer);
+import { BitStream } from './bitjs/io/bitstream.js';
+const bstream = new BitStream(someArrayBuffer, true, offset, length);
+const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
+const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
 ## Tests
