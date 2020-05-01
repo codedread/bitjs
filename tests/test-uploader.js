@@ -36,11 +36,11 @@ function init() {
 function getArchivedFile(evt) {
   const filelist = evt.target.files;
   const fr = new FileReader();
-  fr.onload = function() {
-      const arr = new Uint8Array(fr.result);
-      archivedFileAsText = btoa(arr);
-      archiveUploaderEl.setAttribute('disabled', 'true');
-      unarchiveUploaderEl.removeAttribute('disabled');
+  fr.onload = function () {
+    const arr = new Uint8Array(fr.result);
+    archivedFileAsText = btoa(arr);
+    archiveUploaderEl.setAttribute('disabled', 'true');
+    unarchiveUploaderEl.removeAttribute('disabled');
   };
   fr.readAsArrayBuffer(filelist[0]);
 }
@@ -48,11 +48,11 @@ function getArchivedFile(evt) {
 function getUnarchivedFile(evt) {
   const filelist = evt.target.files;
   const fr = new FileReader();
-  fr.onload = function() {
-      const arr = new Uint8Array(fr.result);
-      unarchivedFileAsText = btoa(arr);
-      unarchiveUploaderEl.setAttribute('disabled', 'true');
-      output();
+  fr.onload = function () {
+    const arr = new Uint8Array(fr.result);
+    unarchivedFileAsText = btoa(arr);
+    unarchiveUploaderEl.setAttribute('disabled', 'true');
+    output();
   };
   fr.readAsArrayBuffer(filelist[0]);
 }
@@ -62,7 +62,7 @@ function output() {
   json += '  "archivedFile": "' + archivedFileAsText + '",\n';
   json += '  "unarchivedFile": "' + unarchivedFileAsText + '"\n';
   json += '}';
-  window.open('data:application/json;utf8,' + json);
+  document.getElementById('json').textContent = json;
 }
 
 // To turn the base64 string back into bytes:

@@ -31,7 +31,7 @@ let allLocalFiles = null;
 let logToConsole = false;
 
 // Progress variables.
-let currentFilename = "";
+let currentFilename = '';
 let currentFileNumber = 0;
 let currentBytesUnarchivedInFile = 0;
 let currentBytesUnarchived = 0;
@@ -64,6 +64,7 @@ const zCentralFileHeaderSignature = 0x02014b50;
 const zDigitalSignatureSignature = 0x05054b50;
 const zEndOfCentralDirSignature = 0x06054b50;
 const zEndOfCentralDirLocatorSignature = 0x07064b50;
+const zDataDescriptorSignature = 0x08074b50;
 
 // mask for getting the Nth bit (zero-based)
 const BIT = [0x01, 0x02, 0x04, 0x08,
@@ -99,48 +100,95 @@ class ZipLocalFile {
     this.extraField = null;
     if (this.extraFieldLength > 0) {
       this.extraField = bstream.readString(this.extraFieldLength);
-      //info(" extra field=" + this.extraField);
     }
 
-    // read in the compressed data
+    // Data descriptor is present if this bit is set, compressed size should be zero.
+    this.hasDataDescriptor = ((this.generalPurpose & BIT[3]) !== 0);
+    if (this.hasDataDescriptor &&
+      (this.crc32 !== 0 || this.compressedSize !== 0 || this.uncompressedSize !== 0)) {
+      err('Zip local file with a data descriptor and non-zero crc/compressedSize/uncompressedSize');
+    }
+
+    // Read in the compressed data if we have no data descriptor.
     this.fileData = null;
-    if (this.compressedSize > 0) {
-      this.fileData = new Uint8Array(bstream.readBytes(this.compressedSize));
+    let descriptorSize = 0;
+    if (this.hasDataDescriptor) {
+      // Hold on to a reference to the bstream, since that is where the compressed file data begins.
+      let savedBstream = bstream.tee();
+
+      // Seek ahead one byte at a time, looking for the next local file header signature or the end
+      // of all local files.
+      let foundDataDescriptor = false;
+      let numBytesSeeked = 0;
+      while (!foundDataDescriptor) {
+        while (bstream.peekNumber(4) !== zLocalFileHeaderSignature &&
+          bstream.peekNumber(4) !== zArchiveExtraDataSignature &&
+          bstream.peekNumber(4) !== zCentralFileHeaderSignature) {
+          numBytesSeeked++;
+          bstream.readBytes(1);
+        }
+
+        // Copy all the read bytes into a buffer and examine the last 16 bytes to see if they are the
+        // data descriptor.
+        let bufferedByteArr = savedBstream.peekBytes(numBytesSeeked);
+        const descriptorStream = new bitjs.io.ByteStream(bufferedByteArr.buffer, numBytesSeeked - 16, 16);
+        const maybeDescriptorSig = descriptorStream.readNumber(4);
+        const maybeCrc32 = descriptorStream.readNumber(4);
+        const maybeCompressedSize = descriptorStream.readNumber(4);
+        const maybeUncompressedSize = descriptorStream.readNumber(4);
+
+        // From the PKZIP App Note: "The signature value 0x08074b50 is also used by some ZIP
+        // implementations as a marker for the Data Descriptor record".
+        if (maybeDescriptorSig === zDataDescriptorSignature) {
+          if (maybeCompressedSize === (numBytesSeeked - 16)) {
+            foundDataDescriptor = true;
+            descriptorSize = 16;
+          }
+        } else if (maybeCompressedSize === (numBytesSeeked - 12)) {
+          foundDataDescriptor = true;
+          descriptorSize = 12;
+        }
+
+        if (foundDataDescriptor) {
+          this.crc32 = maybeCrc32;
+          this.compressedSize = maybeCompressedSize;
+          this.uncompressedSize = maybeUncompressedSize;
+        }
+      }
+      bstream = savedBstream;
     }
 
-    // TODO: deal with data descriptor if present (we currently assume no data descriptor!)
-    // "This descriptor exists only if bit 3 of the general purpose bit flag is set"
-    // But how do you figure out how big the file data is if you don't know the compressedSize
-    // from the header?!?
-    if ((this.generalPurpose & BIT[3]) != 0) {
-      this.crc32 = bstream.readNumber(4);
-      this.compressedSize = bstream.readNumber(4);
-      this.uncompressedSize = bstream.readNumber(4);
-    }
+    this.fileData = new Uint8Array(bstream.readBytes(this.compressedSize));
+    bstream.readBytes(descriptorSize);
 
     // Now that we have all the bytes for this file, we can print out some information.
     if (logToConsole) {
-      info("Zip Local File Header:");
-      info(" version=" + this.version);
-      info(" general purpose=" + this.generalPurpose);
-      info(" compression method=" + this.compressionMethod);
-      info(" last mod file time=" + this.lastModFileTime);
-      info(" last mod file date=" + this.lastModFileDate);
-      info(" crc32=" + this.crc32);
-      info(" compressed size=" + this.compressedSize);
-      info(" uncompressed size=" + this.uncompressedSize);
-      info(" file name length=" + this.fileNameLength);
-      info(" extra field length=" + this.extraFieldLength);
-      info(" filename = '" + this.filename + "'");
+      info('Zip Local File Header:');
+      info(` version=${this.version}`);
+      info(` general purpose=${this.generalPurpose}`);
+      info(` compression method=${this.compressionMethod}`);
+      info(` last mod file time=${this.lastModFileTime}`);
+      info(` last mod file date=${this.lastModFileDate}`);
+      info(` crc32=${this.crc32}`);
+      info(` compressed size=${this.compressedSize}`);
+      info(` uncompressed size=${this.uncompressedSize}`);
+      info(` file name length=${this.fileNameLength}`);
+      info(` extra field length=${this.extraFieldLength}`);
+      info(` filename = '${this.filename}'`);
+      info(` hasDataDescriptor = ${this.hasDataDescriptor}`);
     }
   }
 
   // determine what kind of compressed data we have and decompress
   unzip() {
+    if (!this.fileData) {
+      err('unzip() called on a file with out compressed file data');
+    }
+
     // Zip Version 1.0, no compression (store only)
     if (this.compressionMethod == 0) {
       if (logToConsole) {
-        info("ZIP v" + this.version + ", store only: " + this.filename + " (" + this.compressedSize + " bytes)");
+        info(`ZIP v${this.version}, store only: ${this.filename} (${this.compressedSize} bytes)`);
       }
       currentBytesUnarchivedInFile = this.compressedSize;
       currentBytesUnarchived += this.compressedSize;
@@ -148,12 +196,14 @@ class ZipLocalFile {
     // version == 20, compression method == 8 (DEFLATE)
     else if (this.compressionMethod == 8) {
       if (logToConsole) {
-        info("ZIP v2.0, DEFLATE: " + this.filename + " (" + this.compressedSize + " bytes)");
+        info(`ZIP v2.0, DEFLATE: ${this.filename} (${this.compressedSize} bytes)`);
       }
       this.fileData = inflate(this.fileData, this.uncompressedSize);
     }
     else {
-      err("UNSUPPORTED VERSION/FORMAT: ZIP v" + this.version + ", compression method=" + this.compressionMethod + ": " + this.filename + " (" + this.compressedSize + " bytes)");
+      err(`UNSUPPORTED VERSION/FORMAT: ZIP v${this.version}, ` +
+        `compression method=${this.compressionMethod}: ` +
+        `${this.filename} (${this.compressedSize} bytes)`);
       this.fileData = null;
     }
   }
@@ -165,7 +215,7 @@ class ZipLocalFile {
 function getHuffmanCodes(bitLengths) {
   // ensure bitLengths is an array containing at least one element
   if (typeof bitLengths != typeof [] || bitLengths.length < 1) {
-    err("Error! getHuffmanCodes() called with an invalid array");
+    err('Error! getHuffmanCodes() called with an invalid array');
     return null;
   }
 
@@ -179,7 +229,7 @@ function getHuffmanCodes(bitLengths) {
     const length = bitLengths[i];
     // test to ensure each bit length is a positive, non-zero number
     if (typeof length != typeof 1 || length < 0) {
-      err("bitLengths contained an invalid number in getHuffmanCodes(): " + length + " of type " + (typeof length));
+      err(`bitLengths contained an invalid number in getHuffmanCodes(): ${length} of type ${typeof length}`);
       return null;
     }
     // increment the appropriate bitlength count
@@ -281,8 +331,8 @@ function decodeSymbol(bstream, hcTable) {
       break;
     }
     if (len > hcTable.maxLength) {
-      err("Bit stream out of sync, didn't find a Huffman Code, length was " + len +
-        " and table only max code length of " + hcTable.maxLength);
+      err(`Bit stream out of sync, didn't find a Huffman Code, length was ${len} ` +
+        `and table only max code length of ${hcTable.maxLength}`);
       break;
     }
   }
@@ -508,7 +558,7 @@ function inflate(compressedData, numDecompressedBytes) {
       const hcDistanceTable = getHuffmanCodes(distanceCodeLengths);
       blockSize = inflateBlockData(bstream, hcLiteralTable, hcDistanceTable, buffer);
     } else { // error
-      err("Error! Encountered deflate block of type 3");
+      err('Error! Encountered deflate block of type 3');
       return null;
     }
 
@@ -523,11 +573,13 @@ function inflate(compressedData, numDecompressedBytes) {
   return buffer.data;
 }
 
-function unzip() {
+function archiveUnzip() {
   let bstream = bytestream.tee();
 
-  // loop until we don't see any more local files
+  // loop until we don't see any more local files or we find a data descriptor.
   while (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
+    // Note that this could throw an error if the bstream overflows, which is caught in the
+    // message handler.
     const oneLocalFile = new ZipLocalFile(bstream);
     // this should strip out directories/folders
     if (oneLocalFile && oneLocalFile.uncompressedSize > 0 && oneLocalFile.fileData) {
@@ -557,7 +609,7 @@ function unzip() {
   // archive extra data record
   if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
     if (logToConsole) {
-      info(" Found an Archive Extra Data Signature");
+      info(' Found an Archive Extra Data Signature');
     }
 
     // skipping this record for now
@@ -568,9 +620,9 @@ function unzip() {
 
   // central directory structure
   // TODO: handle the rest of the structures (Zip64 stuff)
-  if (bytestream.peekNumber(4) == zCentralFileHeaderSignature) {
+  if (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
     if (logToConsole) {
-      info(" Found a Central File Header");
+      info(' Found a Central File Header');
     }
 
     // read all file headers
@@ -609,7 +661,7 @@ function unzip() {
   // digital signature
   if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
     if (logToConsole) {
-      info(" Found a Digital Signature");
+      info(' Found a Digital Signature');
     }
 
     bstream.readNumber(4);
@@ -661,7 +713,7 @@ onmessage = function (event) {
   }
 
   if (unarchiveState === UnarchiveState.NOT_STARTED) {
-    currentFilename = "";
+    currentFilename = '';
     currentFileNumber = 0;
     currentBytesUnarchivedInFile = 0;
     currentBytesUnarchived = 0;
@@ -680,7 +732,7 @@ onmessage = function (event) {
   if (unarchiveState === UnarchiveState.UNARCHIVING ||
     unarchiveState === UnarchiveState.WAITING) {
     try {
-      unzip();
+      archiveUnzip();
     } catch (e) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         // Overrun the buffer.

@@ -11,6 +11,7 @@ import { assertEquals, runTests } from './muther.js';
 
 const testInputs = {
   'testUnzipDeflate': 'archive-testfiles/test-unzip-deflate.json',
+  'testUnzipDescriptor': 'archive-testfiles/test-unzip-descriptor.json',
   'testUnzipStore': 'archive-testfiles/test-unzip-store.json',
   'testUnrarM1': 'archive-testfiles/test-unrar-m1.json',
   'testUnrarM2': 'archive-testfiles/test-unrar-m2.json',
@@ -22,6 +23,9 @@ const testInputs = {
   // $ COPYFILE_DISABLE=1 tar cvf lorem.tar lorem.txt
   'testUntar': 'archive-testfiles/test-untar-1.json',
 };
+
+// TODO: It is an error for the Unarchiver worker not to terminate or send a FINISH event.
+// We need to be able to test that here.
 
 const testSuite = { tests: {} };
 for (let testName in testInputs) {
@@ -37,7 +41,9 @@ for (let testName in testInputs) {
             atob(testFile.archivedFile).split(',').map(str => parseInt(str)));
           const unarchivedFile = new Uint8Array(
             atob(testFile.unarchivedFile).split(',').map(str => parseInt(str)));
-          const unarchiver = getUnarchiver(archivedFile.buffer, '../');
+          const unarchiver = getUnarchiver(archivedFile.buffer, {
+            pathToBitJS: '../',
+          });
           unarchiver.addEventListener(UnarchiveEventType.EXTRACT, evt => {
             const theUnarchivedFile = evt.unarchivedFile.fileData;
             try {
