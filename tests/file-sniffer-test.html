@@ -29,6 +29,11 @@
       testRAR() { sniffTest('application/x-rar-compressed', [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x23]); },
       testBZ2() { sniffTest('application/x-bzip2', [0x42, 0x5A, 0x68, 0x19]); },
       testPDF() { sniffTest('application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2d, 0x55]); },
+      testMP3_1() { sniffTest('audio/mpeg', [0xFF, 0xFB]); },
+      testMP3_2() { sniffTest('audio/mpeg', [0xFF, 0xF3]); },
+      testMP3_3() { sniffTest('audio/mpeg', [0xFF, 0xF2]); },
+      testMP3_4() { sniffTest('audio/mpeg', [0x49, 0x44, 0x33]); },
+      testOGG() { sniffTest('application/ogg', [0x4F, 0x67, 0x67, 0x53]); },
     },
   });  
 </script>

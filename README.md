@@ -14,6 +14,10 @@ A set of JavaScript modules to handle binary data in JS (using Typed Arrays).  I
 
 Install it using your favourite package manager, the package is registered under `@codedread/bitjs`. 
 ```bash
+$ npm install @codedread/bitjs
+```
+or
+```bash
 $ yarn add @codedread/bitjs
 ```
 
