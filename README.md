@@ -10,6 +10,13 @@ A set of JavaScript modules to handle binary data in JS (using Typed Arrays).  I
   * bitjs/io: Low-level classes for interpreting binary data (BitStream, ByteStream).  For example, reading or peeking at N bits at a time.
 
 
+## Installation
+
+Install it using your favourite package manager, the package is registered under `@codedread/bitjs`. 
+```bash
+$ yarn add @codedread/bitjs
+```
+
 ## Example Usage
 
 ### bitjs.archive
