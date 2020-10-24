@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A set of JavaScript modules to handle binary data in JS (using Typed Arrays).  Includes:
+A set of dependency-free JavaScript modules to handle binary data in JS (using Typed Arrays).  Includes:
 
   * bitjs/archive: Unarchiving files (unzip, unrar, untar) in the browser, implemented as Web Workers and allowing progressively unarchiving while streaming.
   * bitjs/file: Detect the type of file from its binary signature.
@@ -36,6 +36,7 @@ unzipper.addEventListener('finish', displayZipContents);
 unzipper.start();
 
 function updateProgress(e) {
+  // e.currentFilename is the file currently being unarchived/scanned.
   // e.totalCompressedBytesRead has how many bytes have been unzipped so far
 }
 
