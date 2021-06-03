@@ -9,7 +9,6 @@ A set of dependency-free JavaScript modules to handle binary data in JS (using T
   * bitjs/image: Conversion of WebP images to PNG or JPEG.
   * bitjs/io: Low-level classes for interpreting binary data (BitStream, ByteStream).  For example, reading or peeking at N bits at a time.
 
-
 ## Installation
 
 Install it using your favourite package manager, the package is registered under `@codedread/bitjs`. 
@@ -102,11 +101,11 @@ const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the point
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
-## Tests
+## Other Tests
+
+Those that haven't been ported to mocha/chai/nodejs.
 
 * [bitjs.archive tests](https://codedread.github.io/bitjs/tests/archive-test.html)
-* [bitjs.file tests](https://codedread.github.io/bitjs/tests/file-sniifer-test.html)
-* [bitjs.io tests](https://codedread.github.io/bitjs/tests/io-test.html)
 
 ## Reference
 
