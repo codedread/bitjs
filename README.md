@@ -1,3 +1,5 @@
+[![Node.js CI](https://github.com/codedread/bitjs/actions/workflows/node.js.yml/badge.svg)](https://github.com/codedread/bitjs/actions/workflows/node.js.yml)
+
 # bitjs: Binary Tools for JavaScript
 
 ## Introduction
