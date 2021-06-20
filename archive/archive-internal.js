@@ -227,11 +227,20 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
   /**
    * This method must be overridden by the subclass to return the script filename.
+   * @return {string} The MIME type of the archive.
+   * @protected.
+   */
+  getMIMEType() {
+    throw 'Subclasses of Unarchiver must overload getMIMEType()';
+  }
+
+  /**
+   * This method must be overridden by the subclass to return the script filename.
    * @return {string} The script filename.
    * @protected.
    */
   getScriptFileName() {
-    throw 'Subclasses of AbstractUnarchiver must overload getScriptFileName()';
+    throw 'Subclasses of Unarchiver must overload getScriptFileName()';
   }
 
   /**
@@ -376,6 +385,7 @@ export class UnzipperInternal extends Unarchiver {
     super(arrayBuffer, createWorkerFn, options);
   }
 
+  getMIMEType() { return 'application/zip'; }
   getScriptFileName() { return 'archive/unzip.js'; }
 }
 
@@ -384,6 +394,7 @@ export class UnrarrerInternal extends Unarchiver {
     super(arrayBuffer, createWorkerFn, options);
   }
 
+  getMIMEType() { return 'application/x-rar-compressed'; }
   getScriptFileName() { return 'archive/unrar.js'; }
 }
 
@@ -392,6 +403,7 @@ export class UntarrerInternal extends Unarchiver {
     super(arrayBuffer, createWorkerFn, options);
   }
 
+  getMIMEType() { return 'application/x-tar'; }
   getScriptFileName() { return 'archive/untar.js'; };
 }
 
