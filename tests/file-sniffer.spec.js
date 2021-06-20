@@ -34,4 +34,6 @@ describe('bitjs.file.sniffer', () => {
   it('MP3_3()', () => { sniffTest('audio/mpeg', [0xFF, 0xF2]); });
   it('MP3_4()', () => { sniffTest('audio/mpeg', [0x49, 0x44, 0x33]); });
   it('OGG', () => { sniffTest('application/ogg', [0x4F, 0x67, 0x67, 0x53]); });
+  it('TAR_1', () => { sniffTest('application/x-tar', [0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30]); });
+  it('TAR_2', () => { sniffTest('application/x-tar', [0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00]); });
 });
