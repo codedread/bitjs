@@ -8,13 +8,14 @@
  * Copyright(c) 2011 Google Inc.
  */
 
-import { UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
+import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
          UnarchiveProgressEvent, UnarchiveStartEvent, Unarchiver,
          UnrarrerInternal, UntarrerInternal, UnzipperInternal,
          getUnarchiverInternal } from './archive-internal.js';
 
 export {
+  UnarchiveAppendEvent,
   UnarchiveErrorEvent,
   UnarchiveEvent,
   UnarchiveEventType,
@@ -72,7 +73,8 @@ export class Untarrer extends UntarrerInternal {
  * Factory method that creates an unarchiver based on the byte signature found
  * in the arrayBuffer.
  * @param {ArrayBuffer} ab
- * @param {Object} options An optional object of options.
+ * @param {Object|string} options An optional object of options, or a string
+ *     representing where the path to the unarchiver script files.
  * @return {Unarchiver}
  */
 export function getUnarchiver(ab, options = {}) {

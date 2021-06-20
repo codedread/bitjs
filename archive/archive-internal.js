@@ -16,6 +16,7 @@ import { findMimeType } from '../file/sniffer.js';
  */
 export const UnarchiveEventType = {
   START: 'start',
+  APPEND: 'append',
   PROGRESS: 'progress',
   EXTRACT: 'extract',
   FINISH: 'finish',
@@ -36,6 +37,24 @@ export const UnarchiveEventType = {
      * @type {string}
      */
     this.type = type;
+  }
+}
+
+/**
+ * Updates all Archiver listeners with the updated bytes.
+ */
+ export class UnarchiveAppendEvent extends UnarchiveEvent {
+  /**
+   * @param {ArrayBuffer} ab The new bytes
+   */
+  constructor(ab) {
+    super(UnarchiveEventType.APPEND);
+
+    /**
+     * The appended bytes.
+     * @type {ArrayBuffer}
+     */
+    this.ab = ab;
   }
 }
 
@@ -335,6 +354,10 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
   update(ab) {
     if (this.worker_) {
       this.worker_.postMessage({ bytes: ab });
+    }
+    if (this.listeners_[UnarchiveEventType.APPEND]) {
+      const evt = new UnarchiveAppendEvent(ab);
+      this.listeners_[UnarchiveEventType.APPEND].forEach(listener => listener(evt));
     }
   }
 
