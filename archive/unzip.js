@@ -109,6 +109,7 @@ class ZipLocalFile {
     }
 
     // Read in the compressed data if we have no data descriptor.
+    /** @type {Uint8Array} */
     this.fileData = null;
     let descriptorSize = 0;
     if (this.hasDataDescriptor) {
@@ -622,7 +623,7 @@ function archiveUnzip() {
       oneLocalFile.unzip();
 
       if (oneLocalFile.fileData != null) {
-        postMessage({ type: 'extract', unarchivedFile: oneLocalFile });
+        postMessage({ type: 'extract', unarchivedFile: oneLocalFile }, [oneLocalFile.fileData.buffer]);
         postProgress();
       }
     }

@@ -41,20 +41,20 @@ export const UnarchiveEventType = {
 }
 
 /**
- * Updates all Archiver listeners with the updated bytes.
+ * Updates all Archiver listeners that an append has occurred.
  */
  export class UnarchiveAppendEvent extends UnarchiveEvent {
   /**
-   * @param {ArrayBuffer} ab The new bytes
+   * @param {number} numBytes The number of bytes appended.
    */
-  constructor(ab) {
+  constructor(numBytes) {
     super(UnarchiveEventType.APPEND);
 
     /**
-     * The appended bytes.
-     * @type {ArrayBuffer}
+     * The number of appended bytes.
+     * @type {number}
      */
-    this.ab = ab;
+    this.numBytes = numBytes;
   }
 }
 
@@ -169,7 +169,9 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
  */
  export class Unarchiver {
   /**
-   * @param {ArrayBuffer} arrayBuffer The Array Buffer.
+   * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
+   *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
+   *     to the Worker.
    * @param {Function(string):Worker} createWorkerFn A function that creates a Worker from a script file.
    * @param {Object|string} options An optional object of options, or a string representing where
    *     the BitJS files are located.  The string version of this argument is deprecated.
@@ -349,7 +351,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
       this.worker_.postMessage({
         file: ab,
         logToConsole: this.debugMode_,
-      });
+      }, [ab]);
       this.ab = null;
     }
   }
@@ -358,14 +360,25 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
   /**
    * Adds more bytes to the unarchiver's Worker thread.
-   * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it.
+   * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it. If opt_transferable is
+   *     set to true, this ArrayBuffer must not be referenced after calling update(), since it
+   *     is marked as Transferable and sent to the Worker.
+   * @param {boolean=} opt_transferable Optional boolean whether to mark this ArrayBuffer
+   *     as a Tranferable object, which means it can no longer be referenced outside of
+   *     the Worker thread.
    */
-  update(ab) {
+  update(ab, opt_transferable = false) {
+    const numBytes = ab.byteLength;
     if (this.worker_) {
-      this.worker_.postMessage({ bytes: ab });
+      // Send the ArrayBuffer over, and mark it as a Transferable object if necessary.
+      if (opt_transferable) {
+        this.worker_.postMessage({ bytes: ab }, [ab]);
+      } else {
+        this.worker_.postMessage({ bytes: ab });
+      }
     }
     if (this.listeners_[UnarchiveEventType.APPEND]) {
-      const evt = new UnarchiveAppendEvent(ab);
+      const evt = new UnarchiveAppendEvent(numBytes);
       this.listeners_[UnarchiveEventType.APPEND].forEach(listener => listener(evt));
     }
   }

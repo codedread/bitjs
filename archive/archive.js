@@ -30,12 +30,12 @@ export {
 /**
  * All extracted files returned by an Unarchiver will implement
  * the following interface:
- *
- * interface UnarchivedFile {
- *   string filename
- *   TypedArray fileData
- * }
- *
+ */
+
+/**
+ * @typedef UnarchivedFile
+ * @property {string} filename
+ * @property {Uint8Array} fileData
  */
 
 /**
@@ -72,7 +72,9 @@ export class Untarrer extends UntarrerInternal {
 /**
  * Factory method that creates an unarchiver based on the byte signature found
  * in the arrayBuffer.
- * @param {ArrayBuffer} ab
+ * @param {ArrayBuffer} ab The ArrayBuffer to unarchive. Note that this ArrayBuffer
+ *     must not be referenced after calling this method, as the ArrayBuffer is marked
+ *     as Transferable and sent to a Worker thread once start() is called.
  * @param {Object|string} options An optional object of options, or a string
  *     representing where the path to the unarchiver script files.
  * @return {Unarchiver}
