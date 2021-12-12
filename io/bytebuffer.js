@@ -23,7 +23,15 @@ export const ByteBuffer =
       if (typeof numBytes != typeof 1 || numBytes <= 0) {
         throw "Error! ByteBuffer initialized with '" + numBytes + "'";
       }
+      /**
+       * @type {Uint8Array}
+       * @public
+       */
       this.data = new Uint8Array(numBytes);
+      /**
+       * @type {number}
+       * @public
+       */
       this.ptr = 0;
     }
 

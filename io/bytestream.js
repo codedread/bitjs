@@ -279,7 +279,7 @@ export const ByteStream =
 
     /**
      * Feeds more bytes into the back of the stream.
-     * @param {ArrayBuffer} ab 
+     * @param {ArrayBuffer} ab
      */
     push(ab) {
       if (!(ab instanceof ArrayBuffer)) {

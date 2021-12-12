@@ -1,4 +1,4 @@
-OUT_PATH=/out/io
+OUT_PATH=../../io
 
 BITSTREAM_MODULE=${OUT_PATH}/bitstream.js
 BITSTREAM_WORKER=${OUT_PATH}/bitstream-worker.js
