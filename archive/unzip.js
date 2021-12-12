@@ -251,17 +251,14 @@ function getHuffmanCodes(bitLengths) {
   }
 
   // Step 3: Assign numerical values to all codes
-  const table = {};
-  let tableLength = 0;
+  const table = new Map();
   for (let n = 0; n < numLengths; ++n) {
     const len = bitLengths[n];
     if (len != 0) {
-      table[next_code[len]] = { length: len, symbol: n }; //, bitstring: binaryValueToString(next_code[len],len) };
-      tableLength++;
+      table.set(next_code[len], { length: len, symbol: n }); //, bitstring: binaryValueToString(next_code[len],len) };
       next_code[len]++;
     }
   }
-  table.maxLength = tableLength;
 
   return table;
 }
@@ -317,7 +314,6 @@ function getFixedDistanceTable() {
 function decodeSymbol(bstream, hcTable) {
   let code = 0;
   let len = 0;
-  let match = false;
 
   // loop until we match
   for (; ;) {
@@ -327,16 +323,16 @@ function decodeSymbol(bstream, hcTable) {
     ++len;
 
     // check against Huffman Code table and break if found
-    if (hcTable.hasOwnProperty(code) && hcTable[code].length == len) {
+    if (hcTable.has(code) && hcTable.get(code).length == len) {
       break;
     }
     if (len > hcTable.maxLength) {
       err(`Bit stream out of sync, didn't find a Huffman Code, length was ${len} ` +
-        `and table only max code length of ${hcTable.maxLength}`);
+        `and table only max code length of ${hcTable.length}`);
       break;
     }
   }
-  return hcTable[code].symbol;
+  return hcTable.get(code).symbol;
 }
 
 
@@ -710,6 +706,7 @@ onmessage = function (event) {
     bytestream = new bitjs.io.ByteStream(bytes);
   } else {
     bytestream.push(bytes);
+    // TODO: Shouldn't this return here if it's not waiting?
   }
 
   if (unarchiveState === UnarchiveState.NOT_STARTED) {
