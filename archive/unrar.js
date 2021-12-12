@@ -1302,6 +1302,7 @@ class RarLocalFile {
     }
     else {
       // read in the compressed data
+      /** @type {Uint8Array} */
       this.fileData = null;
       if (this.header.packSize > 0) {
         this.fileData = bstream.readBytes(this.header.packSize);
@@ -1377,7 +1378,7 @@ function unrar() {
       localFile.unrar();
 
       if (localFile.isValid) {
-        postMessage({ type: 'extract', unarchivedFile: localFile });
+        postMessage({ type: 'extract', unarchivedFile: localFile }, [localFile.fileData.buffer]);
         postProgress();
       }
     } else if (localFile.header.packSize == 0 && localFile.header.unpackedSize == 0) {

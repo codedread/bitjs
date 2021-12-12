@@ -100,6 +100,7 @@ class TarLocalFile {
 
     // Done header, now rest of blocks are the file contents.
     this.filename = this.name;
+    /** @type {Uint8Array} */
     this.fileData = null;
 
     info("Untarring file '" + this.filename + "'");
@@ -146,7 +147,7 @@ const untar = function () {
       currentFileNumber = totalFilesInArchive++;
       currentBytesUnarchivedInFile = oneLocalFile.size;
       currentBytesUnarchived += oneLocalFile.size;
-      postMessage({ type: 'extract', unarchivedFile: oneLocalFile });
+      postMessage({ type: 'extract', unarchivedFile: oneLocalFile }, [oneLocalFile.fileData.buffer]);
       postProgress();
     }
   }
