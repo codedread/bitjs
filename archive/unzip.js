@@ -73,7 +73,9 @@ const BIT = [0x01, 0x02, 0x04, 0x08,
   0x1000, 0x2000, 0x4000, 0x8000];
 
 class ZipLocalFile {
-  // takes a ByteStream and parses out the local file information
+  /**
+   * @param {bitjs.io.ByteStream} bstream 
+   */
   constructor(bstream) {
     if (typeof bstream != typeof {} || !bstream.readNumber || typeof bstream.readNumber != typeof function () { }) {
       return null;
@@ -734,7 +736,6 @@ onmessage = function (event) {
     bytestream = new bitjs.io.ByteStream(bytes);
   } else {
     bytestream.push(bytes);
-    // TODO: Shouldn't this return here if it's not waiting?
   }
 
   if (unarchiveState === UnarchiveState.NOT_STARTED) {
