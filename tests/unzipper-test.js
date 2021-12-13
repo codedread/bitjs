@@ -2,7 +2,7 @@
 import { UnarchiveEventType, Unzipper } from '../archive/archive.js';
 
 const result = document.querySelector('#result');
-const fileInputEl = document.querySelector('#zip-tester');
+const fileInputEl = document.querySelector('#unzip-tester');
 
 async function getFiles(fileChangeEvt) {
   result.innerHTML = `Starting to load files`;
