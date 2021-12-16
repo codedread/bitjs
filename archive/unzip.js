@@ -220,7 +220,8 @@ class ZipLocalFile {
 /**
  * Returns a table of Huffman codes. Each entry's key is its code and its value is a JavaScript
  * object containing {length: 6, symbol: X}.
- * @param {number[]} bitLengths
+ * @param {number[]} bitLengths An array representing the bit lengths of the codes, in order.
+ *     See section 3.2.2 of https://datatracker.ietf.org/doc/html/rfc1951.
  * @returns {Map<number, SymbolLengthPair>}
  */
 function getHuffmanCodes(bitLengths) {
@@ -267,7 +268,7 @@ function getHuffmanCodes(bitLengths) {
   for (let n = 0; n < numLengths; ++n) {
     const len = bitLengths[n];
     if (len != 0) {
-      table.set(next_code[len], { length: len, symbol: n }); //, bitstring: binaryValueToString(next_code[len],len) };
+      table.set(next_code[len], { length: len, symbol: n });
       next_code[len]++;
     }
   }

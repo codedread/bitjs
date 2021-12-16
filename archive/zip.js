@@ -47,6 +47,7 @@ importScripts('../io/bytestream-worker.js');
 const zLocalFileHeaderSignature = 0x04034b50;
 const zCentralFileHeaderSignature = 0x02014b50;
 const zEndOfCentralDirSignature = 0x06054b50;
+const zCRC32MagicNumber = 0xedb88320; // 0xdebb20e3;
 
 /**
  * @typedef CentralDirectoryFileHeaderInfo An object to be used to construct the central directory.
@@ -77,8 +78,45 @@ const CompressorState = {
 };
 let state = CompressorState.NOT_STARTED;
 let lastFileReceived = false;
+const crc32Table = createCRC32Table();
 
 /** Helper functions. */
+
+/**
+ * Logic taken from https://github.com/nodeca/pako/blob/master/lib/zlib/crc32.js
+ * @returns {Uint8Array}
+ */
+function createCRC32Table() {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = ((c & 1) ? (zCRC32MagicNumber ^ (c >>> 1)) : (c >>> 1));
+    }
+    table[n] = c;
+  }
+
+  return table;
+};
+
+/**
+ * Logic taken from https://github.com/nodeca/pako/blob/master/lib/zlib/crc32.js
+ * @param {number} crc
+ * @param {Uint8Array} bytes
+ * @returns {number}
+ */
+function calculateCRC32(crc, bytes) {
+  const len = bytes.byteLength;
+  crc ^= -1;
+  for (const byte of bytes) {
+    crc = (crc >>> 8) ^ crc32Table[(crc ^ byte) & 0xFF];
+  }
+  crc ^= -1;
+  if (crc < 0) {
+    crc += 0x100000000;
+  }
+  return crc;
+}
 
 /**
  * Logic taken from https://github.com/thejoshwolfe/yazl.
@@ -129,8 +167,7 @@ function zipOneFile(file) {
     compressionMethod: 0,
     lastModFileTime: dateToDosTime(jsDate),
     lastModFileDate: dateToDosDate(jsDate),
-    // TODO: Calculate. See section 4.4.7 of https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT.
-    crc32: 0,
+    crc32: calculateCRC32(0, file.fileData),
     // TODO: For now, this is easy. Later when we do DEFLATE, we will have to calculate.
     compressedSize: file.fileData.byteLength,
     uncompressedSize: file.fileData.byteLength,
@@ -157,10 +194,9 @@ function zipOneFile(file) {
  */
 function writeCentralFileDirectory() {
   // Each central directory file header is 46 bytes + the filename.
-  let filenameLengths = filesCompressed.map(f => f.fileName.length).reduce((acc, cur) => acc + cur);
-  const sizeOfCentralDirectoryEntries = (filesCompressed.length * 46) + filenameLengths;
-
-  const buffer = new bitjs.io.ByteBuffer(sizeOfCentralDirectoryEntries + 22);
+  let cdsLength = filesCompressed.map(f => f.fileName.length + 46).reduce((a, c) => a + c);
+  // 22 extra bytes for the end-of-central-dir header.
+  const buffer = new bitjs.io.ByteBuffer(cdsLength + 22);
 
   for (const cdInfo of centralDirectoryInfos) {
     buffer.writeNumber(zCentralFileHeaderSignature, 4); // Magic number.
@@ -189,7 +225,7 @@ function writeCentralFileDirectory() {
   buffer.writeNumber(0, 2); // Disk where central directory starts.
   buffer.writeNumber(filesCompressed.length, 2); // Number of central directory records on this disk.
   buffer.writeNumber(filesCompressed.length, 2); // Total number of central directory records.
-  buffer.writeNumber(sizeOfCentralDirectoryEntries, 4); // Size of central directory.
+  buffer.writeNumber(cdsLength, 4); // Size of central directory.
   buffer.writeNumber(numBytesWritten, 4); // Offset of start of central directory.
   buffer.writeNumber(0, 2); // Comment length.
 
