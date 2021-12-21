@@ -24,12 +24,13 @@ export const BitStream =
   class BitStream {
     /**
      * @param {ArrayBuffer} ab An ArrayBuffer object or a Uint8Array.
-     * @param {boolean} rtl Whether the stream reads bits from the byte starting
-     *     from bit 7 to 0 (true) or bit 0 to 7 (false).
+     * @param {boolean} mtl Whether the stream reads bits from the byte starting with the
+     *     most-significant-bit (bit 7) to least-significant (bit 0). False means the direciton is
+     *     from least-significant-bit (bit 0) to most-significant (bit 7).
      * @param {Number} opt_offset The offset into the ArrayBuffer
      * @param {Number} opt_length The length of this BitStream
      */
-    constructor(ab, rtl, opt_offset, opt_length) {
+    constructor(ab, mtl, opt_offset, opt_length) {
       if (!(ab instanceof ArrayBuffer)) {
         throw 'Error! BitArray constructed with an invalid ArrayBuffer object';
       }
@@ -65,7 +66,7 @@ export const BitStream =
        */
       this.bitsRead_ = 0;
 
-      this.peekBits = rtl ? this.peekBits_rtl : this.peekBits_ltr;
+      this.peekBits = mtl ? this.peekBits_mtl : this.peekBits_ltm;
     }
 
     /**
@@ -87,13 +88,13 @@ export const BitStream =
      *   byte0      byte1      byte2      byte3
      * 7......0 | 7......0 | 7......0 | 7......0
      *
-     * The bit pointer starts at bit0 of byte0 and moves left until it reaches
+     * The bit pointer starts at least-significant bit (0) of byte0 and moves left until it reaches
      * bit7 of byte0, then jumps to bit0 of byte1, etc.
      * @param {number} n The number of bits to peek, must be a positive integer.
      * @param {boolean=} movePointers Whether to move the pointer, defaults false.
      * @return {number} The peeked bits, as an unsigned number.
      */
-    peekBits_ltr(n, opt_movePointers) {
+    peekBits_ltm(n, opt_movePointers) {
       const NUM = parseInt(n, 10);
       let num = NUM;
       if (n !== num || num <= 0) {
@@ -151,7 +152,7 @@ export const BitStream =
      * @param {boolean=} movePointers Whether to move the pointer, defaults false.
      * @return {number} The peeked bits, as an unsigned number.
      */
-    peekBits_rtl(n, opt_movePointers) {
+    peekBits_mtl(n, opt_movePointers) {
       const NUM = parseInt(n, 10);
       let num = NUM;
       if (n !== num || num <= 0) {

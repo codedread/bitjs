@@ -25,11 +25,13 @@ bitjs.io.ByteBuffer =
       if (typeof numBytes != typeof 1 || numBytes <= 0) {
         throw "Error! ByteBuffer initialized with '" + numBytes + "'";
       }
+
       /**
        * @type {Uint8Array}
        * @public
        */
       this.data = new Uint8Array(numBytes);
+
       /**
        * @type {number}
        * @public
@@ -122,7 +124,7 @@ bitjs.io.ByteBuffer =
         }
         this.insertByte(curByte);
       }
-    };
+    }
   }
 
   return ByteBuffer;

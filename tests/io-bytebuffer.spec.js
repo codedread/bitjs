@@ -12,7 +12,7 @@ import 'mocha';
 import { expect } from 'chai';
 
 // TODO: Only test ByteBuffer here.
-describe('bitjs.io.ByteBufferBitStream', () => {
+describe('bitjs.io.ByteBuffer', () => {
   let buffer;
 
   beforeEach(() => {
