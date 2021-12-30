@@ -1,8 +1,8 @@
 /**
- * archive-internal.js
+ * decompress-internal.js
  *
  * Provides base functionality for unarchiving, extracted here as an internal
- * module for unit testing. Import archive.js instead.
+ * module for unit testing. Import decompress.js instead.
  *
  * Licensed under the MIT License
  *
