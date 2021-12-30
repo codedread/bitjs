@@ -26,10 +26,12 @@ $ yarn add @codedread/bitjs
 
 ### bitjs.archive
 
-This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. The unarchiving actually happens inside a Web Worker.
+This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. A prototype version of a compressor that creates Zip files is also present. The decompression/compression actually happens inside a Web Worker.
+
+### Decompressing
 
 ```javascript
-import { Unzipper } from './bitjs/archive/archive.js';
+import { Unzipper } from './bitjs/archive/decompress.js';
 const unzipper = new Unzipper(zipFileArrayBuffer);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
@@ -54,7 +56,7 @@ function displayZipContents() {
 The unarchivers also support progressively decoding while streaming the file, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
 
 ```javascript
-import { Unzipper } from './bitjs/archive/archive.js';
+import { Unzipper } from './bitjs/archive/decompress.js';
 const unzipper = new Unzipper(anArrayBufferWithStartingBytes);
 unzipper.addEventListener('progress', updateProgress);
 unzipper.addEventListener('extract', receiveOneFile);
@@ -66,6 +68,32 @@ unzipper.update(anArrayBufferWithMoreBytes);
 ...
 // after some more time
 unzipper.update(anArrayBufferWithYetMoreBytes);
+```
+
+### Compressing
+
+The Zipper only supports creating zip files without compression (story only) for now. The interface
+is pretty straightforward and there is no event-based / streaming API.
+
+```javascript
+import { Zipper } from './bitjs/archive/compress.js';
+const zipper = new Zipper();
+const now = Date.now();
+// Zip files foo.jpg and bar.txt.
+const zippedArrayBuffer = await zipper.start(
+  [
+    {
+      fileName: 'foo.jpg',
+      lastModTime: now,
+      fileData: fooArrayBuffer,
+    },
+    {
+      fileName: 'bar.txt',
+      lastModTime: now,
+      fileData: barArrayBuffer,
+    }
+  ],
+  true /* isLastFile */);
 ```
 
 ### bitjs.file
