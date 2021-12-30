@@ -207,11 +207,15 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
      */
     this.pathToBitJS_ = options.pathToBitJS || '/';
 
-    /** @orivate {boolean} */
+    /**
+     * @orivate
+     * @type {boolean}
+     */
     this.debugMode_ = !!(options.debug);
 
     /**
      * A map from event type to an array of listeners.
+     * @private
      * @type {Map.<string, Array>}
      */
     this.listeners_ = {};
@@ -221,8 +225,8 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
     /**
      * Private web worker initialized during start().
-     * @type {Worker}
      * @private
+     * @type {Worker}
      */
     this.worker_ = null;
   }

@@ -2,6 +2,7 @@
  * archive.js
  *
  * Provides base functionality for unarchiving.
+ * DEPRECATED: Use decompress.js instead.
  *
  * Licensed under the MIT License
  *
@@ -12,7 +13,9 @@ import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEve
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
          UnarchiveProgressEvent, UnarchiveStartEvent, Unarchiver,
          UnrarrerInternal, UntarrerInternal, UnzipperInternal,
-         getUnarchiverInternal } from './archive-internal.js';
+         getUnarchiverInternal } from './decompress-internal.js';
+
+console.warn(`Stop using archive.js and use decompress.js instead. This module will be removed.`);
 
 export {
   UnarchiveAppendEvent,

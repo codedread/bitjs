@@ -1,6 +1,4 @@
 
-import { ByteBuffer } from '../io/bytebuffer.js';
-
 // NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
 /**
@@ -11,8 +9,34 @@ import { ByteBuffer } from '../io/bytebuffer.js';
  */
 
 /**
+ * @readonly
+ * @enum {number}
+ */
+export const ZipCompressionMethod = {
+  STORE: 0, // Default.
+  // DEFLATE: 8,
+};
+
+// export const DeflateCompressionMethod = {
+//   NO_COMPRESSION: 0,
+//   COMPRESSION_FIXED_HUFFMAN: 1,
+//   COMPRESSION_DYNAMIC_HUFFMAN: 2,
+// }
+
+/**
+ * Data elements are packed into bytes in order of increasing bit number within the byte,
+   i.e., starting with the least-significant bit of the byte.
+ * Data elements other than Huffman codes are packed starting with the least-significant bit of the
+   data element.
+ * Huffman codes are packed starting with the most-significant bit of the code.
+ */
+
+/**
  * @typedef CompressorOptions
  * @property {string} pathToBitJS A string indicating where the BitJS files are located.
+ * @property {ZipCompressionMethod} zipCompressionMethod
+ * @property {DeflateCompressionMethod=} deflateCompressionMethod Only present if
+ *     zipCompressionMethod is set to DEFLATE.
  */
 
 /**
@@ -30,6 +54,7 @@ export const CompressStatus = {
 /**
  * A thing that zips files.
  * NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
+ * TODO: Make a streaming / event-driven API.
  */
 export class Zipper {
   /**
@@ -42,6 +67,12 @@ export class Zipper {
      * @private
      */
     this.pathToBitJS = options.pathToBitJS || '/';
+
+    /**
+     * @type {ZipCompressionMethod}
+     * @private
+     */
+    this.zipCompressionMethod = options.zipCompressionMethod || ZipCompressionMethod.STORE;
 
     /**
      * Private web worker initialized during start().
@@ -80,9 +111,13 @@ export class Zipper {
   }
 
   /**
+   * Send in a set of files to be compressed. Set isLastFile to true if no more files are to added
+   * at some future state. The Promise will not resolve until isLastFile is set to true either in
+   * this method or in appendFiles().
    * @param {FileInfo[]} files
    * @param {boolean} isLastFile
-   * @returns {Promise<Uint8Array>} A Promise that contains the entire zipped archive.
+   * @returns {Promise<Uint8Array>} A Promise that will contain the entire zipped archive as an array
+   *     of bytes.
    */
   start(files, isLastFile) {
     return new Promise((resolve, reject) => {

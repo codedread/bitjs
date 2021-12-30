@@ -1,5 +1,5 @@
 
-import { Zipper } from '../archive/compress.js';
+import { Zipper, ZipCompressionMethod } from '../archive/compress.js';
 
 const result = document.querySelector('#result');
 const fileInputEl = document.querySelector('#zip-tester');
@@ -36,7 +36,10 @@ async function getFiles(fileChangeEvt) {
 
   result.innerHTML = `Loaded files`;
 
-  const zipper = new Zipper({ pathToBitJS: '../' });
+  const zipper = new Zipper({
+    pathToBitJS: '../',
+    zipCompressionMethod: ZipCompressionMethod.DEFLATE,
+  });
   byteArray = await zipper.start(fileInfos, true);
   result.innerHTML = `Zipping done`;
   saveButtonEl.style.display = '';

@@ -493,7 +493,7 @@ function inflate(compressedData, numDecompressedBytes) {
   // Bit stream representing the compressed data.
   /** @type {bitjs.io.BitStream} */
   const bstream = new bitjs.io.BitStream(compressedData.buffer,
-    false /* rtl */,
+    false /* mtl */,
     compressedData.byteOffset,
     compressedData.byteLength);
   /** @type {bitjs.io.ByteBuffer} */
