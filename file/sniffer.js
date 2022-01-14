@@ -102,7 +102,7 @@ export function initialize() {
  */
 export function findMimeType(ab) {
   if (!root) {
-    initializeTree();
+    initialize();
   }
 
   const depth = ab.byteLength < maxDepth ? ab.byteLength : maxDepth;
