@@ -12,6 +12,12 @@
 import { findMimeType } from '../file/sniffer.js';
 
 /**
+ * @typedef UnarchivedFile
+ * @property {string} filename
+ * @property {Uint8Array} fileData
+ */
+
+/**
  * The UnarchiveEvent types.
  */
 export const UnarchiveEventType = {
