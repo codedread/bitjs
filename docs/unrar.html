@@ -178,11 +178,11 @@ Packed Data             (Total Packed Size) bytes
 <p>Each flag contains:</p>
 <ul>
 	<li>Bit 0: Whether this section is present or not</li>
-	<li>Bit 1 and 2: The amount of bytes to be read as the remainder, between 0 and 3</li>
-	<li>Bit 4: Signals that the MS-DOS date/time should have its seconds increased by 1</li>
+	<li>Bit 2: Signals that the MS-DOS date/time should have its seconds increased by 1</li>
 	<ul>
 		<li>MS-DOS date/time format can only store even numbers of seconds. This bit counters this limitation.</li>
 	</ul>
+	<li>Bit 3 and 4: The amount of bytes to be read as the remainder, between 0 and 3</li>
 </ul>
 	
 <p>Each section contains:</p>
