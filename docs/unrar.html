@@ -191,7 +191,7 @@ Packed Data             (Total Packed Size) bytes
 	<li>4 bytes containing an MS-DOS date/time (except for mtime, which is part of FILE_HEAD)</li>
 	<li>0 to 3 bytes containing fractions of seconds in 100ns increments</li>
         <ul>
-            <li>They form a 24-bit integer, sorted from most significant to least significant bits</li>
+            <li>They form a 24-bit integer, sorted from least significant to most significant bits</li>
             <li>If fewer than 3 bytes are present, the remaining least significant bits are to be padded with zeroes in order to complete 24-bits</li>
         </ul>
 </ul>
