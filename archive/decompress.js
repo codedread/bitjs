@@ -77,7 +77,7 @@ export class Untarrer extends UntarrerInternal {
 *     as Transferable and sent to a Worker thread once start() is called.
 * @param {Object|string} options An optional object of options, or a string
 *     representing where the path to the unarchiver script files.
-* @return {Unarchiver}
+* @returns {Unarchiver}
 */
 export function getUnarchiver(ab, options = {}) {
   return getUnarchiverInternal(ab, createWorkerFn, options);

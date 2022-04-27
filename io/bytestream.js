@@ -95,7 +95,7 @@ export const ByteStream =
      * Peeks at the next n bytes as an unsigned number but does not advance the
      * pointer.
      * @param {number} n The number of bytes to peek at.  Must be a positive integer.
-     * @return {number} The n bytes interpreted as an unsigned number.
+     * @returns {number} The n bytes interpreted as an unsigned number.
      */
     peekNumber(n) {
       const num = parseInt(n, 10);
@@ -136,7 +136,7 @@ export const ByteStream =
      * Returns the next n bytes as an unsigned number (or -1 on error)
      * and advances the stream pointer n bytes.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
-     * @return {number} The n bytes interpreted as an unsigned number.
+     * @returns {number} The n bytes interpreted as an unsigned number.
      */
     readNumber(n) {
       const num = this.peekNumber(n);
@@ -149,7 +149,7 @@ export const ByteStream =
      * Returns the next n bytes as a signed number but does not advance the
      * pointer.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
-     * @return {number} The bytes interpreted as a signed number.
+     * @returns {number} The bytes interpreted as a signed number.
      */
     peekSignedNumber(n) {
       let num = this.peekNumber(n);
@@ -165,7 +165,7 @@ export const ByteStream =
     /**
      * Returns the next n bytes as a signed number and advances the stream pointer.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
-     * @return {number} The bytes interpreted as a signed number.
+     * @returns {number} The bytes interpreted as a signed number.
      */
     readSignedNumber(n) {
       const num = this.peekSignedNumber(n);
@@ -179,7 +179,7 @@ export const ByteStream =
      * is true.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
      * @param {boolean} movePointers Whether to move the pointers.
-     * @return {Uint8Array} The subarray.
+     * @returns {Uint8Array} The subarray.
      */
     peekBytes(n, movePointers) {
       const num = parseInt(n, 10);
@@ -225,7 +225,7 @@ export const ByteStream =
     /**
      * Reads the next n bytes as a sub-array.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
-     * @return {Uint8Array} The subarray.
+     * @returns {Uint8Array} The subarray.
      */
     readBytes(n) {
       return this.peekBytes(n, true);
@@ -234,7 +234,7 @@ export const ByteStream =
     /**
      * Peeks at the next n bytes as an ASCII string but does not advance the pointer.
      * @param {number} n The number of bytes to peek at.  Must be a positive integer.
-     * @return {string} The next n bytes as a string.
+     * @returns {string} The next n bytes as a string.
      */
     peekString(n) {
       const num = parseInt(n, 10);
@@ -269,7 +269,7 @@ export const ByteStream =
      * Returns the next n bytes as an ASCII string and advances the stream pointer
      * n bytes.
      * @param {number} n The number of bytes to read.  Must be a positive integer.
-     * @return {string} The next n bytes as a string.
+     * @returns {string} The next n bytes as a string.
      */
     readString(n) {
       const strToReturn = this.peekString(n);
@@ -294,7 +294,7 @@ export const ByteStream =
 
     /**
      * Creates a new ByteStream from this ByteStream that can be read / peeked.
-     * @return {ByteStream} A clone of this ByteStream.
+     * @returns {ByteStream} A clone of this ByteStream.
      */
     tee() {
       const clone = new ByteStream(this.bytes.buffer);

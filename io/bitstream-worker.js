@@ -94,7 +94,7 @@ bitjs.io.BitStream =
      * bit7 of byte0, then jumps to bit0 of byte1, etc.
      * @param {number} n The number of bits to peek, must be a positive integer.
      * @param {boolean=} movePointers Whether to move the pointer, defaults false.
-     * @return {number} The peeked bits, as an unsigned number.
+     * @returns {number} The peeked bits, as an unsigned number.
      */
     peekBits_ltm(n, opt_movePointers) {
       const NUM = parseInt(n, 10);
@@ -152,7 +152,7 @@ bitjs.io.BitStream =
      * bit0 of byte0, then goes to bit7 of byte1, etc.
      * @param {number} n The number of bits to peek.  Must be a positive integer.
      * @param {boolean=} movePointers Whether to move the pointer, defaults false.
-     * @return {number} The peeked bits, as an unsigned number.
+     * @returns {number} The peeked bits, as an unsigned number.
      */
     peekBits_mtl(n, opt_movePointers) {
       const NUM = parseInt(n, 10);
@@ -215,7 +215,7 @@ bitjs.io.BitStream =
     /**
      * Reads n bits out of the stream, consuming them (moving the bit pointer).
      * @param {number} n The number of bits to read.  Must be a positive integer.
-     * @return {number} The read bits, as an unsigned number.
+     * @returns {number} The read bits, as an unsigned number.
      */
     readBits(n) {
       return this.peekBits(n, true);
@@ -227,7 +227,7 @@ bitjs.io.BitStream =
      * bits in the current byte.
      * @param {number} n The number of bytes to peek.  Must be a positive integer.
      * @param {boolean=} movePointers Whether to move the pointer, defaults false.
-     * @return {Uint8Array} The subarray.
+     * @returns {Uint8Array} The subarray.
      */
     peekBytes(n, opt_movePointers) {
       const num = parseInt(n, 10);
@@ -280,7 +280,7 @@ bitjs.io.BitStream =
 
     /**
      * @param {number} n The number of bytes to read.
-     * @return {Uint8Array} The subarray.
+     * @returns {Uint8Array} The subarray.
      */
     readBytes(n) {
       return this.peekBytes(n, true);

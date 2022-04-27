@@ -16,7 +16,7 @@ let loadingPromise = undefined;
 let api = undefined;
 
 /**
- * @return {Promise<Object>} Returns the API object.
+ * @returns {Promise<Object>} Returns the API object.
  */
 function loadWebPShimApi() {
   if (api) { return Promise.resolve(api); }
