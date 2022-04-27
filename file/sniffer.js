@@ -43,11 +43,16 @@ const fileSignatures = {
  * numbers above), then the mimeType field will be set.
  */
 class Node {
-  /** @param {number} value */
+  /** @type {string} */
+  mimeType;
+
+  /** @type {Object<number, Node>} */
+  children = {};
+
+  /** @param {number} value The byte that this Node points at. */
   constructor(value) {
+    /** @type {number} */
     this.value = value;
-    this.children = {};
-    this.mimeType = undefined;
   }
 }
 
@@ -98,7 +103,7 @@ export function initialize() {
 /**
  * Finds the likely MIME type represented by the ArrayBuffer.
  * @param {ArrayBuffer} ab
- * @return {string} The MIME type of the buffer, or undefined.
+ * @returns {string} The MIME type of the buffer, or undefined.
  */
 export function findMimeType(ab) {
   if (!root) {
