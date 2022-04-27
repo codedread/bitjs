@@ -153,7 +153,7 @@ PackSize                4 bytes
 UnpSize                 4 bytes
 HostOS                  1 byte
 FileCRC                 4 bytes
-FileTime                4 bytes
+FileTime (mtime)        4 bytes (MS-DOS date/time format)
 UnpVer                  1 byte
 Method                  1 byte
 NameSize                2 bytes
@@ -171,39 +171,79 @@ Packed Data             (Total Packed Size) bytes
 <header>
 	<h6 id="ext-time-structure"><a href="#ext-time-structure">ExtTime Structure</a></h6>
 </header>
+	
+<p>This structure has 4 sections representing additional time data.</p>
+<p>The first 16 bits contain a set of flags, 4 bits for each section.</p>
 
+<p>Each flag contains:</p>
+<ul>
+	<li>Bit 0: Whether this section is present or not</li>
+	<li>Bit 2: Signals that the MS-DOS date/time should have its seconds increased by 1</li>
+	<ul>
+		<li>MS-DOS date/time format can only store even numbers of seconds. This bit counters this limitation.</li>
+	</ul>
+	<li>Bit 3 and 4: The amount of bytes to be read as the remainder, between 0 and 3</li>
+</ul>
+	
+<p>Each section contains:</p>
+	
+<ul>
+	<li>4 bytes containing an MS-DOS date/time (except for mtime, which is part of FILE_HEAD)</li>
+	<li>0 to 3 bytes containing fractions of seconds in 100ns increments</li>
+        <ul>
+            <li>They form a 24-bit integer, sorted from least significant to most significant bits</li>
+            <li>If fewer than 3 bytes are present, the remaining least significant bits are to be padded with zeroes in order to complete 24-bits</li>
+        </ul>
+</ul>
+	
 <p>Follow the following pseudo-code to read in the ExtTime Structure.</p>
-<p><strong>TODO: Fill in details of what this structure represents.</strong></p>
 
 <pre>
+const one_second = 10000000; // 1 second in 100ns intervals => 1E7
 var extTimeFlags = readBits(16)
 
 <b>mtime:</b>
 mtime_rmode = extTimeFlags >> 12
 if ((mtime_rmode & 8)==0) goto ctime
 mtime_count = mtime_rmode & 0x3
-mtime_reminder = readBits(8*mtime_count);
+mtime_remainder = 0
+for (var i = 0; i < mtime_count; i++) {
+    mtime_remainder = (readBits(8) << 16) | (mtime_remainder >> 8)
+}
+if ((mtime_rmode & 4)!=0) mtime_remainder += one_second
 
 <b>ctime:</b>
 ctime_rmode = extTimeFlags >> 8
 if ((ctime_rmode & 8)==0) goto atime
-Set ctime to readBits(16)
+ctime = readBits(32)
 ctime_count = ctime_rmode & 0x3
-ctime_reminder = readBits(8*ctime_count)
+ctime_remainder = 0
+for (var i = 0; i < ctime_count; i++) {
+    ctime_remainder = (readBits(8) << 16) | (ctime_remainder >> 8)
+}
+if ((ctime_rmode & 4)!=0) ctime_remainder += one_second
 
 <b>atime:</b>
 atime_rmode = extTimeFlags >> 4
 if ((atime_rmode & 8)==0) goto arctime
-Set atime to readBits(16)
+atime = readBits(32)
 atime_count = atime_rmode & 0x3
-atime_reminder = readBits(8*atime_count)
+atime_remainder = 0
+for (var i = 0; i < atime_count; i++) {
+    atime_remainder = (readBits(8) << 16) | (atime_remainder >> 8)
+}
+if ((atime_rmode & 4)!=0) atime_remainder += one_second
 
 <b>arctime:</b>
 arctime_rmode = extTimeFlags
 if ((arctime_rmode & 8)==0) goto done_exttime
-Set arctime to readBits(16)
+arctime = readBits(32)
 arctime_count = arctime_rmode & 0x3
-arctime_reminder = readBits(8*arctime_count)
+arctime_remainder = 0
+for (var i = 0; i < arctime_count; i++) {
+    arctime_remainder = (readBits(8) << 16) | (arctime_remainder >> 8)
+}
+if ((arctime_rmode & 4)!=0) arctime_remainder += one_second
 
 <b>done_exttime</b>
 </pre>
@@ -551,6 +591,7 @@ ZeroCount               4 bits (only present if BitLength is 15)
 <ul>
 <li>Eugene Roshal &lt;roshal@rarlab.com&gt; - creator and owner of the RAR format</li>
 <li>Jeff Schiller &lt;codedread@gmail.com&gt; - creator of this document as part of the <a href="http://github.com/codedread/bitjs/">bitjs</a> project</li>
+<li>Andre Brait &lt;andrebrait@gmail.com&gt; - for documenting the ExtTime structure</li>
 </ul>
 </section>
 
