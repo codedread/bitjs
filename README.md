@@ -115,6 +115,8 @@ exec(cmd, (error, stdout) => {
   const info = JSON.parse(stdout);
   // 'video/mp4; codecs="avc1.4D4028, mp4a.40.2"'
   const contentType = getFullMIMEString(info);
+  ...
+});
 ```
 
 ## bitjs.file
