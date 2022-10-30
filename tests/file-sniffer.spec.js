@@ -1,5 +1,5 @@
 /*
- * archive-test.js
+ * file-sniffer.spec.js
  *
  * Licensed under the MIT License
  *

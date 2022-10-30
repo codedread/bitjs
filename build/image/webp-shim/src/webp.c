@@ -1,7 +1,7 @@
 /**
  * webp.c
  *
- * Provides functionality for decoding a WebP imgae and converting it into
+ * Provides functionality for decoding a WebP image and converting it into
  * alternative raster graphics formats (PNG/JPG).
  *
  * Licensed under the MIT License
