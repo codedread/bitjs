@@ -47,7 +47,7 @@ function loadWebPShimApi() {
 }
 
 /**
- * @param {ArrayBuffer|TypedArray} webpBuffer The byte array containing the WebP image bytes.
+ * @param {ArrayBuffer|Uint8Array} webpBuffer The byte array containing the WebP image bytes.
  * @returns {Promise<ArrayBuffer>} A Promise resolving to a byte array containing the PNG bytes.
  */
 export function convertWebPtoPNG(webpBuffer) {
@@ -76,7 +76,7 @@ export function convertWebPtoPNG(webpBuffer) {
 }
 
 /**
- * @param {ArrayBuffer|TypedArray} webpBuffer The byte array containing the WebP image bytes.
+ * @param {ArrayBuffer|Uint8Array} webpBuffer The byte array containing the WebP image bytes.
  * @returns {Promise<ArrayBuffer>} A Promise resolving to a byte array containing the JPG bytes.
  */
 export function convertWebPtoJPG(webpBuffer) {

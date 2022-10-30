@@ -12,7 +12,7 @@
  */
 
 /**
- * @typdef ProbeStream ffprobe -show_streams -print_format json. Only the fields we care about.
+ * @typedef ProbeStream ffprobe -show_streams -print_format json. Only the fields we care about.
  * @property {number} index
  * @property {string} codec_name
  * @property {string} codec_long_name
