@@ -1,6 +1,6 @@
 {
   "name": "@codedread/bitjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Binary Tools for JavaScript",
   "homepage": "https://github.com/codedread/bitjs",
   "author": "Jeff Schiller",
@@ -15,7 +15,12 @@
     "tar",
     "unzip",
     "unrar",
-    "untar"
+    "untar",
+    "file",
+    "codecs",
+    "mp4",
+    "avc",
+    "webm"
   ],
   "main": "./index.js",
   "type": "module",
@@ -32,10 +37,12 @@
     "test": "tests"
   },
   "scripts": {
+    "build": "cd build; make",
     "test": "./node_modules/.bin/mocha tests/*.spec.js"
   },
   "devDependencies": {
     "chai": "^4.3.4",
     "mocha": "^8.4.0"
-  }
+  },
+  "dependencies": {}
 }
