@@ -96,6 +96,29 @@ const zippedArrayBuffer = await zipper.start(
   true /* isLastFile */);
 ```
 
+### bitjs.codecs
+
+This package includes code for dealing with media files (audio/video). It is useful for deriving
+ISO RFC6381 MIME type strings, including the codec information. Currently supports a limited subset
+of MP4 and WEBM.
+
+How to use:
+
+```javascript
+
+import { getFullMIMEString } from 'bitjs/codecs/codecs.js';
+/**
+ * @typedef {import('bitjs/codecs/codecs.js').ProbeInfo} ProbeInfo
+ */
+
+const cmd = 'ffprobe -show_format -show_streams -print_format json -v quiet foo.mp4';
+exec(cmd, (error, stdout) => {
+  /** @type {ProbeInfo} */
+  const info = JSON.parse(stdout);
+  // 'video/mp4; codecs="avc1.4D4028, mp4a.40.2"'
+  const contentType = getFullMIMEString(info);
+```
+
 ### bitjs.file
 
 This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
