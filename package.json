@@ -38,7 +38,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "cd build; make",
+    "build-webpshim": "cd build; make",
     "test": "./node_modules/.bin/mocha tests/*.spec.js"
   },
   "devDependencies": {
