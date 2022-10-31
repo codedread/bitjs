@@ -50,6 +50,13 @@ export function getShortMIMEString(info) {
   if (!info) throw `Invalid ProbeInfo`;
   if (!info.streams || info.streams.length === 0) throw `No streams in ProbeInfo`;
 
+  // mp3 files are always considered audio/.
+  if (info.format.format_name === 'mp3') {
+    return 'audio/mpeg';
+  }
+
+  // Otherwise, any file with at least 1 video stream is considered video/.
+  // Otherwise, any file with at least 1 audio stream is considered audio/.
   const type = info.streams.some(s => s.codec_type === 'video') ?
       'video' :
       info.streams.some(s => s.codec_type === 'audio') ? 'audio' : undefined;
@@ -98,16 +105,30 @@ export function getShortMIMEString(info) {
 export function getFullMIMEString(info) {
   /** A string like 'video/mp4' */
   let contentType = `${getShortMIMEString(info)}`;
+  // If MP3, just send back the type.
+  if (contentType === 'audio/mpeg') {
+    return contentType;
+  }
+
   let codecFrags = new Set();
 
   for (const stream of info.streams) {
     if (stream.codec_type === 'audio') {
-      // TODO! At least mp4a!
+      switch (stream.codec_tag_string) {
+        case 'mp4a': codecFrags.add(getMP4ACodecString(stream)); break;
+        // TODO: vorbis.
+        // TODO: opus.
+        default: 
+      }
     }
     else if (stream.codec_type === 'video') {
       switch (stream.codec_tag_string) {
         case 'avc1': codecFrags.add(getAVC1CodecString(stream)); break;
         case 'vp09': codecFrags.add(getVP09CodecString(stream)); break;
+        // We don't handle these as video streams with codecs, so skip them.
+        case 'png':
+        case 'mjpeg':
+          continue;
         default:
           throw `Could not handle codec_tag_string ${stream.codec_tag_string} yet. ` +
               `Please file a bug https://github.com/codedread/bitjs/issues/new`;
@@ -116,7 +137,6 @@ export function getFullMIMEString(info) {
   }
 
   if (codecFrags.length === 0) return contentType;
-
   return contentType + '; codecs="' + Array.from(codecFrags).join(',') + '"';
 }
 
@@ -213,5 +233,24 @@ function getVP09CodecString(stream) {
   //     ffprobe JSON output instead.
   frag += '.10';
 
+  return frag;
+}
+
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#mp4a
+ * @param {ProbeStream} stream
+ * @returns {string}
+ */
+function getMP4ACodecString(stream) {
+  let frag = 'mp4a.40';
+  switch (stream.profile) {
+    case 'LC':
+      frag += '.2';
+      break;
+    // TODO: more!
+    default: 
+      throw `Cannot handle AAC stream with profile ${stream.profile} yet. ` +
+          `Please file a bug https://github.com/codedread/bitjs/issues/new`;
+  }
   return frag;
 }

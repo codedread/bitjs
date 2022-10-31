@@ -40,6 +40,13 @@ describe('codecs test suite', () => {
       })).to.throw();
     });
 
+    it('detects MP3', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'mp3' },
+        streams: [ { codec_type: 'audio'}, { codec_type: 'video' } ],
+      })).equals('audio/mpeg');
+    });
+
     it('detects AVI video', () => {
       expect(getShortMIMEString({
         format: { format_name: 'avi' },
@@ -249,6 +256,34 @@ describe('codecs test suite', () => {
               const matches = s.match(/vp09\.[0-9]{2}\.([0-9A-F]{2})\.[0-9A-F]{2}/);
               return matches && matches.length === 2 && matches[1] === 'FF';
             });
+      });
+    });
+  });
+
+  describe('AAC', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
+        streams: [{
+          codec_type: 'audio',
+          codec_tag_string: 'mp4a',
+        }],
+      };
+    });
+
+    it('throws when unknown', () => {
+      expect(() => getFullMIMEString(info)).to.throw();
+    });
+
+    describe('Profile tests', () => {
+      it('recognizes AAC-LC', () => {
+        info.streams[0].profile = 'LC';
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('audio/mp4; codecs="mp4a.40.2"');
       });
     });
   });
