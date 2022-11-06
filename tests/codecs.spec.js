@@ -125,7 +125,7 @@ describe('codecs test suite', () => {
       })).to.throw();
     });
 
-    describe('AVC1', () => {
+    describe('AVC1 / H264', () => {
       /** @type {ProbeInfo} */
       let info;
 
@@ -201,6 +201,16 @@ describe('codecs test suite', () => {
               .and.satisfy(s => s.endsWith('0A"'));
         });
       });
+
+      it('Handles codec_name=h264, but no codec_tag_string', () => {
+        info.streams[0].codec_name = 'h264';
+        info.streams[0].profile = 'Main';
+        info.streams[0].codec_tag_string = '[0][0][0][0]';
+        info.streams[0].level = 20;
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.satisfy(s => s.startsWith('video/mp4; codecs="avc1.4D00'));
+      });
     });
   });
 
@@ -260,7 +270,7 @@ describe('codecs test suite', () => {
     });
   });
 
-  describe('AAC', () => {
+  describe('MP4A / AAC', () => {
     /** @type {ProbeInfo} */
     let info;
 
@@ -285,6 +295,15 @@ describe('codecs test suite', () => {
             .to.be.a('string')
             .and.equals('audio/mp4; codecs="mp4a.40.2"');
       });
+    });
+
+    it('handles codec_name=aac but no codec_tag_string', () => {
+      info.streams[0].profile = 'LC';
+      info.streams[0].codec_tag_string = '[0][0][0][0]';
+      info.streams[0].codec_name = 'aac';
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/mp4; codecs="mp4a.40.2"');
     });
   });
 });

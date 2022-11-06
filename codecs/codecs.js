@@ -119,6 +119,14 @@ export function getFullMIMEString(info) {
         // TODO: vorbis.
         // TODO: opus.
         default: 
+          switch (stream.codec_name) {
+            case 'aac': codecFrags.add(getMP4ACodecString(stream)); break;
+            default:
+              throw `Could not handle codec_name ${stream.codec_name}, ` +
+                    `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +
+                    `Please file a bug https://github.com/codedread/bitjs/issues/new`;
+          }
+          break;
       }
     }
     else if (stream.codec_type === 'video') {
@@ -130,8 +138,14 @@ export function getFullMIMEString(info) {
         case 'mjpeg':
           continue;
         default:
-          throw `Could not handle codec_tag_string ${stream.codec_tag_string} yet. ` +
-              `Please file a bug https://github.com/codedread/bitjs/issues/new`;
+          switch (stream.codec_name) {
+            case 'h264': codecFrags.add(getAVC1CodecString(stream)); break;
+            default:
+              throw `Could not handle codec_name ${stream.codec_name}, ` +
+                    `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +
+                    `Please file a bug https://github.com/codedread/bitjs/issues/new`;
+
+          }
       }
     }
   }
@@ -143,6 +157,7 @@ export function getFullMIMEString(info) {
 // TODO: Consider whether any of these should be exported.
 
 /**
+ * AVC1 is the same thing as H264.
  * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#iso_base_media_file_format_mp4_quicktime_and_3gp
  * @param {ProbeStream} stream
  * @returns {string}
@@ -237,6 +252,7 @@ function getVP09CodecString(stream) {
 }
 
 /**
+ * MP4A is the same as AAC.
  * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#mp4a
  * @param {ProbeStream} stream
  * @returns {string}
@@ -248,7 +264,7 @@ function getMP4ACodecString(stream) {
       frag += '.2';
       break;
     // TODO: more!
-    default: 
+    default:
       throw `Cannot handle AAC stream with profile ${stream.profile} yet. ` +
           `Please file a bug https://github.com/codedread/bitjs/issues/new`;
   }
