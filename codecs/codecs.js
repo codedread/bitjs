@@ -116,11 +116,11 @@ export function getFullMIMEString(info) {
     if (stream.codec_type === 'audio') {
       switch (stream.codec_tag_string) {
         case 'mp4a': codecFrags.add(getMP4ACodecString(stream)); break;
-        // TODO: vorbis.
-        // TODO: opus.
         default: 
           switch (stream.codec_name) {
             case 'aac': codecFrags.add(getMP4ACodecString(stream)); break;
+            case 'vorbis': codecFrags.add('vorbis'); break;
+            case 'opus': codecFrags.add('opus'); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +
@@ -140,6 +140,7 @@ export function getFullMIMEString(info) {
         default:
           switch (stream.codec_name) {
             case 'h264': codecFrags.add(getAVC1CodecString(stream)); break;
+            case 'vp9': codecFrags.add(getVP09CodecString(stream)); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +

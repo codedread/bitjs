@@ -214,7 +214,7 @@ describe('codecs test suite', () => {
     });
   });
 
-  describe('VP09', () => {
+  describe('VP09 / VP9', () => {
     /** @type {ProbeInfo} */
     let info;
 
@@ -268,6 +268,16 @@ describe('codecs test suite', () => {
             });
       });
     });
+
+    it('detects codec_name=vp9 but no codec_tag_string', () => {
+      info.streams[0].codec_name = 'vp9';
+      info.streams[0].codec_tag_string = '[0][0][0][0]';
+      info.streams[0].profile = 'Profile 0';
+      info.streams[0].level = 21; // 0x15
+      expect(getFullMIMEString(info))
+      .to.be.a('string')
+      .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.00.15'));
+    });
   });
 
   describe('MP4A / AAC', () => {
@@ -304,6 +314,48 @@ describe('codecs test suite', () => {
       expect(getFullMIMEString(info))
           .to.be.a('string')
           .and.equals('audio/mp4; codecs="mp4a.40.2"');
+    });
+  });
+
+  describe('Vorbis', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'matroska,webm' },
+        streams: [{
+          codec_type: 'audio',
+          codec_name: 'vorbis',
+        }],
+      };
+    });
+
+    it('detects vorbis', () => {
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/webm; codecs="vorbis"');
+    });
+  });
+
+  describe('Opus', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'matroska,webm' },
+        streams: [{
+          codec_type: 'audio',
+          codec_name: 'opus',
+        }],
+      };
+    });
+
+    it('detects opus', () => {
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/webm; codecs="opus"');
     });
   });
 });
