@@ -15,8 +15,6 @@ import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEve
          UnrarrerInternal, UntarrerInternal, UnzipperInternal,
          getUnarchiverInternal } from './decompress-internal.js';
 
-console.warn(`Stop using archive.js and use decompress.js instead. This module will be removed.`);
-
 export {
   UnarchiveAppendEvent,
   UnarchiveErrorEvent,
@@ -58,18 +56,22 @@ export {
 
 const createWorkerFn = (scriptFilename) => new Worker(scriptFilename);
 
+function warn() {
+  console.warn(`Stop using archive.js and use decompress.js instead. This module will be removed.`);
+}
+
 // Thin wrappers of unarchivers for clients who want to construct a specific
 // unarchiver themselves rather than use getUnarchiver().
 export class Unzipper extends UnzipperInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { warn(); super(ab, createWorkerFn, options); }
 }
 
 export class Unrarrer extends UnrarrerInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { warn(); super(ab, createWorkerFn, options); }
 }
 
 export class Untarrer extends UntarrerInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { warn(); super(ab, createWorkerFn, options); }
 }
 
 /**
@@ -83,5 +85,6 @@ export class Untarrer extends UntarrerInternal {
  * @returns {Unarchiver}
  */
 export function getUnarchiver(ab, options = {}) {
+  warn();
   return getUnarchiverInternal(ab, createWorkerFn, options);
 }

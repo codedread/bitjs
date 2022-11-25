@@ -233,8 +233,8 @@ function getVP09CodecString(stream) {
   }
 
   // Add LL hex digits.
-  // TODO: ffprobe is spitting out -99 as level... I'm guessing on LL here.
-  if (stream.level === -99) { frag += '.FF'; }
+  // If ffprobe is spitting out -99 as level... Just return 'vp9'.
+  if (stream.level === -99) { return 'vp9'; }
   else {
     const levelAsHex = Number(stream.level).toString(16).toUpperCase().padStart(2, '0');
     if (levelAsHex.length !== 2) {

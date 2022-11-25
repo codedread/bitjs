@@ -261,11 +261,7 @@ describe('codecs test suite', () => {
         info.streams[0].level = -99; // I'm not sure what ffprobe means by this.
         expect(getFullMIMEString(info))
             .to.be.a('string')
-            .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.'))
-            .and.satisfy(s => {
-              const matches = s.match(/vp09\.[0-9]{2}\.([0-9A-F]{2})\.[0-9A-F]{2}/);
-              return matches && matches.length === 2 && matches[1] === 'FF';
-            });
+            .and.equals('video/webm; codecs="vp9"');
       });
     });
 

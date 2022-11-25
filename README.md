@@ -102,7 +102,8 @@ ISO RFC6381 MIME type strings, including the codec information. Currently suppor
 of MP4 and WEBM.
 
 How to use:
-
+  * First, install ffprobe (ffmpeg) on your system.
+  * Then:
 ```javascript
 
 import { getFullMIMEString } from 'bitjs/codecs/codecs.js';
