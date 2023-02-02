@@ -122,6 +122,8 @@ export function getFullMIMEString(info) {
             case 'aac': codecFrags.add(getMP4ACodecString(stream)); break;
             case 'vorbis': codecFrags.add('vorbis'); break;
             case 'opus': codecFrags.add('opus'); break;
+            // I'm going off of what Chromium calls this one, with the dash.
+            case 'ac3': codecFrags.add('ac-3'); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +

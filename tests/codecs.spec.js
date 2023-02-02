@@ -276,6 +276,27 @@ describe('codecs test suite', () => {
     });
   });
 
+  describe('MPEG2', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'matroska,webm' },
+        streams: [{
+          codec_type: 'video',
+          codec_name: 'mpeg2video',
+        }],
+      };
+    });
+
+    it('detects mpeg2video', () => {
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('video/webm; codecs="mpeg2video"');
+    });
+  });
+
   describe('MP4A / AAC', () => {
     /** @type {ProbeInfo} */
     let info;
@@ -355,7 +376,7 @@ describe('codecs test suite', () => {
     });
   });
 
-  describe('MPEG2', () => {
+  describe('AC-3', () => {
     /** @type {ProbeInfo} */
     let info;
 
@@ -363,16 +384,16 @@ describe('codecs test suite', () => {
       info = {
         format: { format_name: 'matroska,webm' },
         streams: [{
-          codec_type: 'video',
-          codec_name: 'mpeg2video',
+          codec_type: 'audio',
+          codec_name: 'ac3',
         }],
       };
     });
 
-    it('detects mpeg2video', () => {
+    it('detects AC-3', () => {
       expect(getFullMIMEString(info))
           .to.be.a('string')
-          .and.equals('video/webm; codecs="mpeg2video"');
+          .and.equals('audio/webm; codecs="ac-3"');
     });
   });
 });
