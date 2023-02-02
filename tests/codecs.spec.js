@@ -354,4 +354,25 @@ describe('codecs test suite', () => {
           .and.equals('audio/webm; codecs="opus"');
     });
   });
+
+  describe('MPEG2', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'matroska,webm' },
+        streams: [{
+          codec_type: 'video',
+          codec_name: 'mpeg2video',
+        }],
+      };
+    });
+
+    it('detects mpeg2video', () => {
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('video/webm; codecs="mpeg2video"');
+    });
+  });
 });

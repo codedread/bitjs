@@ -27,7 +27,8 @@
  */
 
 /**
- * @typedef ProbeFormat ffprobe -show_format -print_format json. Only the fields we care about.
+ * @typedef ProbeFormat Only the fields we care about from the following command:
+ *     ffprobe -show_format -show_streams -v quiet -print_format json -i file.mp4
  * @property {string} filename
  * @property {string} format_name
  * @property {string} duration Number of seconds, as a string like "473.506367".
@@ -123,7 +124,7 @@ export function getFullMIMEString(info) {
             case 'opus': codecFrags.add('opus'); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
-                    `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +
+                    `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
                     `Please file a bug https://github.com/codedread/bitjs/issues/new`;
           }
           break;
@@ -141,9 +142,10 @@ export function getFullMIMEString(info) {
           switch (stream.codec_name) {
             case 'h264': codecFrags.add(getAVC1CodecString(stream)); break;
             case 'vp9': codecFrags.add(getVP09CodecString(stream)); break;
+            case 'mpeg2video': codecFrags.add('mpeg2video'); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
-                    `codec_tag_string ${stream.codec_tag_string} for file ${info.filename} yet. ` +
+                    `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
                     `Please file a bug https://github.com/codedread/bitjs/issues/new`;
 
           }

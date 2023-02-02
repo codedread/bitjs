@@ -23,11 +23,30 @@ or
 $ yarn add @codedread/bitjs
 ```
 
-## bitjs.archive
+### Using in Node
+
+This module is an ES Module, which should work as expected in other projects using ES Modules. However,
+if you are using a project that uses CommonJs modules, it's a little tricker to use. One valid example
+of this is if a TypeScript project compiles to CommonJS, it will try to turn imports into require()
+statements, which will break. The fix for this (unfortunately) is to update your tsconfig.json:
+
+```json
+ "moduleResolution": "Node16",
+```
+
+and use a Dynamic Import:
+
+```javascript
+const { getFullMIMEString } = await import('@codedread/bitjs');
+```
+
+## Packages
+
+### bitjs.archive
 
 This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. A prototype version of a compressor that creates Zip files is also present. The decompression/compression actually happens inside a Web Worker.
 
-### Decompressing
+#### Decompressing
 
 ```javascript
 import { Unzipper } from './bitjs/archive/decompress.js';
@@ -69,7 +88,7 @@ unzipper.update(anArrayBufferWithMoreBytes);
 unzipper.update(anArrayBufferWithYetMoreBytes);
 ```
 
-### Compressing
+#### Compressing
 
 The Zipper only supports creating zip files without compression (story only) for now. The interface
 is pretty straightforward and there is no event-based / streaming API.
@@ -95,7 +114,7 @@ const zippedArrayBuffer = await zipper.start(
   true /* isLastFile */);
 ```
 
-## bitjs.codecs
+### bitjs.codecs
 
 This package includes code for dealing with media files (audio/video). It is useful for deriving
 ISO RFC6381 MIME type strings, including the codec information. Currently supports a limited subset
@@ -121,7 +140,7 @@ exec(cmd, (error, stdout) => {
 });
 ```
 
-## bitjs.file
+### bitjs.file
 
 This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
 
@@ -130,7 +149,7 @@ import { findMimeType } from './bitjs/file/sniffer.js';
 const mimeType = findMimeType(someArrayBuffer);
 ```
 
-## bitjs.image
+### bitjs.image
 
 This package includes code for dealing with binary images.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
 
@@ -145,7 +164,7 @@ convertWebPtoPNG(webpBuffer).then(pngBuf => {
 });
 ```
 
-## bitjs.io
+### bitjs.io
 
 This package includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
 
@@ -155,12 +174,6 @@ const bstream = new BitStream(someArrayBuffer, true, offset, length);
 const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
-
-# Other Tests
-
-Those that haven't been ported to mocha/chai/nodejs.
-
-* [bitjs.archive tests](https://codedread.github.io/bitjs/tests/archive-test.html)
 
 ## Reference
 
