@@ -51,9 +51,11 @@ export function getShortMIMEString(info) {
   if (!info) throw `Invalid ProbeInfo`;
   if (!info.streams || info.streams.length === 0) throw `No streams in ProbeInfo`;
 
-  // mp3 files are always considered audio/.
+  // mp3/flac files are always considered audio/ (even with mjpeg video streams).
   if (info.format.format_name === 'mp3') {
     return 'audio/mpeg';
+  } else if (info.format.format_name === 'flac') {
+    return 'audio/flac';
   }
 
   // Otherwise, any file with at least 1 video stream is considered video/.
@@ -106,8 +108,9 @@ export function getShortMIMEString(info) {
 export function getFullMIMEString(info) {
   /** A string like 'video/mp4' */
   let contentType = `${getShortMIMEString(info)}`;
-  // If MP3, just send back the type.
-  if (contentType === 'audio/mpeg') {
+  // If MP3/FLAC, just send back the type.
+  if (contentType === 'audio/mpeg'
+      || contentType === 'audio/flac') {
     return contentType;
   }
 
@@ -124,6 +127,7 @@ export function getFullMIMEString(info) {
             case 'opus': codecFrags.add('opus'); break;
             // I'm going off of what Chromium calls this one, with the dash.
             case 'ac3': codecFrags.add('ac-3'); break;
+            case 'flac': codecFrags.add('flac'); break;
             default:
               throw `Could not handle codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +

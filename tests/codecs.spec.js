@@ -47,6 +47,13 @@ describe('codecs test suite', () => {
       })).equals('audio/mpeg');
     });
 
+    it('detects FLAC', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'flac' },
+        streams: [ { codec_type: 'audio'}, { codec_type: 'video' } ],
+      })).equals('audio/flac');
+    });
+
     it('detects AVI video', () => {
       expect(getShortMIMEString({
         format: { format_name: 'avi' },
