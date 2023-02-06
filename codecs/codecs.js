@@ -127,9 +127,10 @@ export function getFullMIMEString(info) {
             case 'opus': codecFrags.add('opus'); break;
             // I'm going off of what Chromium calls this one, with the dash.
             case 'ac3': codecFrags.add('ac-3'); break;
-            case 'flac': codecFrags.add('flac'); break;
+            // It seems to be "fLaC".
+            case 'flac': codecFrags.add(stream.codec_tag_string); break;
             default:
-              throw `Could not handle codec_name ${stream.codec_name}, ` +
+              throw `Could not handle audio codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
                     `Please file a bug https://github.com/codedread/bitjs/issues/new`;
           }
@@ -141,16 +142,16 @@ export function getFullMIMEString(info) {
         case 'avc1': codecFrags.add(getAVC1CodecString(stream)); break;
         case 'vp09': codecFrags.add(getVP09CodecString(stream)); break;
         // We don't handle these as video streams with codecs, so skip them.
-        case 'png':
-        case 'mjpeg':
-          continue;
+        case 'png': continue;
         default:
           switch (stream.codec_name) {
             case 'h264': codecFrags.add(getAVC1CodecString(stream)); break;
-            case 'vp9': codecFrags.add(getVP09CodecString(stream)); break;
             case 'mpeg2video': codecFrags.add('mpeg2video'); break;
+            // Skip mjpeg as a video stream for the codecs string.
+            case 'mjpeg': break;
+            case 'vp9': codecFrags.add(getVP09CodecString(stream)); break;
             default:
-              throw `Could not handle codec_name ${stream.codec_name}, ` +
+              throw `Could not handle video codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
                     `Please file a bug https://github.com/codedread/bitjs/issues/new`;
 

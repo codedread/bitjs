@@ -49,7 +49,7 @@ describe('codecs test suite', () => {
 
     it('detects FLAC', () => {
       expect(getShortMIMEString({
-        format: { format_name: 'flac' },
+        format: { format_name: 'flac', format_tag_string: 'fLaC' },
         streams: [ { codec_type: 'audio'}, { codec_type: 'video' } ],
       })).equals('audio/flac');
     });
@@ -338,6 +338,43 @@ describe('codecs test suite', () => {
       expect(getFullMIMEString(info))
           .to.be.a('string')
           .and.equals('audio/mp4; codecs="mp4a.40.2"');
+    });
+  });
+
+  describe('MP4 / FLAC', () => {
+    /** @type {ProbeInfo} */
+    let info;
+
+    beforeEach(() => {
+      info = {
+        format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
+        streams: [{
+          codec_type: 'audio',
+          codec_tag_string: 'mp4a',
+        }],
+      };
+    });
+
+    it('audio/mp4 handles fLaC', () => {
+      info.streams[0].codec_tag_string = 'fLaC';
+      info.streams[0].codec_name = 'flac';
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/mp4; codecs="fLaC"');
+    });
+
+    it('video/mp4 handles fLaC', () => {
+      const vInfo = structuredClone(info);
+      vInfo.streams[0].codec_tag_string = 'fLaC';
+      vInfo.streams[0].codec_name = 'flac';
+      vInfo.streams.push({
+        codec_type: 'video',
+        codec_name: 'mjpeg',
+      });
+      expect(getFullMIMEString(vInfo))
+          .to.be.a('string')
+          .and.equals('video/mp4; codecs="fLaC"');
+      
     });
   });
 
