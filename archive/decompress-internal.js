@@ -33,16 +33,12 @@ export const UnarchiveEventType = {
 /**
  * An unarchive event.
  */
- export class UnarchiveEvent {
+ export class UnarchiveEvent extends Event {
   /**
    * @param {string} type The event type.
    */
   constructor(type) {
-    /**
-     * The event type.
-     * @type {string}
-     */
-    this.type = type;
+    super(type);
   }
 }
 
@@ -169,11 +165,8 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
 /**
  * Base class for all Unarchivers.
- * TODO: When EventTarget constructors are broadly supported, make this extend
- *     EventTarget and remove event listener code.
- *     https://caniuse.com/#feat=mdn-api_eventtarget_eventtarget
  */
- export class Unarchiver {
+ export class Unarchiver extends EventTarget {
   /**
    * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
    *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
@@ -186,6 +179,8 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    *       'debug': A boolean where true indicates that the archivers should log debug output.
    */
   constructor(arrayBuffer, createWorkerFn, options = {}) {
+    super();
+
     if (typeof options === 'string') {
       console.warn(`Deprecated: Don't send a raw string to Unarchiver()`);
       console.warn(`            send {'pathToBitJS':'${options}'} instead`);
@@ -220,16 +215,6 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
     this.debugMode_ = !!(options.debug);
 
     /**
-     * A map from event type to an array of listeners.
-     * @private
-     * @type {Map.<string, Array>}
-     */
-    this.listeners_ = {};
-    for (let type in UnarchiveEventType) {
-      this.listeners_[UnarchiveEventType[type]] = [];
-    }
-
-    /**
      * Private web worker initialized during start().
      * @private
      * @type {Worker}
@@ -253,35 +238,6 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    */
   getScriptFileName() {
     throw 'Subclasses of Unarchiver must overload getScriptFileName()';
-  }
-
-  /**
-   * Adds an event listener for UnarchiveEvents.
-   *
-   * @param {string} Event type.
-   * @param {function} An event handler function.
-   */
-  addEventListener(type, listener) {
-    if (type in this.listeners_) {
-      if (this.listeners_[type].indexOf(listener) == -1) {
-        this.listeners_[type].push(listener);
-      }
-    }
-  }
-
-  /**
-   * Removes an event listener.
-   *
-   * @param {string} Event type.
-   * @param {EventListener|function} An event listener or handler function.
-   */
-  removeEventListener(type, listener) {
-    if (type in this.listeners_) {
-      const index = this.listeners_[type].indexOf(listener);
-      if (index != -1) {
-        this.listeners_[type].splice(index, 1);
-      }
-    }
   }
 
   /**
@@ -322,10 +278,9 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    */
   handleWorkerEvent_(obj) {
     const type = obj.type;
-    if (type && Object.values(UnarchiveEventType).includes(type) &&
-      this.listeners_[obj.type] instanceof Array) {
+    if (type && Object.values(UnarchiveEventType).includes(type)) {
       const evt = this.createUnarchiveEvent_(obj);
-      this.listeners_[evt.type].forEach(function (listener) { listener(evt) });
+      this.dispatchEvent(evt);
       if (evt.type == UnarchiveEventType.FINISH) {
         this.worker_.terminate();
       }
@@ -387,10 +342,8 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
         this.worker_.postMessage({ bytes: ab });
       }
     }
-    if (this.listeners_[UnarchiveEventType.APPEND]) {
-      const evt = new UnarchiveAppendEvent(numBytes);
-      this.listeners_[UnarchiveEventType.APPEND].forEach(listener => listener(evt));
-    }
+
+    this.dispatchEvent(new UnarchiveAppendEvent(numBytes));
   }
 
   /**
