@@ -360,7 +360,7 @@ describe('codecs test suite', () => {
       info.streams[0].codec_name = 'flac';
       expect(getFullMIMEString(info))
           .to.be.a('string')
-          .and.equals('audio/mp4; codecs="fLaC"');
+          .and.equals('audio/mp4; codecs="flac"');
     });
 
     it('video/mp4 handles fLaC', () => {
@@ -373,7 +373,7 @@ describe('codecs test suite', () => {
       });
       expect(getFullMIMEString(vInfo))
           .to.be.a('string')
-          .and.equals('video/mp4; codecs="fLaC"');
+          .and.equals('video/mp4; codecs="flac"');
       
     });
   });

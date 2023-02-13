@@ -127,8 +127,7 @@ export function getFullMIMEString(info) {
             case 'opus': codecFrags.add('opus'); break;
             // I'm going off of what Chromium calls this one, with the dash.
             case 'ac3': codecFrags.add('ac-3'); break;
-            // It seems to be "fLaC".
-            case 'flac': codecFrags.add(stream.codec_tag_string); break;
+            case 'flac': codecFrags.add('flac'); break;
             default:
               throw `Could not handle audio codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
