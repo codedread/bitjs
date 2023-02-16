@@ -35,6 +35,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "c8": "^7.12.0",
     "chai": "^4.3.4",
     "mocha": "^10.1.0",
     "typescript": "^4.8.0"
@@ -45,6 +46,7 @@
   },
   "scripts": {
     "build-webpshim": "cd build; make",
+    "coverage": "./node_modules/.bin/c8 npm test",
     "test": "./node_modules/.bin/mocha tests/*.spec.js"
   }
 }
