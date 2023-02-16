@@ -1,6 +1,6 @@
 {
   "name": "@codedread/bitjs",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Binary Tools for JavaScript",
   "homepage": "https://github.com/codedread/bitjs",
   "author": "Jeff Schiller",
@@ -33,6 +33,12 @@
   "bugs": {
     "url": "https://github.com/codedread/bitjs/issues"
   },
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^10.1.0",
+    "typescript": "^4.8.0"
+  },
   "directories": {
     "doc": "docs",
     "test": "tests"
@@ -40,11 +46,5 @@
   "scripts": {
     "build-webpshim": "cd build; make",
     "test": "./node_modules/.bin/mocha tests/*.spec.js"
-  },
-  "devDependencies": {
-    "chai": "^4.3.4",
-    "mocha": "^10.1.0",
-    "typescript": "^4.8.0"
-  },
-  "dependencies": {}
+  }
 }

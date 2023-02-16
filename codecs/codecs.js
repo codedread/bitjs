@@ -159,7 +159,7 @@ export function getFullMIMEString(info) {
     }
   }
 
-  if (codecFrags.length === 0) return contentType;
+  if (codecFrags.size === 0) return contentType;
   return contentType + '; codecs="' + Array.from(codecFrags).join(',') + '"';
 }
 
