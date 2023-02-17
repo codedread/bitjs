@@ -22,12 +22,34 @@ bitjs.io.BitStream =
    * Note that this stream is optimized, and thus, will *NOT* throw an error if
    * the end of the stream is reached.  Only use this in scenarios where you
    * already have all the bits you need.
+   *
+   * Bit reading always proceeds from the first byte in the buffer, to the
+   * second byte, and so on. The MTL flag controls which bit is considered
+   * first *inside* the byte.
+   *
+   * An Example for how Most-To-Least vs Least-to-Most mode works:
+   *
+   * If you have an ArrayBuffer with the following two Uint8s:
+   * 185 (0b10111001) and 66 (0b01000010)
+   * and you perform a series of readBits: 2 bits, then 3, then 5, then 6.
+   *
+   * A BitStream in "mtl" mode will yield the following:
+   * - readBits(2) => 2 ('10')
+   * - readBits(3) => 7 ('111')
+   * - readBits(5) => 5 ('00101')
+   * - readBits(6) => 2 ('000010')
+   *
+   * A BitStream in "ltm" mode will yield the following:
+   * - readBits(2) => 1 ('01')
+   * - readBits(3) => 6 ('110')
+   * - readBits(5) => 21 ('10101')
+   * - readBits(6) => 16 ('010000')
    */
   class BitStream {
     /**
      * @param {ArrayBuffer} ab An ArrayBuffer object or a Uint8Array.
      * @param {boolean} mtl Whether the stream reads bits from the byte starting with the
-     *     most-significant-bit (bit 7) to least-significant (bit 0). False means the direciton is
+     *     most-significant-bit (bit 7) to least-significant (bit 0). False means the direction is
      *     from least-significant-bit (bit 0) to most-significant (bit 7).
      * @param {Number} opt_offset The offset into the ArrayBuffer
      * @param {Number} opt_length The length of this BitStream
@@ -73,6 +95,7 @@ bitjs.io.BitStream =
 
     /**
      * Returns how many bites have been read in the stream since the beginning of time.
+     * @returns {number}
      */
     getNumBitsRead() {
       return this.bitsRead_;
@@ -80,6 +103,7 @@ bitjs.io.BitStream =
 
     /**
      * Returns how many bits are currently in the stream left to be read.
+     * @returns {number}
      */
     getNumBitsLeft() {
       const bitsLeftInByte = 8 - this.bitPtr;
@@ -205,6 +229,7 @@ bitjs.io.BitStream =
      * Bit at (bytePtr,bitPtr) has the highest position in returning data.
      * Taken from getbits.hpp in unrar.
      * TODO: Move this out of BitStream and into unrar.
+     * @returns {number}
      */
     getBits() {
       return (((((this.bytes[this.bytePtr] & 0xff) << 16) +

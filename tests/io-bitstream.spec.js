@@ -20,7 +20,7 @@ describe('bitjs.io.BitStream', () => {
   });
 
   it('BitPeekAndRead_RTL', () => {
-    const stream = new BitStream(array.buffer, true /* rtl */);
+    const stream = new BitStream(array.buffer, true /* mtl */);
     // 0110 = 2 + 4 = 6
     expect(stream.readBits(4)).equals(6);
     // 0101 011 = 1 + 2 + 8 + 32 = 43
@@ -35,7 +35,7 @@ describe('bitjs.io.BitStream', () => {
   });
 
   it('BitPeekAndRead_LTR', () => {
-    const stream = new BitStream(array.buffer, false /* rtl */);
+    const stream = new BitStream(array.buffer, false /* mtl */);
 
     // 0101 = 2 + 4 = 6
     expect(stream.peekBits(4)).equals(5);
