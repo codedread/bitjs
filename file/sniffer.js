@@ -7,12 +7,18 @@
  * Copyright(c) 2020 Google Inc.
  */
 
-// There are basically two major "container" families for modern audio-visual formats:
-//   1) the ISO-BMFF family (MP4, HEVC, AVIF, etc)
-//   2) the Matroska family (MKV, WebM, WebP)
+// A Container Format is a file that embeds multiple data streams into a single file.
+// Relevant examples:
+//   1) the ISO-BMFF family (MP4, HEVC, AVIF, MOV/QT, etc)
+//   2) the Matroska family (MKV, WebM)
+//   3) the RIFF family (WAV, AVI, WebP)
+//   4) the OGG family (OGV, OPUS)
+//   5) the ZIP family (ZIP, JAR, CBZ, EPUB, ODF, OOXML)
 
 // The ISO-BMFF container needs special processing because of its "compatible brands" array :(
 // The Matroska container needs special processing because the sub-type can appear anywhere :(
+// The OGG container needs special processing to determine what kind of streams are present :(
+// The ZIP container needs special processing to determine what files are present inside it :(
 
 //  NOTE: Because the ICO format also starts with a couple zero bytes, this tree will rely on the
 //        File Type box never going beyond 255 bytes in length which, seems unlikely according to
@@ -58,6 +64,8 @@ const fileSignatures = {
     [0xFF, 0xF2],
     [0x49, 0x44, 0x33], // 'ID3'
   ],
+  'audio/wav': [[0x52, 0x49, 0x46, 0x46, '??', '??', '??', '??', 0x57, 0x41, 0x56, 0x45]], // 'RIFF....WAVE'
+  'video/avi': [[0x52, 0x49, 0x46, 0x46, '??', '??', '??', '??', 0x41, 0x56, 0x49, 0x20]], // 'RIFF....AVI '
 };
 
 // TODO: Eventually add support for various container formats so that:
