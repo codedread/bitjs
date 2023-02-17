@@ -8,7 +8,7 @@
  */
 
 // A Container Format is a file that embeds multiple data streams into a single file.
-// Relevant examples:
+// Examples:
 //   1) the ISO-BMFF family (MP4, HEVC, AVIF, MOV/QT, etc)
 //   2) the Matroska family (MKV, WebM)
 //   3) the RIFF family (WAV, AVI, WebP)
@@ -66,6 +66,10 @@ const fileSignatures = {
   ],
   'audio/wav': [[0x52, 0x49, 0x46, 0x46, '??', '??', '??', '??', 0x57, 0x41, 0x56, 0x45]], // 'RIFF....WAVE'
   'video/avi': [[0x52, 0x49, 0x46, 0x46, '??', '??', '??', '??', 0x41, 0x56, 0x49, 0x20]], // 'RIFF....AVI '
+
+  // Miscellaneous.
+  'font/woff': [[0x77, 0x4F, 0x46, 0x46]], // 'wOFF'
+  'font/woff2': [[0x77, 0x4F, 0x46, 0x32]], // 'wOF2'
 };
 
 // TODO: Eventually add support for various container formats so that:
@@ -102,7 +106,7 @@ let maxDepth = 0;
 export function initialize() {
   root = new Node();
 
-  // Construct the tree, erroring if overlapping mime types are possible.
+  // Construct the tree, erroring if overlapping mime types are found.
   for (const mimeType in fileSignatures) {
     for (const signature of fileSignatures[mimeType]) {
       let curNode = root;
