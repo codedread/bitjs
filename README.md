@@ -182,3 +182,4 @@ const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not a
 ## History
 
 This project grew out of another project of mine, [kthoom](https://github.com/codedread/kthoom) (a comic book reader implemented in the browser).  This repository was automatically exported from [my original repository on GoogleCode](https://code.google.com/p/bitjs) and has undergone considerable changes and improvements since then, including adding streaming support, starter RarVM support, tests, many bug fixes, and updating the code to ES6.
+# cobrew
