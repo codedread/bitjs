@@ -196,7 +196,7 @@ Packed Data             (Total Packed Size) bytes
         </ul>
 </ul>
 	
-<p>Follow the following pseudo-code to read in the ExtTime Structure.</p>
+<p>Follow this pseudo-code to read in the ExtTime Structure.</p>
 
 <pre>
 const one_second = 10000000; // 1 second in 100ns intervals => 1E7
@@ -510,7 +510,7 @@ keepOldTable            1 bit
 	<h5 id="huffman-code-table"><a href="#huffman-code-table">3.3.1.1 Huffman Code Tables</a></h5>
 </header>
 
-<p>The Huffman Encoding tables consist a series of bit lengths.  For a more thorough treatment of the concepts of Huffman Encoding, see <a href="http://tools.ietf.org/html/rfc1951#page-6">the Deflate spec</a>.  The RAR format uses a set of twenty bit lengths to construct Huffman Codes.  The Huffman Encoding tables in RAR files consist of at most twenty entries of the format:</p>
+<p>The Huffman Encoding tables consist of a series of bit lengths.  For a more thorough treatment of the concepts of Huffman Encoding, see <a href="http://tools.ietf.org/html/rfc1951#page-6">the Deflate spec</a>.  The RAR format uses a set of twenty bit lengths to construct Huffman Codes.  The Huffman Encoding tables in RAR files consist of at most twenty entries of the format:</p>
 
 <pre>
 BitLength               4 bits
