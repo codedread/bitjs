@@ -7,18 +7,8 @@
  * Copyright(c) 2020 Google Inc.
  */
 
-// A Container Format is a file that embeds multiple data streams into a single file.
-// Examples:
-//   1) the ISO-BMFF family (MP4, HEVC, AVIF, MOV/QT, etc)
-//   2) the Matroska family (MKV, WebM)
-//   3) the RIFF family (WAV, AVI, WebP)
-//   4) the OGG family (OGV, OPUS)
-//   5) the ZIP family (ZIP, JAR, CBZ, EPUB, ODF, OOXML)
-
-// The ISO-BMFF container needs special processing because of its "compatible brands" array :(
-// The Matroska container needs special processing because the sub-type can appear anywhere :(
-// The OGG container needs special processing to determine what kind of streams are present :(
-// The ZIP container needs special processing to determine what files are present inside it :(
+// https://mimesniff.spec.whatwg.org/ is a good resource.
+// https://github.com/h2non/filetype is an easy target for reverse-engineering.
 
 //  NOTE: Because the ICO format also starts with a couple zero bytes, this tree will rely on the
 //        File Type box never going beyond 255 bytes in length which, seems unlikely according to
@@ -72,13 +62,9 @@ const fileSignatures = {
   'font/woff2': [[0x77, 0x4F, 0x46, 0x32]], // 'wOF2'
 };
 
-// TODO: Eventually add support for various container formats so that:
-//   * an OGG container can be resolved to OGG Audio, OGG Video
-//   * an HEIF container can be resolved to AVIF, HEIC
-
 /**
- * Represents a single byte in the tree. If this node terminates a known MIME type (see magic
- * numbers above), then the mimeType field will be set.
+ * Represents a single byte in the magic number tree. If this node terminates a known MIME type
+ * (see magic numbers above), then the mimeType field will be set.
  */
 class Node {
   /** @type {string} */
@@ -133,9 +119,9 @@ export function initialize() {
       }
 
       if (curNode.mimeType) {
-        throw `File signature collision:  ${curNode.mimeType} overlaps with ${mimeType}`;
+        throw `Magic number collision:  ${curNode.mimeType} overlaps with ${mimeType}`;
       } else if (Object.keys(curNode.children).length > 0) {
-        throw `${mimeType} signature is not unique, it collides with other mime types`;
+        throw `${mimeType} magic number is not unique, it collides with other mime types`;
       }
       curNode.mimeType = mimeType;
     } // for each signature
@@ -152,23 +138,17 @@ export function findMimeType(ab) {
     initialize();
   }
 
-  const depth = ab.byteLength < maxDepth ? ab.byteLength : maxDepth;
-  const arr = new Uint8Array(ab).subarray(0, depth);
+  const arr = new Uint8Array(ab);
   let curNode = root;
   let mimeType;
   // Step through bytes, updating curNode as it walks down the byte tree.
   for (const byte of arr) {
-    // If this node has a placeholder child, just step into it.
-    if (curNode.children['??']) {
-      curNode = curNode.children['??'];
-      continue;
-    }
-    if (curNode.children[byte] === undefined) return undefined;
-    curNode = curNode.children[byte];
-    if (curNode.mimeType) {
-      mimeType = curNode.mimeType;
+    // If we found the mimeType or it is unknown, break the loop.
+    if (!curNode || (mimeType = curNode.mimeType)) {
       break;
     }
+    // Move into the next byte's node (if it exists) or the placeholder node (if it exists).
+    curNode = curNode.children[byte] || curNode.children['??'];
   }
   return mimeType;
 }

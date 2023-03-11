@@ -17,6 +17,7 @@ function sniffTest(mimeType, sig) {
 }
 
 describe('bitjs.file.sniffer', () => {
+  it('handles unknown', () => { sniffTest(undefined, [0x01, 0x99, 0xde, 0xad])});
   it('BMP', () => { sniffTest('image/bmp', [0x42, 0x4D, 0x46]); });
   it('GIF', () => { sniffTest('image/gif', [0x47, 0x49, 0x46, 0x38, 0x20]); });
   it('JPG', () => { sniffTest('image/jpeg', [0xFF, 0xD8, 0xFF, 0x23]); });
