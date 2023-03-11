@@ -27,10 +27,12 @@ export const BitStream: {
         peekBits: (n: number, opt_movePointers: any) => number;
         /**
          * Returns how many bites have been read in the stream since the beginning of time.
+         * @returns {number}
          */
         getNumBitsRead(): number;
         /**
          * Returns how many bits are currently in the stream left to be read.
+         * @returns {number}
          */
         getNumBitsLeft(): number;
         /**
@@ -60,6 +62,7 @@ export const BitStream: {
          * Bit at (bytePtr,bitPtr) has the highest position in returning data.
          * Taken from getbits.hpp in unrar.
          * TODO: Move this out of BitStream and into unrar.
+         * @returns {number}
          */
         getBits(): number;
         /**

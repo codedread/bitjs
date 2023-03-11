@@ -20,16 +20,11 @@ export namespace UnarchiveEventType {
 /**
  * An unarchive event.
  */
-export class UnarchiveEvent {
+export class UnarchiveEvent extends Event {
     /**
      * @param {string} type The event type.
      */
     constructor(type: string);
-    /**
-     * The event type.
-     * @type {string}
-     */
-    type: string;
 }
 /**
  * Updates all Archiver listeners that an append has occurred.
@@ -118,11 +113,8 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 }
 /**
  * Base class for all Unarchivers.
- * TODO: When EventTarget constructors are broadly supported, make this extend
- *     EventTarget and remove event listener code.
- *     https://caniuse.com/#feat=mdn-api_eventtarget_eventtarget
  */
-export class Unarchiver {
+export class Unarchiver extends EventTarget {
     /**
      * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
      *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
@@ -159,12 +151,6 @@ export class Unarchiver {
      */
     debugMode_: boolean;
     /**
-     * A map from event type to an array of listeners.
-     * @private
-     * @type {Map.<string, Array>}
-     */
-    private listeners_;
-    /**
      * Private web worker initialized during start().
      * @private
      * @type {Worker}
@@ -182,20 +168,6 @@ export class Unarchiver {
      * @protected.
      */
     protected getScriptFileName(): string;
-    /**
-     * Adds an event listener for UnarchiveEvents.
-     *
-     * @param {string} Event type.
-     * @param {function} An event handler function.
-     */
-    addEventListener(type: any, listener: any): void;
-    /**
-     * Removes an event listener.
-     *
-     * @param {string} Event type.
-     * @param {EventListener|function} An event listener or handler function.
-     */
-    removeEventListener(type: any, listener: any): void;
     /**
      * Create an UnarchiveEvent out of the object sent back from the Worker.
      * @param {Object} obj

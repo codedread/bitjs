@@ -17,7 +17,8 @@
  * @property {string} r_frame_rate Like "60000/1001"
  */
 /**
- * @typedef ProbeFormat ffprobe -show_format -print_format json. Only the fields we care about.
+ * @typedef ProbeFormat Only the fields we care about from the following command:
+ *     ffprobe -show_format -show_streams -v quiet -print_format json -i file.mp4
  * @property {string} filename
  * @property {string} format_name
  * @property {string} duration Number of seconds, as a string like "473.506367".
@@ -69,7 +70,8 @@ export type ProbeStream = {
     r_frame_rate: string;
 };
 /**
- * ffprobe -show_format -print_format json. Only the fields we care about.
+ * Only the fields we care about from the following command:
+ *     ffprobe -show_format -show_streams -v quiet -print_format json -i file.mp4
  */
 export type ProbeFormat = {
     filename: string;

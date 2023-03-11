@@ -47,6 +47,7 @@
   "scripts": {
     "build-webpshim": "cd build; make",
     "coverage": "./node_modules/.bin/c8 npm test",
-    "test": "./node_modules/.bin/mocha tests/*.spec.js"
+    "test": "./node_modules/.bin/mocha tests/*.spec.js",
+    "update-types": "tsc"
   }
 }
