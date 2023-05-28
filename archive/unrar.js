@@ -12,10 +12,10 @@
 // present.
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('../io/bitstream-worker.js');
-importScripts('../io/bytestream-worker.js');
-importScripts('../io/bytebuffer-worker.js');
-importScripts('rarvm.js');
+import { BitStream } from '../io/bitstream.js';
+import { ByteStream } from '../io/bytestream.js';
+import { ByteBuffer } from '../io/bytebuffer.js';
+import { VM_GLOBALMEMADDR, VM_GLOBALMEMSIZE, VM_FIXEDGLOBALSIZE, MAXWINMASK } from './rarvm.js';
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -86,7 +86,7 @@ const ENDARC_HEAD = 0x7b;
  */
 class RarVolumeHeader {
   /**
-   * @param {bitjs.io.ByteStream} bstream
+   * @param {ByteStream} bstream
    */
   constructor(bstream) {
     let headBytesRead = 0;
@@ -316,19 +316,19 @@ const RD = { //rep decode
 };
 
 /**
- * @type {Array<bitjs.io.ByteBuffer>}
+ * @type {Array<ByteBuffer>}
  */
 const rOldBuffers = [];
 
 /**
  * The current buffer we are unpacking to.
- * @type {bitjs.io.ByteBuffer}
+ * @type {ByteBuffer}
  */
 let rBuffer;
 
 /**
  * The buffer of the final bytes after filtering (only used in Unpack29).
- * @type {bitjs.io.ByteBuffer}
+ * @type {ByteBuffer}
  */
 let wBuffer;
 
@@ -346,7 +346,7 @@ let wBuffer;
 
 /**
  * Read in Huffman tables for RAR
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  */
 function RarReadTables(bstream) {
   const BitLength = new Array(rBC);
@@ -491,7 +491,7 @@ function RarMakeDecodeTables(BitLength, offset, dec, size) {
 
 // TODO: implement
 /**
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  * @param {boolean} Solid
  */
 function Unpack15(bstream, Solid) {
@@ -500,7 +500,7 @@ function Unpack15(bstream, Solid) {
 
 /**
  * Unpacks the bit stream into rBuffer using the Unpack20 algorithm.
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  * @param {boolean} Solid
  */
 function Unpack20(bstream, Solid) {
@@ -694,7 +694,7 @@ function InitFilters() {
  */
 function RarAddVMCode(firstByte, vmCode) {
   VM.init();
-  const bstream = new bitjs.io.BitStream(vmCode.buffer, true /* rtl */);
+  const bstream = new BitStream(vmCode.buffer, true /* rtl */);
 
   let filtPos;
   if (firstByte & 0x80) {
@@ -864,7 +864,7 @@ function RarAddVMCode(firstByte, vmCode) {
 
 
 /**
- * @param {!bitjs.io.BitStream} bstream
+ * @param {!BitStream} bstream
  */
 function RarReadVMCode(bstream) {
   const firstByte = bstream.readBits(8);
@@ -886,7 +886,7 @@ function RarReadVMCode(bstream) {
 
 /**
  * Unpacks the bit stream into rBuffer using the Unpack29 algorithm.
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  * @param {boolean} Solid
  */
 function Unpack29(bstream, Solid) {
@@ -1258,9 +1258,9 @@ function unpack(v) {
   // TODO: implement what happens when unpVer is < 15
   const Ver = v.header.unpVer <= 15 ? 15 : v.header.unpVer;
   const Solid = v.header.flags.LHD_SOLID;
-  const bstream = new bitjs.io.BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength);
+  const bstream = new BitStream(v.fileData.buffer, true /* rtl */, v.fileData.byteOffset, v.fileData.byteLength);
 
-  rBuffer = new bitjs.io.ByteBuffer(v.header.unpackedSize);
+  rBuffer = new ByteBuffer(v.header.unpackedSize);
 
   if (logToConsole) {
     info('Unpacking ' + v.filename + ' RAR v' + Ver);
@@ -1276,7 +1276,7 @@ function unpack(v) {
       break;
     case 29: // rar 3.x compression
     case 36: // alternative hash
-      wBuffer = new bitjs.io.ByteBuffer(rBuffer.data.length);
+      wBuffer = new ByteBuffer(rBuffer.data.length);
       Unpack29(bstream, Solid);
       break;
   } // switch(method)
@@ -1290,7 +1290,7 @@ function unpack(v) {
  */
 class RarLocalFile {
   /**
-   * @param {bitjs.io.ByteStream} bstream
+   * @param {ByteStream} bstream
    */
   constructor(bstream) {
     this.header = new RarVolumeHeader(bstream);
@@ -1325,7 +1325,7 @@ class RarLocalFile {
 
         // Create a new buffer and copy it over.
         const len = this.header.packSize;
-        const newBuffer = new bitjs.io.ByteBuffer(len);
+        const newBuffer = new ByteBuffer(len);
         newBuffer.insertBytes(this.fileData);
         this.fileData = newBuffer.data;
       } else {
@@ -1402,7 +1402,7 @@ onmessage = function (event) {
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bytestream) {
-    bytestream = new bitjs.io.ByteStream(bytes);
+    bytestream = new ByteStream(bytes);
 
     currentFilename = '';
     currentFileNumber = 0;

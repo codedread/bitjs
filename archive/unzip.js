@@ -13,9 +13,9 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('../io/bitstream-worker.js');
-importScripts('../io/bytebuffer-worker.js');
-importScripts('../io/bytestream-worker.js');
+import { BitStream } from '../io/bitstream.js';
+import { ByteBuffer } from '../io/bytebuffer.js';
+import { ByteStream } from '../io/bytestream.js';
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -74,7 +74,7 @@ const BIT = [0x01, 0x02, 0x04, 0x08,
 
 class ZipLocalFile {
   /**
-   * @param {bitjs.io.ByteStream} bstream 
+   * @param {ByteStream} bstream 
    */
   constructor(bstream) {
     if (typeof bstream != typeof {} || !bstream.readNumber || typeof bstream.readNumber != typeof function () { }) {
@@ -133,7 +133,7 @@ class ZipLocalFile {
         // Copy all the read bytes into a buffer and examine the last 16 bytes to see if they are the
         // data descriptor.
         let bufferedByteArr = savedBstream.peekBytes(numBytesSeeked);
-        const descriptorStream = new bitjs.io.ByteStream(bufferedByteArr.buffer, numBytesSeeked - 16, 16);
+        const descriptorStream = new ByteStream(bufferedByteArr.buffer, numBytesSeeked - 16, 16);
         const maybeDescriptorSig = descriptorStream.readNumber(4);
         const maybeCrc32 = descriptorStream.readNumber(4);
         const maybeCompressedSize = descriptorStream.readNumber(4);
@@ -327,7 +327,7 @@ function getFixedDistanceTable() {
 /**
  * Extract one bit at a time until we find a matching Huffman Code
  * then return that symbol.
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  * @param {Map<number, SymbolLengthPair>} hcTable
  * @returns {number}
  */
@@ -417,10 +417,10 @@ const DistLookupTable = [
 ];
 
 /**
- * @param {bitjs.io.BitStream} bstream
+ * @param {BitStream} bstream
  * @param {Map<number, SymbolLengthPair>} hcLiteralTable
  * @param {Map<number, SymbolLengthPair>} hcDistanceTable
- * @param {bitjs.io.ByteBuffer} buffer
+ * @param {ByteBuffer} buffer
  * @returns 
  */
 function inflateBlockData(bstream, hcLiteralTable, hcDistanceTable, buffer) {
@@ -491,13 +491,13 @@ function inflateBlockData(bstream, hcLiteralTable, hcDistanceTable, buffer) {
  */
 function inflate(compressedData, numDecompressedBytes) {
   // Bit stream representing the compressed data.
-  /** @type {bitjs.io.BitStream} */
-  const bstream = new bitjs.io.BitStream(compressedData.buffer,
+  /** @type {BitStream} */
+  const bstream = new BitStream(compressedData.buffer,
     false /* mtl */,
     compressedData.byteOffset,
     compressedData.byteLength);
-  /** @type {bitjs.io.ByteBuffer} */
-  const buffer = new bitjs.io.ByteBuffer(numDecompressedBytes);
+  /** @type {ByteBuffer} */
+  const buffer = new ByteBuffer(numDecompressedBytes);
   let blockSize = 0;
 
   // block format: http://tools.ietf.org/html/rfc1951#page-9
@@ -734,7 +734,7 @@ onmessage = function (event) {
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bytestream) {
-    bytestream = new bitjs.io.ByteStream(bytes);
+    bytestream = new ByteStream(bytes);
   } else {
     bytestream.push(bytes);
   }

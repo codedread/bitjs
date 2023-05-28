@@ -11,7 +11,7 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('../io/bytestream-worker.js');
+import { ByteStream } from '../io/bytestream.js';
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -166,7 +166,7 @@ onmessage = function (event) {
 
   // This is the very first time we have been called. Initialize the bytestream.
   if (!bytestream) {
-    bytestream = new bitjs.io.ByteStream(bytes);
+    bytestream = new ByteStream(bytes);
   } else {
     bytestream.push(bytes);
   }

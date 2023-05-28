@@ -6,6 +6,8 @@
  * Copyright(c) 2017 Google Inc.
  */
 
+import { BitStream } from '../io/bitstream.js';
+
 /**
  * CRC Implementation.
  */
@@ -104,13 +106,13 @@ function CRC(startCRC, arr) {
 /**
  * RarVM Implementation.
  */
-const VM_MEMSIZE = 0x40000;
-const VM_MEMMASK = (VM_MEMSIZE - 1);
-const VM_GLOBALMEMADDR = 0x3C000;
-const VM_GLOBALMEMSIZE = 0x2000;
-const VM_FIXEDGLOBALSIZE = 64;
-const MAXWINSIZE = 0x400000;
-const MAXWINMASK = (MAXWINSIZE - 1);
+export const VM_MEMSIZE = 0x40000;
+export const VM_MEMMASK = (VM_MEMSIZE - 1);
+export const VM_GLOBALMEMADDR = 0x3C000;
+export const VM_GLOBALMEMSIZE = 0x2000;
+export const VM_FIXEDGLOBALSIZE = 64;
+export const MAXWINSIZE = 0x400000;
+export const MAXWINMASK = (MAXWINSIZE - 1);
 
 /**
  */
@@ -448,7 +450,7 @@ const StdList = [
 /**
  * @constructor
  */
-class RarVM {
+export class RarVM {
   constructor() {
     /** @private {Uint8Array} */
     this.mem_ = null;
@@ -486,7 +488,7 @@ class RarVM {
   /**
    * @param {VM_PreparedOperand} op
    * @param {boolean} byteMode
-   * @param {bitjs.io.BitStream} bstream A rtl bit stream.
+   * @param {BitStream} bstream A rtl bit stream.
    */
   decodeArg(op, byteMode, bstream) {
     const data = bstream.peekBits(16);
@@ -808,7 +810,7 @@ class RarVM {
 
     //InitBitInput();
     //memcpy(InBuf,Code,Min(CodeSize,BitInput::MAX_SIZE));
-    const bstream = new bitjs.io.BitStream(code.buffer, true /* rtl */);
+    const bstream = new BitStream(code.buffer, true /* rtl */);
 
     // Calculate the single byte XOR checksum to check validity of VM code.
     let xorSum = 0;
@@ -970,7 +972,7 @@ class RarVM {
   /**
    * Static function that reads in the next set of bits for the VM
    * (might return 4, 8, 16 or 32 bits).
-   * @param {bitjs.io.BitStream} bstream A RTL bit stream.
+   * @param {BitStream} bstream A RTL bit stream.
    * @returns {number} The value of the bits read.
    */
   static readData(bstream) {

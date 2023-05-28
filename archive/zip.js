@@ -12,9 +12,7 @@
  */
 
 // This file expects to be invoked as a Worker (see onmessage below).
-importScripts('../io/bitstream-worker.js');
-importScripts('../io/bytebuffer-worker.js');
-importScripts('../io/bytestream-worker.js');
+import { ByteBuffer } from '../io/bytebuffer.js';
 
 /**
  * The client sends messages to this Worker containing files to archive in order. The client
@@ -146,14 +144,14 @@ function dateToDosTime(jsDate) {
 
 /**
  * @param {FileInfo} file
- * @returns {bitjs.io.ByteBuffer}
+ * @returns {ByteBuffer}
  */
 function zipOneFile(file) {
   // Zip Local File Header has 30 bytes and then the filename and extrafields.
   const fileHeaderSize = 30 + file.fileName.length;
 
-  /** @type {bitjs.io.ByteBuffer} */
-  const buffer = new bitjs.io.ByteBuffer(fileHeaderSize + file.fileData.length);
+  /** @type {ByteBuffer} */
+  const buffer = new ByteBuffer(fileHeaderSize + file.fileData.length);
 
   buffer.writeNumber(zLocalFileHeaderSignature, 4); // Magic number.
   buffer.writeNumber(0x0A, 2); // Version.
@@ -190,13 +188,13 @@ function zipOneFile(file) {
 }
 
 /**
- * @returns {bitjs.io.ByteBuffer}
+ * @returns {ByteBuffer}
  */
 function writeCentralFileDirectory() {
   // Each central directory file header is 46 bytes + the filename.
   let cdsLength = filesCompressed.map(f => f.fileName.length + 46).reduce((a, c) => a + c);
   // 22 extra bytes for the end-of-central-dir header.
-  const buffer = new bitjs.io.ByteBuffer(cdsLength + 22);
+  const buffer = new ByteBuffer(cdsLength + 22);
 
   for (const cdInfo of centralDirectoryInfos) {
     buffer.writeNumber(zCentralFileHeaderSignature, 4); // Magic number.

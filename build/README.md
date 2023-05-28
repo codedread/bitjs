@@ -1,7 +1,8 @@
 # Build
 
 This folder contains files needed to build various pieces of the library.  You only need to worry
-about this if you intend on patching / modifying the library in some way.
+about this if you intend on patching / modifying the library in some way. It is only needed for the
+WebP Shim parts of bitjs.
 
 ## Prerequisites
   * Install Docker

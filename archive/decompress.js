@@ -53,7 +53,7 @@ export {
 *   just node's worker_threads ?
 */
 
-const createWorkerFn = (scriptFilename) => new Worker(scriptFilename);
+const createWorkerFn = (scriptFilename) => new Worker(scriptFilename, { type: 'module' });
 
 // Thin wrappers of compressors for clients who want to construct a specific
 // unarchiver themselves rather than use getUnarchiver().
