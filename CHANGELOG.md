@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2023-09-30
+
+- codecs: Handle m4a files as audio/mp4.
+
 ## [1.1.1] - 2023-06-21
 
 - Fix missing RarVM import in unrar.js.

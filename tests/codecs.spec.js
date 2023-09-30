@@ -75,6 +75,13 @@ describe('codecs test suite', () => {
       })).equals('audio/mpeg');
     });
 
+    it('detects M4A audio', () => {
+      expect(getShortMIMEString({
+        format: { filename: 'sample.m4a', format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
+        streams: [ { codec_type: 'video', }, { codec_type: 'audio' } ],
+      })).equals('audio/mp4');
+    });
+
     it('detects MP4 video', () => {
       expect(getShortMIMEString({
         format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
@@ -306,24 +313,21 @@ describe('codecs test suite', () => {
 
   describe('MP4A / AAC', () => {
     /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
-        streams: [{
-          codec_type: 'audio',
-          codec_tag_string: 'mp4a',
-        }],
-      };
-    });
+    let baseInfo = {
+      format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
+      streams: [{
+        codec_type: 'audio',
+        codec_tag_string: 'mp4a',
+      }],
+    };
 
     it('throws when unknown', () => {
-      expect(() => getFullMIMEString(info)).to.throw();
+      expect(() => getFullMIMEString(baseInfo)).to.throw();
     });
 
     describe('Profile tests', () => {
       it('recognizes AAC-LC', () => {
+        const info = structuredClone(baseInfo);
         info.streams[0].profile = 'LC';
         expect(getFullMIMEString(info))
             .to.be.a('string')
@@ -332,6 +336,7 @@ describe('codecs test suite', () => {
     });
 
     it('handles codec_name=aac but no codec_tag_string', () => {
+      const info = structuredClone(baseInfo);
       info.streams[0].profile = 'LC';
       info.streams[0].codec_tag_string = '[0][0][0][0]';
       info.streams[0].codec_name = 'aac';
@@ -339,6 +344,16 @@ describe('codecs test suite', () => {
           .to.be.a('string')
           .and.equals('audio/mp4; codecs="mp4a.40.2"');
     });
+
+    it('handles m4a file with MJPEG stream', () => {
+      const info = structuredClone(baseInfo);
+      info.format.filename = 'sample.m4a';
+      info.streams[0].profile = 'LC';
+      info.streams.push({codec_name: 'mjpeg', codec_type: 'video', profile: 'Baseline'});
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/mp4; codecs="mp4a.40.2"');
+    })
   });
 
   describe('MP4 / FLAC', () => {
@@ -374,7 +389,7 @@ describe('codecs test suite', () => {
       expect(getFullMIMEString(vInfo))
           .to.be.a('string')
           .and.equals('video/mp4; codecs="flac"');
-      
+
     });
   });
 

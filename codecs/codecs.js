@@ -58,6 +58,11 @@ export function getShortMIMEString(info) {
     return 'audio/flac';
   }
 
+  // M4A files are specifically audio/mp4.
+  if (info?.format?.filename?.toLowerCase().endsWith('.m4a')) {
+    return 'audio/mp4';
+  }
+
   // Otherwise, any file with at least 1 video stream is considered video/.
   // Otherwise, any file with at least 1 audio stream is considered audio/.
   const type = info.streams.some(s => s.codec_type === 'video') ?
