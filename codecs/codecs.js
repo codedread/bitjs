@@ -43,6 +43,17 @@
  */
 
 /**
+ * Maps the ffprobe format.format_name string to a short MIME type.
+ * @type {Object<string, string>}
+ */
+const FORMAT_NAME_TO_SHORT_TYPE = {
+  'avi': 'video/x-msvideo',
+  'flac': 'audio/flac',
+  'mp3': 'audio/mpeg',
+  'wav': 'audio/wav',
+}
+
+/**
  * TODO: Reconcile this with file/sniffer.js findMimeType() which does signature matching.
  * @param {ProbeInfo} info
  * @returns {string}
@@ -51,11 +62,9 @@ export function getShortMIMEString(info) {
   if (!info) throw `Invalid ProbeInfo`;
   if (!info.streams || info.streams.length === 0) throw `No streams in ProbeInfo`;
 
-  // mp3/flac files are always considered audio/ (even with mjpeg video streams).
-  if (info.format.format_name === 'mp3') {
-    return 'audio/mpeg';
-  } else if (info.format.format_name === 'flac') {
-    return 'audio/flac';
+  const formatName = info?.format?.format_name;
+  if (formatName && Object.keys(FORMAT_NAME_TO_SHORT_TYPE).includes(formatName)) {
+    return FORMAT_NAME_TO_SHORT_TYPE[formatName];
   }
 
   // M4A files are specifically audio/mp4.
@@ -75,10 +84,7 @@ export function getShortMIMEString(info) {
 
   /** @type {string} */
   let subType;
-  switch (info.format.format_name) {
-    case 'avi':
-      subType = 'x-msvideo';
-      break;
+  switch (formatName) {
     case 'mpeg':
       subType = 'mpeg';
       break;
@@ -93,7 +99,7 @@ export function getShortMIMEString(info) {
       subType = 'webm';
       break;
     default:
-      throw `Cannot handle format ${info.format.format_name} yet. ` +
+      throw `Cannot handle format ${formatName} yet. ` +
           `Please file a bug https://github.com/codedread/bitjs/issues/new`;
   }
 
@@ -113,9 +119,7 @@ export function getShortMIMEString(info) {
 export function getFullMIMEString(info) {
   /** A string like 'video/mp4' */
   let contentType = `${getShortMIMEString(info)}`;
-  // If MP3/FLAC, just send back the type.
-  if (contentType === 'audio/mpeg'
-      || contentType === 'audio/flac') {
+  if (Object.values(FORMAT_NAME_TO_SHORT_TYPE).includes(contentType)) {
     return contentType;
   }
 

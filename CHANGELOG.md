@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2023-10-15
+
+### Changed
+
+- codecs: Add support for WAV files to getShortMIMEString() and getFullMIMEString().
+- codecs: Fix support for AVI files in getFullMIMEString().
+
 ## [1.1.2] - 2023-09-30
 
 ### Changed

@@ -455,4 +455,40 @@ describe('codecs test suite', () => {
           .and.equals('audio/webm; codecs="ac-3"');
     });
   });
+
+  describe('AVI', () => {
+    it('detects AVI', () => {
+      /** @type {ProbeInfo} */
+      let info = {
+        format: { format_name: 'avi' },
+        streams: [
+          { codec_type: 'video', codec_name: 'mpeg4', codec_tag_string: 'XVID' },
+          { codec_type: 'audio', codec_name: 'mp3' },
+          { codec_type: 'audio', codec_name: 'mp3' },
+        ],
+      };
+      expect(getShortMIMEString(info))
+          .to.be.a('string')
+          .and.equals('video/x-msvideo');
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('video/x-msvideo');
+    });
+  });
+
+  describe('WAV', () => {
+    it('detects WAV', () => {
+      /** @type {ProbeInfo} */
+      let info = {
+        format: { format_name: 'wav' },
+        streams: [ { codec_type: 'audio', codec_name: 'pcm_s16le' } ],
+      };
+      expect(getShortMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/wav');
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/wav');
+    });
+  });
 });
