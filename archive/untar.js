@@ -27,7 +27,7 @@ let allLocalFiles = null;
 let logToConsole = false;
 
 // Progress variables.
-let currentFilename = "";
+let currentFilename = '';
 let currentFileNumber = 0;
 let currentBytesUnarchivedInFile = 0;
 let currentBytesUnarchived = 0;
@@ -80,7 +80,7 @@ class TarLocalFile {
     this.linkname = readCleanString(bstream, 100);
     this.maybeMagic = readCleanString(bstream, 6);
 
-    if (this.maybeMagic == "ustar") {
+    if (this.maybeMagic == 'ustar') {
       this.version = readCleanString(bstream, 2);
       this.uname = readCleanString(bstream, 32);
       this.gname = readCleanString(bstream, 32);
@@ -88,8 +88,15 @@ class TarLocalFile {
       this.devminor = readCleanString(bstream, 8);
       this.prefix = readCleanString(bstream, 155);
 
+      // From https://linux.die.net/man/1/ustar:
+      // "The name field (100 chars) an inserted slash ('/') and the prefix field (155 chars)
+      //  produce the pathname of the file. When recreating the original filename, name and prefix
+      //  are concatenated, using a slash character in the middle. If a pathname does not fit in the
+      //  space provided or may not be split at a slash character so that the parts will fit into
+      //  100 + 155 chars, the file may not be archived. Linknames longer than 100 chars may not be
+      //  archived too."
       if (this.prefix.length) {
-        this.name = this.prefix + this.name;
+        this.name = `${this.prefix}/${this.name}`;
       }
       bstream.readBytes(12); // 512 - 500
     } else {
@@ -103,13 +110,13 @@ class TarLocalFile {
     /** @type {Uint8Array} */
     this.fileData = null;
 
-    info("Untarring file '" + this.filename + "'");
-    info("  size = " + this.size);
-    info("  typeflag = " + this.typeflag);
+    info(`Untarring file '${this.filename}'`);
+    info(`  size = ${this.size}`);
+    info(`  typeflag = ${this.typeflag}`);
 
     // A regular file.
     if (this.typeflag == 0) {
-      info("  This is a regular file.");
+      info('  This is a regular file.');
       const sizeInBytes = parseInt(this.size);
       this.fileData = new Uint8Array(bstream.readBytes(sizeInBytes));
       bytesRead += sizeInBytes;
@@ -123,7 +130,7 @@ class TarLocalFile {
         bstream.readBytes(remaining);
       }
     } else if (this.typeflag == 5) {
-      info("  This is a directory.")
+      info('  This is a directory.')
     }
   }
 }
@@ -172,7 +179,7 @@ onmessage = function (event) {
   }
 
   if (unarchiveState === UnarchiveState.NOT_STARTED) {
-    currentFilename = "";
+    currentFilename = '';
     currentFileNumber = 0;
     currentBytesUnarchivedInFile = 0;
     currentBytesUnarchived = 0;
