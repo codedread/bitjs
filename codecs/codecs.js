@@ -53,6 +53,13 @@ const FORMAT_NAME_TO_SHORT_TYPE = {
   'wav': 'audio/wav',
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#webm says that only
+// the following codecs are supported for webm:
+// - video: AV1, VP8, VP9
+// - audio: Opus, Vorbis
+const WEBM_AUDIO_CODECS = [ 'opus', 'vorbis' ];
+const WEBM_VIDEO_CODECS = [ 'av1', 'vp8', 'vp9' ];
+
 /**
  * TODO: Reconcile this with file/sniffer.js findMimeType() which does signature matching.
  * @param {ProbeInfo} info
@@ -94,9 +101,16 @@ export function getShortMIMEString(info) {
     case 'ogg':
       subType = 'ogg';
       break;
-    // Should we detect .mkv files as x-matroska?
     case 'matroska,webm':
-      subType = 'webm';
+      let isWebM = true;
+      for (const stream of info.streams) {
+        if (   (stream.codec_type === 'audio' && !WEBM_AUDIO_CODECS.includes(stream.codec_name))
+            || (stream.codec_type === 'video' && !WEBM_VIDEO_CODECS.includes(stream.codec_name))) {
+              isWebM = false;
+          break;
+        }
+      }
+      subType = isWebM ? 'webm' : 'x-matroska';
       break;
     default:
       throw `Cannot handle format ${formatName} yet. ` +
@@ -132,11 +146,12 @@ export function getFullMIMEString(info) {
         default: 
           switch (stream.codec_name) {
             case 'aac': codecFrags.add(getMP4ACodecString(stream)); break;
-            case 'vorbis': codecFrags.add('vorbis'); break;
-            case 'opus': codecFrags.add('opus'); break;
             // I'm going off of what Chromium calls this one, with the dash.
             case 'ac3': codecFrags.add('ac-3'); break;
+            case 'dts': codecFrags.add('dts'); break;
             case 'flac': codecFrags.add('flac'); break;
+            case 'opus': codecFrags.add('opus'); break;
+            case 'vorbis': codecFrags.add('vorbis'); break;
             default:
               throw `Could not handle audio codec_name ${stream.codec_name}, ` +
                     `codec_tag_string ${stream.codec_tag_string} for file ${info.format.filename} yet. ` +
@@ -153,10 +168,12 @@ export function getFullMIMEString(info) {
         case 'png': continue;
         default:
           switch (stream.codec_name) {
+            case 'av1': codecFrags.add('av1'); break;
             case 'h264': codecFrags.add(getAVC1CodecString(stream)); break;
-            case 'mpeg2video': codecFrags.add('mpeg2video'); break;
             // Skip mjpeg as a video stream for the codecs string.
             case 'mjpeg': break;
+            case 'mpeg2video': codecFrags.add('mpeg2video'); break;
+            case 'vp8': codecFrags.add('vp8'); break;
             case 'vp9': codecFrags.add(getVP09CodecString(stream)); break;
             default:
               throw `Could not handle video codec_name ${stream.codec_name}, ` +

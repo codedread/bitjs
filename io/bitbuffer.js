@@ -32,7 +32,7 @@ export class BitBuffer {
    */
   constructor(numBytes, mtl = false) {
     if (typeof numBytes != typeof 1 || numBytes <= 0) {
-      throw "Error! ByteBuffer initialized with '" + numBytes + "'";
+      throw "Error! BitBuffer initialized with '" + numBytes + "'";
     }
 
     /**

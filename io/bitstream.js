@@ -51,7 +51,7 @@ export class BitStream {
    */
   constructor(ab, mtl, opt_offset, opt_length) {
     if (!(ab instanceof ArrayBuffer)) {
-      throw 'Error! BitArray constructed with an invalid ArrayBuffer object';
+      throw 'Error! BitStream constructed with an invalid ArrayBuffer object';
     }
 
     const offset = opt_offset || 0;

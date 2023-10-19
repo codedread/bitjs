@@ -113,15 +113,29 @@ describe('codecs test suite', () => {
     it('detects WEBM video', () => {
       expect(getShortMIMEString({
         format: { format_name: 'matroska,webm' },
-        streams: [ { codec_type: 'video' } ],
+        streams: [ { codec_type: 'video', codec_name: 'vp8' } ],
       })).equals('video/webm');
     });
 
     it('detects WEBM audio', () => {
       expect(getShortMIMEString({
         format: { format_name: 'matroska,webm' },
-        streams: [ { codec_type: 'audio' } ],
+        streams: [ { codec_type: 'audio', codec_name: 'vorbis' } ],
       })).equals('audio/webm');
+    });
+
+    it('detects Matroska Video', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'video', codec_name: 'h264' } ],
+      })).equals('video/x-matroska');
+    });
+
+    it('detects Matroska audio', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'audio', codec_name: 'dts' } ],
+      })).equals('audio/x-matroska');
     });
   });
 
@@ -228,86 +242,193 @@ describe('codecs test suite', () => {
     });
   });
 
-  describe('VP09 / VP9', () => {
-    /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'matroska,webm' },
-        streams: [{
-          codec_type: 'video',
-          codec_tag_string: 'vp09',
-        }],
-      };
-    });
-
-    describe('Profile tests', () => {
+  describe('WebM' ,() => {
+    describe('AV1', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
       beforeEach(() => {
-        info.streams[0].level = 20;
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'video', codec_name: 'av1' }],
+        };
       });
 
-      it('detects Profile 0', () => {
-        info.streams[0].profile = 'Profile 0';
-        expect(getFullMIMEString(info))
-            .to.be.a('string')
-            .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.00.'));
+      it('outputs MIME string', () => {
+        expect(getShortMIMEString(info)).equals('video/webm');
+        expect(getFullMIMEString(info)).equals('video/webm; codecs="av1"')
       });
     });
 
-    describe('Level tests', () => {
+    describe('VP8', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
       beforeEach(() => {
-        info.streams[0].profile = 'Profile 0';
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'video', codec_name: 'vp8' }],
+        };
       });
 
-      it('detects 2-digit hex level', () => {
+      it('outputs MIME string', () => {
+        expect(getShortMIMEString(info)).equals('video/webm');
+        expect(getFullMIMEString(info)).equals('video/webm; codecs="vp8"')
+      });
+    });
+
+    describe('VP09 / VP9', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'video', codec_name: 'vp9', codec_tag_string: 'vp09' }],
+        };
+      });
+  
+      describe('Profile tests', () => {
+        beforeEach(() => {
+          info.streams[0].level = 20;
+        });
+  
+        it('detects Profile 0', () => {
+          info.streams[0].profile = 'Profile 0';
+          expect(getFullMIMEString(info))
+              .to.be.a('string')
+              .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.00.'));
+        });
+      });
+  
+      describe('Level tests', () => {
+        beforeEach(() => {
+          info.streams[0].profile = 'Profile 0';
+        });
+  
+        it('detects 2-digit hex level', () => {
+          info.streams[0].level = 21; // 0x15
+          expect(getFullMIMEString(info))
+              .to.be.a('string')
+              .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.'))
+              .and.satisfy(s => {
+                const matches = s.match(/vp09\.[0-9]{2}\.([0-9A-F]{2})\.[0-9A-F]{2}/);
+                return matches && matches.length === 2 && matches[1] === '15';
+              });
+          });
+  
+        it('detects level = -99', () => {
+          info.streams[0].level = -99; // I'm not sure what ffprobe means by this.
+          expect(getFullMIMEString(info))
+              .to.be.a('string')
+              .and.equals('video/webm; codecs="vp9"');
+        });
+      });
+  
+      it('detects codec_name=vp9 but no codec_tag_string', () => {
+        info.streams[0].codec_name = 'vp9';
+        info.streams[0].codec_tag_string = '[0][0][0][0]';
+        info.streams[0].profile = 'Profile 0';
         info.streams[0].level = 21; // 0x15
         expect(getFullMIMEString(info))
-            .to.be.a('string')
-            .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.'))
-            .and.satisfy(s => {
-              const matches = s.match(/vp09\.[0-9]{2}\.([0-9A-F]{2})\.[0-9A-F]{2}/);
-              return matches && matches.length === 2 && matches[1] === '15';
-            });
-        });
-
-      it('detects level = -99', () => {
-        info.streams[0].level = -99; // I'm not sure what ffprobe means by this.
-        expect(getFullMIMEString(info))
-            .to.be.a('string')
-            .and.equals('video/webm; codecs="vp9"');
+        .to.be.a('string')
+        .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.00.15'));
       });
     });
 
-    it('detects codec_name=vp9 but no codec_tag_string', () => {
-      info.streams[0].codec_name = 'vp9';
-      info.streams[0].codec_tag_string = '[0][0][0][0]';
-      info.streams[0].profile = 'Profile 0';
-      info.streams[0].level = 21; // 0x15
-      expect(getFullMIMEString(info))
-      .to.be.a('string')
-      .and.satisfy(s => s.startsWith('video/webm; codecs="vp09.00.15'));
+    describe('Vorbis', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'audio', codec_name: 'vorbis' }],
+        };
+      });
+  
+      it('detects vorbis', () => {
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('audio/webm; codecs="vorbis"');
+      });
     });
+  
+    describe('Opus', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{
+            codec_type: 'audio',
+            codec_name: 'opus',
+          }],
+        };
+      });
+  
+      it('detects opus', () => {
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('audio/webm; codecs="opus"');
+      });
+    });  
   });
 
-  describe('MPEG2', () => {
-    /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'matroska,webm' },
-        streams: [{
-          codec_type: 'video',
-          codec_name: 'mpeg2video',
-        }],
-      };
+  describe('Matroska', () => {
+    describe('MPEG2 codec', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'video', codec_name: 'mpeg2video' }],
+        };
+      });
+  
+      it('outputs full MIME string', () => {
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('video/x-matroska; codecs="mpeg2video"');
+      });
     });
+  
+    describe('AC-3', () => {
+      /** @type {ProbeInfo} */
+      let info;
+  
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'audio', codec_name: 'ac3' }],
+        };
+      });
+  
+      it('detects AC-3', () => {
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('audio/x-matroska; codecs="ac-3"');
+      });
+    });
+  
+    describe('DTS', () => {
+      /** @type {ProbeInfo} */
+      let info;
 
-    it('detects mpeg2video', () => {
-      expect(getFullMIMEString(info))
-          .to.be.a('string')
-          .and.equals('video/webm; codecs="mpeg2video"');
+      beforeEach(() => {
+        info = {
+          format: { format_name: 'matroska,webm' },
+          streams: [{ codec_type: 'audio', codec_name: 'dts' }],
+        };
+      });
+  
+      it('outputs full MIME string', () => {
+        expect(getFullMIMEString(info))
+            .to.be.a('string')
+            .and.equals('audio/x-matroska; codecs="dts"');
+      });
     });
   });
 
@@ -390,69 +511,6 @@ describe('codecs test suite', () => {
           .to.be.a('string')
           .and.equals('video/mp4; codecs="flac"');
 
-    });
-  });
-
-  describe('Vorbis', () => {
-    /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'matroska,webm' },
-        streams: [{
-          codec_type: 'audio',
-          codec_name: 'vorbis',
-        }],
-      };
-    });
-
-    it('detects vorbis', () => {
-      expect(getFullMIMEString(info))
-          .to.be.a('string')
-          .and.equals('audio/webm; codecs="vorbis"');
-    });
-  });
-
-  describe('Opus', () => {
-    /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'matroska,webm' },
-        streams: [{
-          codec_type: 'audio',
-          codec_name: 'opus',
-        }],
-      };
-    });
-
-    it('detects opus', () => {
-      expect(getFullMIMEString(info))
-          .to.be.a('string')
-          .and.equals('audio/webm; codecs="opus"');
-    });
-  });
-
-  describe('AC-3', () => {
-    /** @type {ProbeInfo} */
-    let info;
-
-    beforeEach(() => {
-      info = {
-        format: { format_name: 'matroska,webm' },
-        streams: [{
-          codec_type: 'audio',
-          codec_name: 'ac3',
-        }],
-      };
-    });
-
-    it('detects AC-3', () => {
-      expect(getFullMIMEString(info))
-          .to.be.a('string')
-          .and.equals('audio/webm; codecs="ac-3"');
     });
   });
 

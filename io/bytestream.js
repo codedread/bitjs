@@ -22,7 +22,8 @@ export class ByteStream {
    */
   constructor(ab, opt_offset, opt_length) {
     if (!(ab instanceof ArrayBuffer)) {
-      throw 'Error! BitArray constructed with an invalid ArrayBuffer object';
+      console.error(typeof ab);
+      throw 'Error! ByteStream constructed with an invalid ArrayBuffer object';
     }
 
     const offset = opt_offset || 0;
