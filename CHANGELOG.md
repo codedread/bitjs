@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2023-10-19
+
+### Changed
+
+- codecs: Add support for DTS audio codec and AV1 video codec.
+- codecs: Update how Matroska video/audio files are detected (video/x-matroska).
+  [Issue #43](https://github.com/codedread/bitjs/issues/43)
+- untar: Fix long path/filenames in 'ustar' format. [Issue #42](https://github.com/codedread/bitjs/issues/43)
+
 ## [1.1.3] - 2023-10-15
 
 ### Changed

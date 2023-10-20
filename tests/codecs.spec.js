@@ -115,9 +115,21 @@ describe('codecs test suite', () => {
         format: { format_name: 'matroska,webm' },
         streams: [ { codec_type: 'video', codec_name: 'vp8' } ],
       })).equals('video/webm');
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'video', codec_name: 'vp9' } ],
+      })).equals('video/webm');
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'video', codec_name: 'av1' } ],
+      })).equals('video/webm');
     });
 
     it('detects WEBM audio', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'audio', codec_name: 'opus' } ],
+      })).equals('audio/webm');
       expect(getShortMIMEString({
         format: { format_name: 'matroska,webm' },
         streams: [ { codec_type: 'audio', codec_name: 'vorbis' } ],
@@ -129,9 +141,29 @@ describe('codecs test suite', () => {
         format: { format_name: 'matroska,webm' },
         streams: [ { codec_type: 'video', codec_name: 'h264' } ],
       })).equals('video/x-matroska');
+
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [
+          { codec_type: 'audio', codec_name: 'aac' },
+          { codec_type: 'video', codec_name: 'vp9' },
+        ],
+      })).equals('video/x-matroska');
+
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [
+          { codec_type: 'audio', codec_name: 'vorbis' },
+          { codec_type: 'video', codec_name: 'h264' },
+        ],
+      })).equals('video/x-matroska');
     });
 
     it('detects Matroska audio', () => {
+      expect(getShortMIMEString({
+        format: { format_name: 'matroska,webm' },
+        streams: [ { codec_type: 'audio', codec_name: 'aac' } ],
+      })).equals('audio/x-matroska');
       expect(getShortMIMEString({
         format: { format_name: 'matroska,webm' },
         streams: [ { codec_type: 'audio', codec_name: 'dts' } ],
