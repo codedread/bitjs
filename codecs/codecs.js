@@ -294,9 +294,13 @@ function getVP09CodecString(stream) {
  */
 function getMP4ACodecString(stream) {
   let frag = 'mp4a.40';
+  // https://dashif.org/codecs/audio/
   switch (stream.profile) {
     case 'LC':
       frag += '.2';
+      break;
+    case 'HE-AAC':
+      frag += '.5';
       break;
     // TODO: more!
     default:

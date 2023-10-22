@@ -488,6 +488,15 @@ describe('codecs test suite', () => {
       });
     });
 
+    it('recognizes codec_name=HE-AAC', () => {
+      const info = structuredClone(baseInfo);
+      info.streams[0].profile = 'HE-AAC';
+      info.streams[0].codec_name = 'aac';
+      expect(getFullMIMEString(info))
+          .to.be.a('string')
+          .and.equals('audio/mp4; codecs="mp4a.40.5"');
+    });
+
     it('handles codec_name=aac but no codec_tag_string', () => {
       const info = structuredClone(baseInfo);
       info.streams[0].profile = 'LC';
