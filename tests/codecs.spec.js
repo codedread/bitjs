@@ -349,11 +349,11 @@ describe('codecs test suite', () => {
               });
           });
   
-        it('detects level = -99', () => {
-          info.streams[0].level = -99; // I'm not sure what ffprobe means by this.
+        it('detects level = -99 as level 1', () => {
+          info.streams[0].level = -99; // I believe this is the "unknown" value from ffprobe.
           expect(getFullMIMEString(info))
               .to.be.a('string')
-              .and.equals('video/webm; codecs="vp9"');
+              .and.equals('video/webm; codecs="vp09.00.10.10"');
         });
       });
   
@@ -572,6 +572,18 @@ describe('codecs test suite', () => {
       expect(getFullMIMEString(info))
           .to.be.a('string')
           .and.equals('video/x-msvideo');
+    });
+  });
+
+  describe('MP3', () => {
+    it('detects MP3', () => {
+      /** @type {ProbeInfo} */
+      let info = {
+        format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2' },
+        streams: [ { codec_type: 'audio', codec_name: 'mp3', codec_tag_string: 'mp4a' } ],
+      };
+      expect(getShortMIMEString(info)).equals('audio/mp4');
+      expect(getFullMIMEString(info)).equals('audio/mp4; codecs="mp3"');
     });
   });
 

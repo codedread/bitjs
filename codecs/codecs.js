@@ -141,6 +141,12 @@ export function getFullMIMEString(info) {
 
   for (const stream of info.streams) {
     if (stream.codec_type === 'audio') {
+      // MP3 can sometimes have codec_tag_string=mp4a, so we check for it first.
+      if (stream.codec_name === 'mp3') {
+        codecFrags.add('mp3');
+        continue;
+      }
+
       switch (stream.codec_tag_string) {
         case 'mp4a': codecFrags.add(getMP4ACodecString(stream)); break;
         default: 
@@ -267,8 +273,8 @@ function getVP09CodecString(stream) {
   }
 
   // Add LL hex digits.
-  // If ffprobe is spitting out -99 as level... Just return 'vp9'.
-  if (stream.level === -99) { return 'vp9'; }
+  // If ffprobe is spitting out -99 as level... it means unknown, so we will guess level=1.
+  if (stream.level === -99) { frag += `.10`; }
   else {
     const levelAsHex = Number(stream.level).toString(16).toUpperCase().padStart(2, '0');
     if (levelAsHex.length !== 2) {
@@ -279,8 +285,8 @@ function getVP09CodecString(stream) {
   }
 
   // Add DD hex digits.
-  // TODO: This is just a guess at DD (16?), need to try and extract this info from
-  //     ffprobe JSON output instead.
+  // TODO: This is just a guess at DD (10-bit color depth), need to try and extract this info
+  //     from ffprobe JSON output instead.
   frag += '.10';
 
   return frag;

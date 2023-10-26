@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.6] - 2023-10-25
+
+### Changed
+
+- codecs: Special handling for mp3 streams inside mp4 containers.
+- codecs: Handle ffprobe level -99 in mp4 files.
+
 ## [1.1.5] - 2023-10-22
 
 ### Changed
