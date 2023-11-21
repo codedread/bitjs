@@ -12,6 +12,8 @@
 // present.
 
 // This file expects to be invoked as a Worker (see onmessage below).
+// TODO: Make this a plain ES Module and then write a thin wrapper around it for Worker-ization.
+//     This will allow us to write proper unit tests for it.
 import { BitStream } from '../io/bitstream.js';
 import { ByteStream } from '../io/bytestream.js';
 import { ByteBuffer } from '../io/bytebuffer.js';
