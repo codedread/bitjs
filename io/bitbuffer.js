@@ -84,13 +84,13 @@ export class BitBuffer {
         if (this.bytePtr >= this.data.byteLength) {
           throw `No more bytes left when switching packing direction`;
         }
-        this.bitPtr = 7;
+        this.bitPtr = 0;
       } else if (!this.mtl && this.bitPtr !== 0) {
         this.bytePtr++;
         if (this.bytePtr >= this.data.byteLength) {
           throw `No more bytes left when switching packing direction`;
         }
-        this.bitPtr = 0;
+        this.bitPtr = 7;
       }
     }
 

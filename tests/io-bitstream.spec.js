@@ -19,10 +19,22 @@ describe('bitjs.io.BitStream', () => {
     }
   });
 
-  it('BitPeekAndRead_RTL', () => {
+  it('throws an error without an ArrayBuffer', () => {
+    expect(() => new BitStream()).throws();
+  });
+
+  it('BitPeekAndRead_MTL', () => {
     const stream = new BitStream(array.buffer, true /* mtl */);
+
+    expect(stream.peekBits(0)).equals(0);
+    expect(stream.peekBits(-1)).equals(0);
+    expect(stream.bytePtr).equals(0);
+    expect(stream.bitPtr).equals(0);
+
     // 0110 = 2 + 4 = 6
     expect(stream.readBits(4)).equals(6);
+    expect(stream.getNumBitsRead()).equals(4);
+
     // 0101 011 = 1 + 2 + 8 + 32 = 43
     expect(stream.readBits(7)).equals(43);
     // 00101 01100101 01 = 1 + 4 + 16 + 128 + 256 + 1024 + 4096 = 5525
@@ -32,10 +44,18 @@ describe('bitjs.io.BitStream', () => {
 
     // Ensure the last bit is read, even if we flow past the end of the stream.
     expect(stream.readBits(2)).equals(1);
+
+    expect(stream.getNumBitsRead()).equals(33);
   });
 
-  it('BitPeekAndRead_LTR', () => {
+  it('BitPeekAndRead_LTM', () => {
+    /** @type {BitStream} */
     const stream = new BitStream(array.buffer, false /* mtl */);
+
+    expect(stream.peekBits(0)).equals(0);
+    expect(stream.peekBits(-1)).equals(0);
+    expect(stream.bytePtr).equals(0);
+    expect(stream.bitPtr).equals(0);
 
     // 0101 = 2 + 4 = 6
     expect(stream.peekBits(4)).equals(5);
@@ -68,5 +88,11 @@ describe('bitjs.io.BitStream', () => {
     expect(twoBytes[1]).equals(Number('0b01010110'));
 
     expect(() => stream.readBytes(3)).throws();
+  });
+
+  it('throws an error with weird values of peekBytes()', () => {
+    /** @type {BitStream} */
+    const stream = new BitStream(array.buffer);
+    expect(() => stream.peekBytes(-1)).throws();
   });
 });

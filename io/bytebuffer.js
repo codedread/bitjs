@@ -114,7 +114,7 @@ export class ByteBuffer {
   writeASCIIString(str) {
     for (let i = 0; i < str.length; ++i) {
       const curByte = str.charCodeAt(i);
-      if (curByte < 0 || curByte > 255) {
+      if (curByte < 0 || curByte > 127) {
         throw 'Trying to write a non-ASCII string!';
       }
       this.insertByte(curByte);

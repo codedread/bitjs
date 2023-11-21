@@ -17,6 +17,35 @@ describe('bitjs.io.ByteStream', () => {
     array = new Uint8Array(4);
   });
 
+  it('throws an error without an ArrayBuffer', () => {
+    expect(() => new ByteStream()).throws();
+    expect(() => new ByteStream(array.buffer).push()).throws();
+  });
+
+  it('getNumBytesRead() works', () => {
+    const stream = new ByteStream(array.buffer);
+    expect(stream.getNumBytesRead()).equals(0);
+    stream.readBytes(1);
+    expect(stream.getNumBytesRead()).equals(1);
+    stream.readBytes(2);
+    expect(stream.getNumBytesRead()).equals(3);
+  });
+
+  it('throws when peeking a weird numbers of bytes', () => {
+    array[0] = 255;
+    const stream = new ByteStream(array.buffer);
+    expect(stream.peekNumber(0)).equals(0);
+    expect(() => stream.peekNumber(-2)).throws();
+    expect(() => stream.peekNumber(5)).throws();
+
+    expect(stream.peekBytes(0).length).equals(0);
+    expect(() => stream.peekBytes(-1)).throws();
+
+    expect(stream.peekString(0)).equals('');
+    expect(() => stream.peekString(-1)).throws();
+    expect(() => stream.peekString(5)).throws();
+  });
+
   it('PeekAndRead_SingleByte', () => {
     array[0] = 192;
     const stream = new ByteStream(array.buffer);

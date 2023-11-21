@@ -11,7 +11,12 @@ import 'mocha';
 import { expect } from 'chai';
 
 describe('bitjs.io.BitBuffer', () => {
+  /** @type {BitBuffer} */
   let buffer;
+
+  it('throws when invalid numBytes', () => {
+    expect(() => new BitBuffer()).throws();
+  });
 
   describe('least-to-most-significant bit-packing', () => {
     beforeEach(() => {
@@ -19,10 +24,22 @@ describe('bitjs.io.BitBuffer', () => {
     });
 
     it('bit/byte pointers initialized properly', () => {
+      expect(buffer.getPackingDirection()).equals(false);
       expect(buffer.bytePtr).equals(0);
       expect(buffer.bitPtr).equals(0);
-    })
+    });
 
+    it('throws when writing invalid values', () => {
+      expect(() => buffer.writeBits(-3, 2)).throws();
+      expect(() => buffer.writeBits(3, -2)).throws();
+      expect(() => buffer.writeBits(0, 54)).throws();
+    });
+
+    it('throws when writing too many bits into the buffer', () => {
+      buffer.writeBits(0, 31); // thirty-one zeroes.
+      expect(() => buffer.writeBits(1, 2)).throws();
+    });
+  
     it('write multiple bits', () => {
       buffer.writeBits(0b01011, 5); // Should result in: 0b00001011.
       expect(buffer.bytePtr).equals(0);
@@ -47,6 +64,26 @@ describe('bitjs.io.BitBuffer', () => {
       expect(Array.from(buffer.data)).to.have.ordered.members(
         [0xfe, 0xff, 0x03, 0x00]);
     });
+
+    it('properly changes bit-packing direction', () => {
+      buffer.writeBits(3, 2);
+      expect(buffer.data[0]).equals(3);
+      expect(buffer.bytePtr).equals(0);
+      expect(buffer.bitPtr).equals(2);
+
+      buffer.setPackingDirection(true /** most to least significant */);
+      expect(buffer.bytePtr).equals(1);
+      expect(buffer.bitPtr).equals(7);
+
+      buffer.writeBits(7, 3);
+      expect(buffer.data[0]).equals(3);
+      expect(buffer.data[1]).equals(224);
+    });
+
+    it('throws when switching packing direction and no more bytes left', () => {
+      buffer.writeBits(0, 25);
+      expect(() => buffer.setPackingDirection(true)).throws();
+    });
   });
 
   describe('most-to-least-significant bit-packing', () => {
@@ -55,6 +92,7 @@ describe('bitjs.io.BitBuffer', () => {
     });
 
     it('bit/byte pointers initialized properly', () => {
+      expect(buffer.getPackingDirection()).equals(true);
       expect(buffer.bytePtr).equals(0);
       expect(buffer.bitPtr).equals(7);
     })
@@ -83,6 +121,26 @@ describe('bitjs.io.BitBuffer', () => {
       expect(buffer.bitPtr).equals(5);
       expect(Array.from(buffer.data)).to.have.ordered.members(
         [0x7f, 0xff, 0xc0, 0x00]);
+    });
+
+    it('properly changes bit-packing direction', () => {
+      buffer.writeBits(3, 2);
+      expect(buffer.bytePtr).equals(0);
+      expect(buffer.bitPtr).equals(5);
+      expect(buffer.data[0]).equals(192);
+
+      buffer.setPackingDirection(false /** least to most significant */);
+      expect(buffer.bytePtr).equals(1);
+      expect(buffer.bitPtr).equals(0);
+
+      buffer.writeBits(7, 3);
+      expect(buffer.data[0]).equals(192);
+      expect(buffer.data[1]).equals(7);
+    });
+
+    it('throws when switching packing direction and no more bytes left', () => {
+      buffer.writeBits(0, 25);
+      expect(() => buffer.setPackingDirection(false)).throws();
     });
   });
 });
