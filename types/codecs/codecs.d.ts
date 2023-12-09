@@ -1,36 +1,4 @@
 /**
- * This module helps interpret ffprobe -print_format json output.
- * Its coverage is pretty sparse right now, so send me pull requests!
- */
-/**
- * @typedef ProbeStream ffprobe -show_streams -print_format json. Only the fields we care about.
- * @property {number} index
- * @property {string} codec_name
- * @property {string} codec_long_name
- * @property {string} profile
- * @property {string} codec_type Either 'audio' or 'video'.
- * @property {string} codec_tag_string
- * @property {string} id
- * @property {number?} level
- * @property {number?} width
- * @property {number?} height
- * @property {string} r_frame_rate Like "60000/1001"
- */
-/**
- * @typedef ProbeFormat Only the fields we care about from the following command:
- *     ffprobe -show_format -show_streams -v quiet -print_format json -i file.mp4
- * @property {string} filename
- * @property {string} format_name
- * @property {string} duration Number of seconds, as a string like "473.506367".
- * @property {string} size Number of bytes, as a string.
- * @property {string} bit_rate Bit rate, as a string.
- */
-/**
- * @typedef ProbeInfo ffprobe -show_format -show_streams -print_format json
- * @property {ProbeStream[]} streams
- * @property {ProbeFormat} format
- */
-/**
  * TODO: Reconcile this with file/sniffer.js findMimeType() which does signature matching.
  * @param {ProbeInfo} info
  * @returns {string}
