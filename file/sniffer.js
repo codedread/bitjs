@@ -8,7 +8,9 @@
  */
 
 // https://mimesniff.spec.whatwg.org/ is a good resource.
-// https://github.com/h2non/filetype is an easy target for reverse-engineering.
+// Easy targets for reverse-engineering:
+// - https://github.com/h2non/filetype
+// - https://github.com/gabriel-vasile/mimetype (particularly internal/magic/ftyp.go)
 
 //  NOTE: Because the ICO format also starts with a couple zero bytes, this tree will rely on the
 //        File Type box never going beyond 255 bytes in length which, seems unlikely according to
