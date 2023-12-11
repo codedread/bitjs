@@ -18,9 +18,17 @@ import { findMimeType } from '../file/sniffer.js';
  */
 
 /**
- * @typedef DecompressorOptions
+ * An enum for threading mode. Currently supporting only WebWorkers.
+ */
+export const ThreadingMode = {
+  WEB_WORKER: 'WEB_WORKER',
+}
+
+/**
+ * @typedef UnarchiverOptions
  * @property {string} pathToBitJS The path to the bitjs folder.
- * @property {boolean=} debug Set to true for verbose decompressor logging.
+ * @property {boolean=} debug Set to true for verbose unarchiver logging.
+ * @property {ThreadingMode=} threadingMode The default is WEB_WORKER.
  */
 
 /**
@@ -172,14 +180,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 /**
  * Base class for all Unarchivers.
  */
- export class Unarchiver extends EventTarget {
-  /**
-   * A handle to the decompressor implementation context.
-   * @type {Worker|*}
-   * @private
-   */
-  implRef_;
-
+export class Unarchiver extends EventTarget {
   /**
    * The client-side port that sends messages to, and receives messages from the
    * decompressor implementation.
@@ -194,7 +195,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    *     to the decompress implementation.
    * @param {Function(string, MessagePort):Promise<*>} connectPortFn A function that takes a path
    *     to a JS decompression implementation (unzip.js) and connects it to a MessagePort.
-   * @param {DecompressorOptions|string} options An optional object of options, or a string
+   * @param {UnarchiverOptions|string} options An optional object of options, or a string
    *     representing where the BitJS files are located.  The string version of this argument is
    *     deprecated.
    */
@@ -203,7 +204,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
 
     if (typeof options === 'string') {
       console.warn(`Deprecated: Don't send a raw string to Unarchiver()`);
-      console.warn(`            send DecompressorOptions instead.`);
+      console.warn(`            send UnarchiverOptions instead.`);
       options = { 'pathToBitJS': options };
     }
 
@@ -310,10 +311,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
     const messageChannel = new MessageChannel();
     this.port_ = messageChannel.port1;
     this.connectPortFn_(this.pathToBitJS_,
-        this.getScriptFileName(),
-        messageChannel.port2).then((implRef) => {
-      this.implRef_ = implRef;
-
+        this.getScriptFileName(), messageChannel.port2).then(() => {
       this.port_.onerror = function (e) {
         console.log('Impl error: message = ' + e.message);
         throw e;
@@ -367,12 +365,6 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
     if (this.port_) {
       this.port_.close();
       this.port_ = null;
-    }
-    if (this.implRef_) {
-      if (this.implRef_ instanceof Worker) {
-        this.implRef_.terminate();
-        this.implRef_ = null;
-      }
     }
   }
 }
