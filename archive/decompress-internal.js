@@ -18,6 +18,12 @@ import { findMimeType } from '../file/sniffer.js';
  */
 
 /**
+ * @typedef DecompressorOptions
+ * @property {string} pathToBitJS The path to the bitjs folder.
+ * @property {boolean=} debug Set to true for verbose decompressor logging.
+ */
+
+/**
  * The UnarchiveEvent types.
  */
 export const UnarchiveEventType = {
@@ -188,18 +194,16 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    *     to the decompress implementation.
    * @param {Function(string, MessagePort):Promise<*>} connectPortFn A function that takes a path
    *     to a JS decompression implementation (unzip.js) and connects it to a MessagePort.
-   * @param {Object|string} options An optional object of options, or a string representing where
-   *     the BitJS files are located.  The string version of this argument is deprecated.
-   *     Available options:
-   *       'pathToBitJS': A string indicating where the BitJS files are located.
-   *       'debug': A boolean where true indicates that the archivers should log debug output.
+   * @param {DecompressorOptions|string} options An optional object of options, or a string
+   *     representing where the BitJS files are located.  The string version of this argument is
+   *     deprecated.
    */
   constructor(arrayBuffer, connectPortFn, options = {}) {
     super();
 
     if (typeof options === 'string') {
       console.warn(`Deprecated: Don't send a raw string to Unarchiver()`);
-      console.warn(`            send {'pathToBitJS':'${options}'} instead`);
+      console.warn(`            send DecompressorOptions instead.`);
       options = { 'pathToBitJS': options };
     }
 

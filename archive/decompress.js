@@ -39,6 +39,10 @@ export {
  */
 
 /**
+ * @typedef {import('./decompress-internal.js').DecompressorOptions} DecompressorOptions
+ */
+
+/**
  * Creates a WebWorker with the given decompressor implementation (i.e. unzip.js)
  * and transfers a MessagePort for communication. Returns a Promise to the Worker.
  * @param {string} pathToBitJS The path to the bitjs folder.
@@ -78,9 +82,10 @@ export class Untarrer extends UntarrerInternal {
 * in the ArrayBuffer.
 * @param {ArrayBuffer} ab The ArrayBuffer to unarchive. Note that this ArrayBuffer
 *     must not be referenced after calling this method, as the ArrayBuffer may be
-*     tranferred to a different JS context once start() is called.
-* @param {Object|string} options An optional object of options, or a string
-*     representing where the path to the unarchiver script files.
+*     transferred to a different JS context once start() is called.
+* @param {DecompressorOptions|string} options An optional object of options, or a
+*     string representing where the path to the unarchiver script files. The latter
+*     is now deprecated (use DecompressorOptions).
 * @returns {Unarchiver}
 */
 export function getUnarchiver(ab, options = {}) {

@@ -1,14 +1,15 @@
 /**
 * Factory method that creates an unarchiver based on the byte signature found
-* in the arrayBuffer.
+* in the ArrayBuffer.
 * @param {ArrayBuffer} ab The ArrayBuffer to unarchive. Note that this ArrayBuffer
-*     must not be referenced after calling this method, as the ArrayBuffer is marked
-*     as Transferable and sent to a Worker thread once start() is called.
-* @param {Object|string} options An optional object of options, or a string
-*     representing where the path to the unarchiver script files.
+*     must not be referenced after calling this method, as the ArrayBuffer may be
+*     transferred to a different JS context once start() is called.
+* @param {UnarchiverOptions|string} options An optional object of options, or a
+*     string representing where the path to the unarchiver script files. The latter
+*     is now deprecated (use UnarchiverOptions).
 * @returns {Unarchiver}
 */
-export function getUnarchiver(ab: ArrayBuffer, options?: any | string): Unarchiver;
+export function getUnarchiver(ab: ArrayBuffer, options?: UnarchiverOptions | string): Unarchiver;
 export class Unzipper extends UnzipperInternal {
     constructor(ab: any, options: any);
 }
@@ -22,6 +23,7 @@ export type UnarchivedFile = {
     filename: string;
     fileData: Uint8Array;
 };
+export type UnarchiverOptions = import('./decompress-internal.js').UnarchiverOptions;
 import { Unarchiver } from "./decompress-internal.js";
 import { UnarchiveAppendEvent } from "./decompress-internal.js";
 import { UnarchiveErrorEvent } from "./decompress-internal.js";
