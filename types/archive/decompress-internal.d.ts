@@ -8,109 +8,15 @@
  * @returns {Unarchiver}
  */
 export function getUnarchiverInternal(ab: ArrayBuffer, connectPortFn: any, options?: any | string): Unarchiver;
-export namespace UnarchiveEventType {
-    const START: string;
-    const APPEND: string;
-    const PROGRESS: string;
-    const EXTRACT: string;
-    const FINISH: string;
-    const INFO: string;
-    const ERROR: string;
+export namespace ThreadingMode {
+    const WEB_WORKER: string;
 }
 /**
- * An unarchive event.
+ * @typedef UnarchiverOptions
+ * @property {string} pathToBitJS The path to the bitjs folder.
+ * @property {boolean=} debug Set to true for verbose unarchiver logging.
+ * @property {ThreadingMode=} threadingMode The default is WEB_WORKER.
  */
-export class UnarchiveEvent extends Event {
-    /**
-     * @param {string} type The event type.
-     */
-    constructor(type: string);
-}
-/**
- * Updates all Archiver listeners that an append has occurred.
- */
-export class UnarchiveAppendEvent extends UnarchiveEvent {
-    /**
-     * @param {number} numBytes The number of bytes appended.
-     */
-    constructor(numBytes: number);
-    /**
-     * The number of appended bytes.
-     * @type {number}
-     */
-    numBytes: number;
-}
-/**
- * Useful for passing info up to the client (for debugging).
- */
-export class UnarchiveInfoEvent extends UnarchiveEvent {
-    /**
-     * The information message.
-     * @type {string}
-     */
-    msg: string;
-}
-/**
- * An unrecoverable error has occured.
- */
-export class UnarchiveErrorEvent extends UnarchiveEvent {
-    /**
-     * The information message.
-     * @type {string}
-     */
-    msg: string;
-}
-/**
- * Start event.
- */
-export class UnarchiveStartEvent extends UnarchiveEvent {
-    constructor();
-}
-/**
- * Finish event.
- */
-export class UnarchiveFinishEvent extends UnarchiveEvent {
-    /**
-     * @param {Object} metadata A collection fo metadata about the archive file.
-     */
-    constructor(metadata?: any);
-    metadata: any;
-}
-/**
- * Progress event.
- */
-export class UnarchiveProgressEvent extends UnarchiveEvent {
-    /**
-     * @param {string} currentFilename
-     * @param {number} currentFileNumber
-     * @param {number} currentBytesUnarchivedInFile
-     * @param {number} currentBytesUnarchived
-     * @param {number} totalUncompressedBytesInArchive
-     * @param {number} totalFilesInArchive
-     * @param {number} totalCompressedBytesRead
-     */
-    constructor(currentFilename: string, currentFileNumber: number, currentBytesUnarchivedInFile: number, currentBytesUnarchived: number, totalUncompressedBytesInArchive: number, totalFilesInArchive: number, totalCompressedBytesRead: number);
-    currentFilename: string;
-    currentFileNumber: number;
-    currentBytesUnarchivedInFile: number;
-    totalFilesInArchive: number;
-    currentBytesUnarchived: number;
-    totalUncompressedBytesInArchive: number;
-    totalCompressedBytesRead: number;
-}
-/**
- * Extract event.
- */
-export class UnarchiveExtractEvent extends UnarchiveEvent {
-    /**
-     * @param {UnarchivedFile} unarchivedFile
-     */
-    constructor(unarchivedFile: UnarchivedFile);
-    /**
-     * @type {UnarchivedFile}
-     */
-    unarchivedFile: UnarchivedFile;
-}
 /**
  * Base class for all Unarchivers.
  */
@@ -126,12 +32,6 @@ export class Unarchiver extends EventTarget {
      *     deprecated.
      */
     constructor(arrayBuffer: ArrayBuffer, connectPortFn: any, options?: UnarchiverOptions | string);
-    /**
-     * A handle to the decompressor implementation context.
-     * @type {Worker|*}
-     * @private
-     */
-    private implRef_;
     /**
      * The client-side port that sends messages to, and receives messages from the
      * decompressor implementation.
@@ -229,5 +129,21 @@ export type UnarchiverOptions = {
      * Set to true for verbose unarchiver logging.
      */
     debug?: boolean | undefined;
+    /**
+     * The default is WEB_WORKER.
+     */
+    threadingMode?: {
+        WEB_WORKER: string;
+    } | undefined;
 };
+import { UnarchiveAppendEvent } from "./events.js";
+import { UnarchiveErrorEvent } from "./events.js";
+import { UnarchiveEvent } from "./events.js";
+import { UnarchiveEventType } from "./events.js";
+import { UnarchiveExtractEvent } from "./events.js";
+import { UnarchiveFinishEvent } from "./events.js";
+import { UnarchiveInfoEvent } from "./events.js";
+import { UnarchiveProgressEvent } from "./events.js";
+import { UnarchiveStartEvent } from "./events.js";
+export { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType, UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent, UnarchiveProgressEvent, UnarchiveStartEvent };
 //# sourceMappingURL=decompress-internal.d.ts.map

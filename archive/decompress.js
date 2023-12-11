@@ -8,11 +8,11 @@
  * Copyright(c) 2021 Google Inc.
  */
 
- import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
-  UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
-  UnarchiveProgressEvent, UnarchiveStartEvent, Unarchiver,
-  UnrarrerInternal, UntarrerInternal, UnzipperInternal,
-  getUnarchiverInternal } from './decompress-internal.js';
+import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
+         UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
+         UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
+import { Unarchiver, UnrarrerInternal, UntarrerInternal, UnzipperInternal,
+         getUnarchiverInternal } from './decompress-internal.js';
 
 export {
   UnarchiveAppendEvent,

@@ -9,11 +9,12 @@
  * Copyright(c) 2011 Google Inc.
  */
 
+// TODO: When up-revving to a major new version, remove this module.
+
 import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
-         UnarchiveProgressEvent, UnarchiveStartEvent, Unarchiver,
-         UnrarrerInternal, UntarrerInternal, UnzipperInternal,
-         getUnarchiverInternal } from './decompress-internal.js';
+         UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
+import { Unarchiver } from './decompress-internal.js';
 import { Unzipper, Unrarrer, Untarrer, getUnarchiver } from './decompress.js';
 
 export {
