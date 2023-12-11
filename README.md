@@ -90,7 +90,7 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
 #### Compressing
 
-The Zipper only supports creating zip files without compression (story only) for now. The interface
+The Zipper only supports creating zip files without compression (store only) for now. The interface
 is pretty straightforward and there is no event-based / streaming API.
 
 ```javascript

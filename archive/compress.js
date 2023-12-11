@@ -1,3 +1,12 @@
+/**
+ * compress.js
+ *
+ * Provides base functionality for compressing.
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2023 Google Inc.
+ */
 
 // NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
