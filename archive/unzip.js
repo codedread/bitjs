@@ -12,9 +12,6 @@
  * DEFLATE format: http://tools.ietf.org/html/rfc1951
  */
 
-// This file expects to be invoked as a Worker (see onmessage below).
-// TODO: Make this a plain ES Module and then write a thin wrapper around it for Worker-ization.
-//     This will allow us to write proper unit tests for it.
 import { BitStream } from '../io/bitstream.js';
 import { ByteBuffer } from '../io/bytebuffer.js';
 import { ByteStream } from '../io/bytestream.js';
@@ -25,6 +22,9 @@ const UnarchiveState = {
   WAITING: 2,
   FINISHED: 3,
 };
+
+/** @type {MessagePort} */
+let hostPort;
 
 // State - consider putting these into a class.
 let unarchiveState = UnarchiveState.NOT_STARTED;
@@ -42,13 +42,13 @@ let totalFilesInArchive = 0;
 
 // Helper functions.
 const info = function (str) {
-  postMessage({ type: 'info', msg: str });
+  hostPort.postMessage({ type: 'info', msg: str });
 };
 const err = function (str) {
-  postMessage({ type: 'error', msg: str });
+  hostPort.postMessage({ type: 'error', msg: str });
 };
 const postProgress = function () {
-  postMessage({
+  hostPort.postMessage({
     type: 'progress',
     currentFilename,
     currentFileNumber,
@@ -628,7 +628,7 @@ function archiveUnzip() {
       oneLocalFile.unzip();
 
       if (oneLocalFile.fileData != null) {
-        postMessage({ type: 'extract', unarchivedFile: oneLocalFile }, [oneLocalFile.fileData.buffer]);
+        hostPort.postMessage({ type: 'extract', unarchivedFile: oneLocalFile }, [oneLocalFile.fileData.buffer]);
         postProgress();
       }
     }
@@ -725,12 +725,12 @@ function archiveUnzip() {
   bytestream = bstream.tee();
 
   unarchiveState = UnarchiveState.FINISHED;
-  postMessage({ type: 'finish', metadata });
+  hostPort.postMessage({ type: 'finish', metadata });
 }
 
 // event.data.file has the first ArrayBuffer.
 // event.data.bytes has all subsequent ArrayBuffers.
-onmessage = function (event) {
+const onmessage = function (event) {
   const bytes = event.data.file || event.data.bytes;
   logToConsole = !!event.data.logToConsole;
 
@@ -751,7 +751,7 @@ onmessage = function (event) {
     currentBytesUnarchived = 0;
     allLocalFiles = [];
 
-    postMessage({ type: 'start' });
+    hostPort.postMessage({ type: 'start' });
 
     unarchiveState = UnarchiveState.UNARCHIVING;
 
@@ -774,3 +774,15 @@ onmessage = function (event) {
     }
   }
 };
+
+/**
+ * Connect the host to the unzip implementation with the given MessagePort.
+ * @param {MessagePort} port
+ */
+export function connect(port) {
+  if (hostPort) {
+    throw `hostPort already connected`;
+  }
+  hostPort = port;
+  port.onmessage = onmessage;
+}

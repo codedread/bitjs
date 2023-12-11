@@ -33,7 +33,7 @@ export const UnarchiveEventType = {
 /**
  * An unarchive event.
  */
- export class UnarchiveEvent extends Event {
+export class UnarchiveEvent extends Event {
   /**
    * @param {string} type The event type.
    */
@@ -45,7 +45,7 @@ export const UnarchiveEventType = {
 /**
  * Updates all Archiver listeners that an append has occurred.
  */
- export class UnarchiveAppendEvent extends UnarchiveEvent {
+export class UnarchiveAppendEvent extends UnarchiveEvent {
   /**
    * @param {number} numBytes The number of bytes appended.
    */
@@ -168,17 +168,33 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
  */
  export class Unarchiver extends EventTarget {
   /**
+   * A handle to the decompressor implementation context.
+   * @type {Worker|*}
+   * @private
+   */
+  implRef_;
+
+  /**
+   * The client-side port that sends messages to, and receives messages from the
+   * decompressor implementation.
+   * @type {MessagePort}
+   * @private
+   */
+  port_;
+
+  /**
    * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
    *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
-   *     to the Worker.
-   * @param {Function(string):Worker} createWorkerFn A function that creates a Worker from a script file.
+   *     to the decompress implementation.
+   * @param {Function(string, MessagePort):Promise<*>} connectPortFn A function that takes a path
+   *     to a JS decompression implementation (unzip.js) and connects it to a MessagePort.
    * @param {Object|string} options An optional object of options, or a string representing where
    *     the BitJS files are located.  The string version of this argument is deprecated.
    *     Available options:
    *       'pathToBitJS': A string indicating where the BitJS files are located.
    *       'debug': A boolean where true indicates that the archivers should log debug output.
    */
-  constructor(arrayBuffer, createWorkerFn, options = {}) {
+  constructor(arrayBuffer, connectPortFn, options = {}) {
     super();
 
     if (typeof options === 'string') {
@@ -195,11 +211,11 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
     this.ab = arrayBuffer;
 
     /**
-     * A factory method that creates a Worker that does the unarchive work.
-     * @type {Function(string): Worker}
+     * A factory method that connects a port to the decompress implementation.
+     * @type {Function(MessagePort): Promise<*>}
      * @private
      */
-    this.createWorkerFn_ = createWorkerFn;
+    this.connectPortFn_ = connectPortFn;
 
     /**
      * The path to the BitJS files.
@@ -213,13 +229,6 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
      * @type {boolean}
      */
     this.debugMode_ = !!(options.debug);
-
-    /**
-     * Private web worker initialized during start().
-     * @private
-     * @type {Worker}
-     */
-    this.worker_ = null;
   }
 
   /**
@@ -241,7 +250,7 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
   }
 
   /**
-   * Create an UnarchiveEvent out of the object sent back from the Worker.
+   * Create an UnarchiveEvent out of the object sent back from the implementation.
    * @param {Object} obj
    * @returns {UnarchiveEvent}
    * @private
@@ -276,70 +285,71 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
    * @param {Object} obj
    * @private
    */
-  handleWorkerEvent_(obj) {
+  handlePortEvent_(obj) {
     const type = obj.type;
     if (type && Object.values(UnarchiveEventType).includes(type)) {
       const evt = this.createUnarchiveEvent_(obj);
       this.dispatchEvent(evt);
       if (evt.type == UnarchiveEventType.FINISH) {
-        this.worker_.terminate();
+        this.stop();
       }
     } else {
-      console.log(`Unknown object received from worker: ${obj}`);
+      console.log(`Unknown object received from port: ${obj}`);
     }
   }
 
   /**
-   * Starts the unarchive in a separate Web Worker thread and returns immediately.
+   * Starts the unarchive by connecting the ports and sending the first ArrayBuffer.
    */
   start() {
     const me = this;
-    const scriptFileName = this.pathToBitJS_ + this.getScriptFileName();
-    if (scriptFileName) {
-      this.worker_ = this.createWorkerFn_(scriptFileName);
+    const messageChannel = new MessageChannel();
+    this.port_ = messageChannel.port1;
+    this.connectPortFn_(this.pathToBitJS_,
+        this.getScriptFileName(),
+        messageChannel.port2).then((implRef) => {
+      this.implRef_ = implRef;
 
-      this.worker_.onerror = function (e) {
-        console.log('Worker error: message = ' + e.message);
+      this.port_.onerror = function (e) {
+        console.log('Impl error: message = ' + e.message);
         throw e;
       };
-
-      this.worker_.onmessage = function (e) {
+  
+      this.port_.onmessage = function (e) {
         if (typeof e.data == 'string') {
-          // Just log any strings the workers pump our way.
+          // Just log any strings the port pumps our way.
           console.log(e.data);
         } else {
-          me.handleWorkerEvent_(e.data);
+          me.handlePortEvent_(e.data);
         }
       };
-
+  
       const ab = this.ab;
-      this.worker_.postMessage({
+      this.port_.postMessage({
         file: ab,
         logToConsole: this.debugMode_,
       }, [ab]);
-      this.ab = null;
-    }
+      this.ab = null;  
+    });
   }
 
-  // TODO: Create a startSync() method that does not use a worker for Node.
-
   /**
-   * Adds more bytes to the unarchiver's Worker thread.
+   * Adds more bytes to the unarchiver.
    * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it. If opt_transferable is
    *     set to true, this ArrayBuffer must not be referenced after calling update(), since it
-   *     is marked as Transferable and sent to the Worker.
+   *     is marked as Transferable and sent to the implementation.
    * @param {boolean=} opt_transferable Optional boolean whether to mark this ArrayBuffer
    *     as a Tranferable object, which means it can no longer be referenced outside of
-   *     the Worker thread.
+   *     the implementation context.
    */
   update(ab, opt_transferable = false) {
     const numBytes = ab.byteLength;
-    if (this.worker_) {
+    if (this.port_) {
       // Send the ArrayBuffer over, and mark it as a Transferable object if necessary.
       if (opt_transferable) {
-        this.worker_.postMessage({ bytes: ab }, [ab]);
+        this.port_.postMessage({ bytes: ab }, [ab]);
       } else {
-        this.worker_.postMessage({ bytes: ab });
+        this.port_.postMessage({ bytes: ab });
       }
     }
 
@@ -347,18 +357,25 @@ export class UnarchiveExtractEvent extends UnarchiveEvent {
   }
 
   /**
-   * Terminates the Web Worker for this Unarchiver and returns immediately.
+   * Closes the port to the decompressor implementation and terminates it.
    */
   stop() {
-    if (this.worker_) {
-      this.worker_.terminate();
+    if (this.port_) {
+      this.port_.close();
+      this.port_ = null;
+    }
+    if (this.implRef_) {
+      if (this.implRef_ instanceof Worker) {
+        this.implRef_.terminate();
+        this.implRef_ = null;
+      }
     }
   }
 }
 
 export class UnzipperInternal extends Unarchiver {
-  constructor(arrayBuffer, createWorkerFn, options) {
-    super(arrayBuffer, createWorkerFn, options);
+  constructor(arrayBuffer, connectPortFn, options) {
+    super(arrayBuffer, connectPortFn, options);
   }
 
   getMIMEType() { return 'application/zip'; }
@@ -366,8 +383,8 @@ export class UnzipperInternal extends Unarchiver {
 }
 
 export class UnrarrerInternal extends Unarchiver {
-  constructor(arrayBuffer, createWorkerFn, options) {
-    super(arrayBuffer, createWorkerFn, options);
+  constructor(arrayBuffer, connectPortFn, options) {
+    super(arrayBuffer, connectPortFn, options);
   }
 
   getMIMEType() { return 'application/x-rar-compressed'; }
@@ -375,8 +392,8 @@ export class UnrarrerInternal extends Unarchiver {
 }
 
 export class UntarrerInternal extends Unarchiver {
-  constructor(arrayBuffer, createWorkerFn, options) {
-    super(arrayBuffer, createWorkerFn, options);
+  constructor(arrayBuffer, connectPortFn, options) {
+    super(arrayBuffer, connectPortFn, options);
   }
 
   getMIMEType() { return 'application/x-tar'; }
@@ -387,12 +404,12 @@ export class UntarrerInternal extends Unarchiver {
  * Factory method that creates an unarchiver based on the byte signature found
  * in the arrayBuffer.
  * @param {ArrayBuffer} ab
- * @param {Function(string):Worker} createWorkerFn A function that creates a Worker from a script file.
+ * @param {Function(string):Promise<*>} connectPortFn A function that connects the impl port.
  * @param {Object|string} options An optional object of options, or a string representing where
  *     the path to the unarchiver script files.
  * @returns {Unarchiver}
  */
- export function getUnarchiverInternal(ab, createWorkerFn, options = {}) {
+ export function getUnarchiverInternal(ab, connectPortFn, options = {}) {
   if (ab.byteLength < 10) {
     return null;
   }
@@ -401,11 +418,11 @@ export class UntarrerInternal extends Unarchiver {
   const mimeType = findMimeType(ab);
 
   if (mimeType === 'application/x-rar-compressed') { // Rar!
-    unarchiver = new UnrarrerInternal(ab, createWorkerFn, options);
+    unarchiver = new UnrarrerInternal(ab, connectPortFn, options);
   } else if (mimeType === 'application/zip') { // PK (Zip)
-    unarchiver = new UnzipperInternal(ab, createWorkerFn, options);
+    unarchiver = new UnzipperInternal(ab, connectPortFn, options);
   } else { // Try with tar
-    unarchiver = new UntarrerInternal(ab, createWorkerFn, options);
+    unarchiver = new UntarrerInternal(ab, connectPortFn, options);
   }
   return unarchiver;
 }

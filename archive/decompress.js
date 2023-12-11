@@ -39,46 +39,50 @@ export {
  */
 
 /**
-* The goal is to make this testable - send getUnarchiver() an array buffer of
-* an archive, call start on the unarchiver, expect the returned result.
-*
-* Problem: It relies on Web Workers, and that won't work in a nodejs context.
-* Solution: Make archive.js very thin, have it feed web-specific things into
-*           an internal module that is isomorphic JavaScript.
-*
-* TODO:
-* - write unit tests for archive-internal.js that use the nodejs Worker
-*   equivalent.
-* - maybe use @pgriess/node-webworker or @audreyt/node-webworker-threads or
-*   just node's worker_threads ?
-*/
+ * Creates a WebWorker with the given decompressor implementation (i.e. unzip.js)
+ * and transfers a MessagePort for communication. Returns a Promise to the Worker.
+ * @param {string} pathToBitJS The path to the bitjs folder.
+ * @param {string} implFilename The decompressor implementation filename
+ *     relative to the bitjs root (e.g. archive/unzip.js)
+ * @param {MessagePort} implPort The MessagePort to connect to the decompressor
+ *     implementation.
+ * @returns {Promise<*>} Returns a Promise that resolves to the Worker object.
+ */
+const connectPortFn = (pathToBitJS, implFilename, implPort) => {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(pathToBitJS + 'archive/unarchiver-webworker.js', {
+      type: 'module'
+    });
 
-const createWorkerFn = (scriptFilename) => new Worker(scriptFilename, { type: 'module' });
+    worker.postMessage({ implSrc: (pathToBitJS + implFilename), }, [implPort]);
+    resolve(worker);
+  });
+};
 
-// Thin wrappers of compressors for clients who want to construct a specific
+// Thin wrappers of decompressors for clients who want to construct a specific
 // unarchiver themselves rather than use getUnarchiver().
 export class Unzipper extends UnzipperInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { super(ab, connectPortFn, options); }
 }
 
 export class Unrarrer extends UnrarrerInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { super(ab, connectPortFn, options); }
 }
 
 export class Untarrer extends UntarrerInternal {
-  constructor(ab, options) { super(ab, createWorkerFn, options); }
+  constructor(ab, options) { super(ab, connectPortFn, options); }
 }
 
 /**
 * Factory method that creates an unarchiver based on the byte signature found
-* in the arrayBuffer.
+* in the ArrayBuffer.
 * @param {ArrayBuffer} ab The ArrayBuffer to unarchive. Note that this ArrayBuffer
-*     must not be referenced after calling this method, as the ArrayBuffer is marked
-*     as Transferable and sent to a Worker thread once start() is called.
+*     must not be referenced after calling this method, as the ArrayBuffer may be
+*     tranferred to a different JS context once start() is called.
 * @param {Object|string} options An optional object of options, or a string
 *     representing where the path to the unarchiver script files.
 * @returns {Unarchiver}
 */
 export function getUnarchiver(ab, options = {}) {
-  return getUnarchiverInternal(ab, createWorkerFn, options);
+  return getUnarchiverInternal(ab, connectPortFn, options);
 }
