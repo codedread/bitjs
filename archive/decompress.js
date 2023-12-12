@@ -28,9 +28,9 @@ export {
 } 
 
 /**
-* All extracted files returned by an Unarchiver will implement
-* the following interface:
-*/
+ * All extracted files returned by an Unarchiver will implement
+ * the following interface:
+ */
 
 /**
  * @typedef UnarchivedFile
@@ -43,23 +43,27 @@ export {
  */
 
 /**
- * Creates a WebWorker with the given decompressor implementation (e.g. unzip.js)
- * and transfers a MessagePort for communication. Returns a Promise to the Worker.
+ * Connects the MessagePort to the unarchiver implementation (e.g. unzip.js). If Workers exist
+ * (e.g. web browsers or deno), imports the implementation inside a Web Worker. Otherwise, it
+ * dynamically imports the implementation inside the current JS context.
+ * The MessagePort is used for communication between host and implementation.
  * @param {string} pathToBitJS The path to the bitjs folder.
- * @param {string} implFilename The decompressor implementation filename
- *     relative to this path (e.g. './unzip.js').
- * @param {MessagePort} implPort The MessagePort to connect to the decompressor
- *     implementation.
- * @returns {Promise<*>} Returns a Promise that resolves to the Worker object.
+ * @param {string} implFilename The decompressor implementation filename relative to this path
+ *     (e.g. './unzip.js').
+ * @param {MessagePort} implPort The MessagePort to connect to the decompressor implementation.
+ * @returns {Promise<void>} The Promise resolves once the ports are connected.
  */
-const connectPortFn = (pathToBitJS, implFilename, implPort) => {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(pathToBitJS + 'archive/unarchiver-webworker.js', {
-      type: 'module'
+const connectPortFn = async (pathToBitJS, implFilename, implPort) => {
+  if (typeof Worker === 'undefined') {
+    return import(`${implFilename}`).then(implModule => {
+      implModule.connect(implPort)
     });
+  }
 
-    worker.postMessage({ implSrc: (pathToBitJS + implFilename), }, [implPort]);
-    resolve(worker);
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(pathToBitJS + 'archive/unarchiver-webworker.js', { type: 'module' });
+    worker.postMessage({ implSrc: implFilename }, [implPort]);
+    resolve();
   });
 };
 

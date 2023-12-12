@@ -6,21 +6,25 @@
 
 A set of dependency-free JavaScript modules to handle binary data in JS (using Typed Arrays).  Includes:
 
-  * bitjs/archive: Unarchiving files (unzip, unrar, untar) in the browser, implemented as Web Workers and allowing progressively unarchiving while streaming.
-  * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381 MIME type string
+  * bitjs/archive: Unarchiving files (unzip, unrar, untar) in JavaScript,
+    implemented as Web Workers where supported, and allowing progressive
+    unarchiving while streaming.
+  * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381
+    MIME type string
   * bitjs/file: Detect the type of file from its binary signature.
   * bitjs/image: Conversion of WebP images to PNG or JPEG.
-  * bitjs/io: Low-level classes for interpreting binary data (BitStream, ByteStream).  For example, reading or peeking at N bits at a time.
+  * bitjs/io: Low-level classes for interpreting binary data (BitStream
+    ByteStream).  For example, reading or peeking at N bits at a time.
 
 ## Installation
 
 Install it using your favourite package manager, the package is registered under `@codedread/bitjs`. 
 ```bash
-$ npm install @codedread/bitjs
+npm install @codedread/bitjs
 ```
 or
 ```bash
-$ yarn add @codedread/bitjs
+yarn add @codedread/bitjs
 ```
 
 ### Using in Node
@@ -44,7 +48,7 @@ const { getFullMIMEString } = await import('@codedread/bitjs');
 
 ### bitjs.archive
 
-This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. A prototype version of a compressor that creates Zip files is also present. The decompression/compression actually happens inside a Web Worker.
+This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. A prototype version of a compressor that creates Zip files is also present. The decompression/compression actually happens inside a Web Worker, when the runtime supports it (browsers, deno).
 
 #### Decompressing
 
@@ -86,6 +90,24 @@ unzipper.update(anArrayBufferWithMoreBytes);
 ...
 // after some more time
 unzipper.update(anArrayBufferWithYetMoreBytes);
+```
+
+##### A NodeJS Example
+
+```javascript
+  import * as fs from 'fs';
+  import { getUnarchiver } from './archive/decompress.js';
+
+  const nodeBuffer = fs.readFileSync('comic.cbz');
+  const ab = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.length);
+  const unarchiver = getUnarchiver(ab, { pathToBitJS: './' });
+  unarchiver.addEventListener('progress', () => process.stdout.write('.'));
+  unarchiver.addEventListener('extract', (evt) => {
+    const extractedFile = evt.unarchivedFile;
+    console.log(`${extractedFile.filename} (${extractedFile.fileData.byteLength} bytes)`);
+  });
+  unarchiver.addEventListener('finish', () => console.log(`Done!`));
+  unarchiver.start();
 ```
 
 #### Compressing

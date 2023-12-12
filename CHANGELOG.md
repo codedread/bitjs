@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.7] - 2023-12-11
+
+### Changed
+
+- decompress: Allow unarchiving in Node.
+
 ## [1.1.6] - 2023-10-25
 
 ### Changed

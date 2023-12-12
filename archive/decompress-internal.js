@@ -21,13 +21,6 @@ import { findMimeType } from '../file/sniffer.js';
  */
 
 /**
- * An enum for threading mode. Currently supporting only WebWorkers.
- */
-export const ThreadingMode = {
-  WEB_WORKER: 'WEB_WORKER',
-}
-
-/**
  * @typedef UnarchiverOptions
  * @property {string} pathToBitJS The path to the bitjs folder.
  * @property {boolean=} debug Set to true for verbose unarchiver logging.
@@ -232,7 +225,7 @@ export class UnzipperInternal extends Unarchiver {
   }
 
   getMIMEType() { return 'application/zip'; }
-  getScriptFileName() { return 'archive/unzip.js'; }
+  getScriptFileName() { return './unzip.js'; }
 }
 
 export class UnrarrerInternal extends Unarchiver {
@@ -241,7 +234,7 @@ export class UnrarrerInternal extends Unarchiver {
   }
 
   getMIMEType() { return 'application/x-rar-compressed'; }
-  getScriptFileName() { return 'archive/unrar.js'; }
+  getScriptFileName() { return './unrar.js'; }
 }
 
 export class UntarrerInternal extends Unarchiver {
@@ -250,7 +243,7 @@ export class UntarrerInternal extends Unarchiver {
   }
 
   getMIMEType() { return 'application/x-tar'; }
-  getScriptFileName() { return 'archive/untar.js'; };
+  getScriptFileName() { return './untar.js'; };
 }
 
 /**
