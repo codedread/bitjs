@@ -11,6 +11,7 @@
 import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
          UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
+import { getConnectedPort } from './common.js';
 import { findMimeType } from '../file/sniffer.js';
 
 // Exported as a convenience (and also because this module used to contain these).
@@ -44,29 +45,6 @@ export {
  */
 
 /**
- * Connects the MessagePort to the unarchiver implementation (e.g. unzip.js). If Workers exist
- * (e.g. web browsers or deno), imports the implementation inside a Web Worker. Otherwise, it
- * dynamically imports the implementation inside the current JS context.
- * The MessagePort is used for communication between host and implementation.
- * @param {string} implFilename The decompressor implementation filename relative to this path
- *     (e.g. './unzip.js').
- * @param {MessagePort} implPort The MessagePort to connect to the decompressor implementation.
- * @returns {Promise<void>} The Promise resolves once the ports are connected.
- */
-const connectPortFn = async (implFilename, implPort) => {
-  if (typeof Worker === 'undefined') {
-    return import(`${implFilename}`).then(implModule => implModule.connect(implPort));
-  }
-  
-  return new Promise((resolve, reject) => {
-    const workerScriptPath = new URL(`./webworker-wrapper.js`, import.meta.url).href;
-    const worker = new Worker(workerScriptPath, { type: 'module' });
-    worker.postMessage({ implSrc: implFilename }, [implPort]);
-    resolve();
-  });
-};
-
-/**
  * Base class for all Unarchivers.
  */
 export class Unarchiver extends EventTarget {
@@ -82,13 +60,11 @@ export class Unarchiver extends EventTarget {
    * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
    *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
    *     to the decompress implementation.
-   * @param {Function(string, MessagePort):Promise<*>} connectPortFn A function that takes a path
-   *     to a JS decompression implementation (unzip.js) and connects it to a MessagePort.
    * @param {UnarchiverOptions|string} options An optional object of options, or a string
    *     representing where the BitJS files are located.  The string version of this argument is
    *     deprecated.
    */
-  constructor(arrayBuffer, connectPortFn, options = {}) {
+  constructor(arrayBuffer, options = {}) {
     super();
 
     if (typeof options === 'string') {
@@ -103,13 +79,6 @@ export class Unarchiver extends EventTarget {
      * @protected
      */
     this.ab = arrayBuffer;
-
-    /**
-     * A factory method that connects a port to the decompress implementation.
-     * @type {Function(MessagePort): Promise<*>}
-     * @private
-     */
-    this.connectPortFn_ = connectPortFn;
 
     /**
      * @orivate
@@ -170,6 +139,7 @@ export class Unarchiver extends EventTarget {
    * Receive an event and pass it to the listener functions.
    *
    * @param {Object} obj
+   * @returns {boolean} Returns true if the decompression is finished. 
    * @private
    */
   handlePortEvent_(obj) {
@@ -179,31 +149,36 @@ export class Unarchiver extends EventTarget {
       this.dispatchEvent(evt);
       if (evt.type == UnarchiveEventType.FINISH) {
         this.stop();
+        return true;
       }
     } else {
       console.log(`Unknown object received from port: ${obj}`);
     }
+    return false;
   }
 
   /**
    * Starts the unarchive by connecting the ports and sending the first ArrayBuffer.
+   * @returns {Promise<void>} A Promise that resolves when the decompression is complete. While the
+   *     decompression is proceeding, you can send more bytes of the archive to the decompressor
+   *     using the update() method.
    */
-  start() {
-    const me = this;
-    const messageChannel = new MessageChannel();
-    this.port_ = messageChannel.port1;
-    this.connectPortFn_(this.getScriptFileName(), messageChannel.port2).then(() => {
-      this.port_.onerror = function (e) {
-        console.log('Impl error: message = ' + e.message);
-        throw e;
+  async start() {
+    this.port_ = await getConnectedPort(this.getScriptFileName());
+    return new Promise((resolve, reject) => {
+      this.port_.onerror = (evt) => {
+        console.log('Impl error: message = ' + evt.message);
+        reject(evt);
       };
   
-      this.port_.onmessage = function (e) {
-        if (typeof e.data == 'string') {
-          // Just log any strings the port pumps our way.
-          console.log(e.data);
+      this.port_.onmessage = (evt) => {
+        if (typeof evt.data == 'string') {
+          // Just log any strings the implementation pumps our way.
+          console.log(evt.data);
         } else {
-          me.handlePortEvent_(e.data);
+          if (this.handlePortEvent_(evt.data)) {
+            resolve();
+          }
         }
       };
   
@@ -212,10 +187,11 @@ export class Unarchiver extends EventTarget {
         file: ab,
         logToConsole: this.debugMode_,
       }, [ab]);
-      this.ab = null;  
+      this.ab = null;
     });
   }
 
+  // TODO(bitjs): Test whether ArrayBuffers must be transferred...
   /**
    * Adds more bytes to the unarchiver.
    * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it. If opt_transferable is
@@ -258,7 +234,7 @@ export class Unzipper extends Unarchiver {
    * @param {UnarchiverOptions} options 
    */
   constructor(ab, options = {}) {
-    super(ab, connectPortFn, options);
+    super(ab, options);
   }
 
   getMIMEType() { return 'application/zip'; }
@@ -271,7 +247,7 @@ export class Unrarrer extends Unarchiver {
    * @param {UnarchiverOptions} options 
    */
   constructor(ab, options = {}) {
-    super(ab, connectPortFn, options);
+    super(ab, options);
   }
 
   getMIMEType() { return 'application/x-rar-compressed'; }
@@ -284,7 +260,7 @@ export class Untarrer extends Unarchiver {
    * @param {UnarchiverOptions} options 
    */
   constructor(ab, options = {}) {
-    super(ab, connectPortFn, options);
+    super(ab, options);
   }
 
   getMIMEType() { return 'application/x-tar'; }
@@ -311,11 +287,11 @@ export function getUnarchiver(ab, options = {}) {
   const mimeType = findMimeType(ab);
 
   if (mimeType === 'application/x-rar-compressed') { // Rar!
-    unarchiver = new Unrarrer(ab, connectPortFn, options);
+    unarchiver = new Unrarrer(ab, options);
   } else if (mimeType === 'application/zip') { // PK (Zip)
-    unarchiver = new Unzipper(ab, connectPortFn, options);
+    unarchiver = new Unzipper(ab, options);
   } else { // Try with tar
-    unarchiver = new Untarrer(ab, connectPortFn, options);
+    unarchiver = new Untarrer(ab, options);
   }
   return unarchiver;
 }

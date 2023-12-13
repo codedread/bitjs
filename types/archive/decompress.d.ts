@@ -11,6 +11,19 @@
  */
 export function getUnarchiver(ab: ArrayBuffer, options?: UnarchiverOptions | string): Unarchiver;
 /**
+ * All extracted files returned by an Unarchiver will implement
+ * the following interface:
+ */
+/**
+ * @typedef UnarchivedFile
+ * @property {string} filename
+ * @property {Uint8Array} fileData
+ */
+/**
+ * @typedef UnarchiverOptions
+ * @property {boolean=} debug Set to true for verbose unarchiver logging.
+ */
+/**
  * Base class for all Unarchivers.
  */
 export class Unarchiver extends EventTarget {
@@ -18,13 +31,11 @@ export class Unarchiver extends EventTarget {
      * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
      *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
      *     to the decompress implementation.
-     * @param {Function(string, MessagePort):Promise<*>} connectPortFn A function that takes a path
-     *     to a JS decompression implementation (unzip.js) and connects it to a MessagePort.
      * @param {UnarchiverOptions|string} options An optional object of options, or a string
      *     representing where the BitJS files are located.  The string version of this argument is
      *     deprecated.
      */
-    constructor(arrayBuffer: ArrayBuffer, connectPortFn: any, options?: UnarchiverOptions | string);
+    constructor(arrayBuffer: ArrayBuffer, options?: UnarchiverOptions | string);
     /**
      * The client-side port that sends messages to, and receives messages from the
      * decompressor implementation.
@@ -38,12 +49,6 @@ export class Unarchiver extends EventTarget {
      * @protected
      */
     protected ab: ArrayBuffer;
-    /**
-     * A factory method that connects a port to the decompress implementation.
-     * @type {Function(MessagePort): Promise<*>}
-     * @private
-     */
-    private connectPortFn_;
     /**
      * @orivate
      * @type {boolean}
@@ -72,13 +77,17 @@ export class Unarchiver extends EventTarget {
      * Receive an event and pass it to the listener functions.
      *
      * @param {Object} obj
+     * @returns {boolean} Returns true if the decompression is finished.
      * @private
      */
     private handlePortEvent_;
     /**
      * Starts the unarchive by connecting the ports and sending the first ArrayBuffer.
+     * @returns {Promise<void>} A Promise that resolves when the decompression is complete. While the
+     *     decompression is proceeding, you can send more bytes of the archive to the decompressor
+     *     using the update() method.
      */
-    start(): void;
+    start(): Promise<void>;
     /**
      * Adds more bytes to the unarchiver.
      * @param {ArrayBuffer} ab The ArrayBuffer with more bytes in it. If opt_transferable is

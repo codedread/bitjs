@@ -8,6 +8,8 @@
  * Copyright(c) 2023 Google Inc.
  */
 
+import { getConnectedPort } from './common.js';
+
 // NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
 /**
@@ -57,28 +59,6 @@ export const CompressStatus = {
   WORKING: 'working',
   COMPLETE: 'complete',
   ERROR: 'error',
-};
-
-/**
- * Connects the MessagePort to the compressor implementation (e.g. zip.js). If Workers exist
- * (e.g. web browsers or deno), imports the implementation inside a Web Worker. Otherwise, it
- * dynamically imports the implementation inside the current JS context.
- * The MessagePort is used for communication between host and implementation.
- * @param {string} implFilename The compressor implementation filename relative to this path
- *     (e.g. './zip.js').
- * @param {MessagePort} implPort The MessagePort to connect to the compressor implementation.
- * @returns {Promise<void>} The Promise resolves once the ports are connected.
- */
-const connectPortFn = async (implFilename, implPort) => {
-  if (typeof Worker === 'undefined') {
-    return import(`${implFilename}`).then(implModule => implModule.connect(implPort));
-  }
-  return new Promise((resolve, reject) => {
-    const workerScriptPath = new URL(`./webworker-wrapper.js`, import.meta.url).href;
-    const worker = new Worker(workerScriptPath, { type: 'module' });
-    worker.postMessage({ implSrc: implFilename }, [ implPort ]);
-    resolve();
-  });
 };
 
 /**
@@ -144,9 +124,7 @@ export class Zipper {
    *     of bytes.
    */
   async start(files, isLastFile) {
-    const messageChannel = new MessageChannel();
-    this.port_ = messageChannel.port1;
-    await connectPortFn('./zip.js', messageChannel.port2);
+    this.port_ = await getConnectedPort('./zip.js');
     return new Promise((resolve, reject) => {
       this.port_.onerror = (evt) => {
         console.log('Impl error: message = ' + evt.message);
