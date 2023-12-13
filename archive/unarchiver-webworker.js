@@ -9,7 +9,8 @@
 /**
  * A WebWorker wrapper for a decompress implementation. Upon creation and being
  * sent its first message, it dynamically loads the correct decompressor and
- * connects the message port
+ * connects the message port. All other communication takes place over the
+ * MessageChannel.
  */
 
 /** @type {MessagePort} */

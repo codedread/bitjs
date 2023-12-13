@@ -14,8 +14,7 @@
 import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
          UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
-import { Unarchiver } from './decompress-internal.js';
-import { Unzipper, Unrarrer, Untarrer, getUnarchiver } from './decompress.js';
+import { Unarchiver, Unzipper, Unrarrer, Untarrer, getUnarchiver } from './decompress.js';
 
 export {
   UnarchiveAppendEvent,

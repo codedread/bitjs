@@ -100,7 +100,7 @@ unzipper.update(anArrayBufferWithYetMoreBytes);
 
   const nodeBuffer = fs.readFileSync('comic.cbz');
   const ab = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.length);
-  const unarchiver = getUnarchiver(ab, { pathToBitJS: './' });
+  const unarchiver = getUnarchiver(ab);
   unarchiver.addEventListener('progress', () => process.stdout.write('.'));
   unarchiver.addEventListener('extract', (evt) => {
     const extractedFile = evt.unarchivedFile;
