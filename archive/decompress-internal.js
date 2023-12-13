@@ -9,6 +9,9 @@
  * Copyright(c) 2021 Google Inc.
  */
 
+// TODO(bitjs): Consider moving all this back into decompress.js to simplify the code now that
+//     the implementation isn't tied to Web Workers so heavily.
+
 import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
          UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
@@ -20,11 +23,12 @@ import { findMimeType } from '../file/sniffer.js';
  * @property {Uint8Array} fileData
  */
 
+// TODO: Remove pathToBitJS completely from this.
+
 /**
  * @typedef UnarchiverOptions
  * @property {string} pathToBitJS The path to the bitjs folder.
  * @property {boolean=} debug Set to true for verbose unarchiver logging.
- * @property {ThreadingMode=} threadingMode The default is WEB_WORKER.
  */
 
 /**
@@ -71,13 +75,6 @@ export class Unarchiver extends EventTarget {
      * @private
      */
     this.connectPortFn_ = connectPortFn;
-
-    /**
-     * The path to the BitJS files.
-     * @type {string}
-     * @private
-     */
-    this.pathToBitJS_ = options.pathToBitJS || '/';
 
     /**
      * @orivate
@@ -160,8 +157,7 @@ export class Unarchiver extends EventTarget {
     const me = this;
     const messageChannel = new MessageChannel();
     this.port_ = messageChannel.port1;
-    this.connectPortFn_(this.pathToBitJS_,
-        this.getScriptFileName(), messageChannel.port2).then(() => {
+    this.connectPortFn_(this.getScriptFileName(), messageChannel.port2).then(() => {
       this.port_.onerror = function (e) {
         console.log('Impl error: message = ' + e.message);
         throw e;

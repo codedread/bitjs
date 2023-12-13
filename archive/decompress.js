@@ -47,21 +47,19 @@ export {
  * (e.g. web browsers or deno), imports the implementation inside a Web Worker. Otherwise, it
  * dynamically imports the implementation inside the current JS context.
  * The MessagePort is used for communication between host and implementation.
- * @param {string} pathToBitJS The path to the bitjs folder.
  * @param {string} implFilename The decompressor implementation filename relative to this path
  *     (e.g. './unzip.js').
  * @param {MessagePort} implPort The MessagePort to connect to the decompressor implementation.
  * @returns {Promise<void>} The Promise resolves once the ports are connected.
  */
-const connectPortFn = async (pathToBitJS, implFilename, implPort) => {
+const connectPortFn = async (implFilename, implPort) => {
   if (typeof Worker === 'undefined') {
-    return import(`${implFilename}`).then(implModule => {
-      implModule.connect(implPort)
-    });
+    return import(`${implFilename}`).then(implModule => implModule.connect(implPort));
   }
-
+  
   return new Promise((resolve, reject) => {
-    const worker = new Worker(pathToBitJS + 'archive/unarchiver-webworker.js', { type: 'module' });
+    const workerScriptPath = new URL(`./unarchiver-webworker.js`, import.meta.url).href;
+    const worker = new Worker(workerScriptPath, { type: 'module' });
     worker.postMessage({ implSrc: implFilename }, [implPort]);
     resolve();
   });

@@ -130,6 +130,8 @@ export class Zipper {
    */
   start(files, isLastFile) {
     return new Promise((resolve, reject) => {
+      // TODO: Only use Worker if it exists (like decompress).
+      // TODO: Remove need for pathToBitJS (like decompress).
       this.worker_ = new Worker(this.pathToBitJS + `archive/zip.js`);
       this.worker_.onerror = (evt) => {
         console.log('Worker error: message = ' + evt.message);
