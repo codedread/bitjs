@@ -13,6 +13,8 @@ import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEve
          UnarchiveProgressEvent, UnarchiveStartEvent } from './events.js';
 import { findMimeType } from '../file/sniffer.js';
 
+// Exported as a convenience (and also because this module used to contain these).
+// TODO(bitjs): Remove this export in a future release?
 export {
   UnarchiveAppendEvent,
   UnarchiveErrorEvent,
@@ -57,7 +59,7 @@ const connectPortFn = async (implFilename, implPort) => {
   }
   
   return new Promise((resolve, reject) => {
-    const workerScriptPath = new URL(`./unarchiver-webworker.js`, import.meta.url).href;
+    const workerScriptPath = new URL(`./webworker-wrapper.js`, import.meta.url).href;
     const worker = new Worker(workerScriptPath, { type: 'module' });
     worker.postMessage({ implSrc: implFilename }, [implPort]);
     resolve();

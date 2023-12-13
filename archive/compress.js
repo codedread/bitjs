@@ -11,7 +11,7 @@
 // NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
 /**
- * @typedef FileInfo An object that is sent to the worker to represent a file to zip.
+ * @typedef FileInfo An object that is sent to the implementation to represent a file to zip.
  * @property {string} fileName The name of the file. TODO: Includes the path?
  * @property {number} lastModTime The number of ms since the Unix epoch (1970-01-01 at midnight).
  * @property {ArrayBuffer} fileData The bytes of the file.
@@ -42,7 +42,6 @@ export const ZipCompressionMethod = {
 
 /**
  * @typedef CompressorOptions
- * @property {string} pathToBitJS A string indicating where the BitJS files are located.
  * @property {ZipCompressionMethod} zipCompressionMethod
  * @property {DeflateCompressionMethod=} deflateCompressionMethod Only present if
  *     zipCompressionMethod is set to DEFLATE.
@@ -61,34 +60,50 @@ export const CompressStatus = {
 };
 
 /**
+ * Connects the MessagePort to the compressor implementation (e.g. zip.js). If Workers exist
+ * (e.g. web browsers or deno), imports the implementation inside a Web Worker. Otherwise, it
+ * dynamically imports the implementation inside the current JS context.
+ * The MessagePort is used for communication between host and implementation.
+ * @param {string} implFilename The compressor implementation filename relative to this path
+ *     (e.g. './zip.js').
+ * @param {MessagePort} implPort The MessagePort to connect to the compressor implementation.
+ * @returns {Promise<void>} The Promise resolves once the ports are connected.
+ */
+const connectPortFn = async (implFilename, implPort) => {
+  if (typeof Worker === 'undefined') {
+    return import(`${implFilename}`).then(implModule => implModule.connect(implPort));
+  }
+  return new Promise((resolve, reject) => {
+    const workerScriptPath = new URL(`./webworker-wrapper.js`, import.meta.url).href;
+    const worker = new Worker(workerScriptPath, { type: 'module' });
+    worker.postMessage({ implSrc: implFilename }, [ implPort ]);
+    resolve();
+  });
+};
+
+/**
  * A thing that zips files.
  * NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
  * TODO: Make a streaming / event-driven API.
  */
 export class Zipper {
   /**
+   * The client-side port that sends messages to, and receives messages from the
+   * decompressor implementation.
+   * @type {MessagePort}
+   * @private
+   */
+  port_;
+
+  /**
    * @param {CompressorOptions} options
    */
   constructor(options) {
-    /**
-     * The path to the BitJS files.
-     * @type {string}
-     * @private
-     */
-    this.pathToBitJS = options.pathToBitJS || '/';
-
     /**
      * @type {ZipCompressionMethod}
      * @private
      */
     this.zipCompressionMethod = options.zipCompressionMethod || ZipCompressionMethod.STORE;
-
-    /**
-     * Private web worker initialized during start().
-     * @type {Worker}
-     * @private
-     */
-    this.worker_ = null;
 
     /**
      * @type {CompressStatus}
@@ -109,14 +124,14 @@ export class Zipper {
    * @param {boolean} isLastFile 
    */
   appendFiles(files, isLastFile) {
-    if (!this.worker_) {
-      throw `Worker not initialized. Did you forget to call start() ?`;
+    if (!this.port_) {
+      throw `Port not initialized. Did you forget to call start() ?`;
     }
     if (![CompressStatus.READY, CompressStatus.WORKING].includes(this.compressState)) {
       throw `Zipper not in the right state: ${this.compressState}`;
     }
 
-    this.worker_.postMessage({ files, isLastFile });
+    this.port_.postMessage({ files, isLastFile });
   }
 
   /**
@@ -128,18 +143,19 @@ export class Zipper {
    * @returns {Promise<Uint8Array>} A Promise that will contain the entire zipped archive as an array
    *     of bytes.
    */
-  start(files, isLastFile) {
+  async start(files, isLastFile) {
+    const messageChannel = new MessageChannel();
+    this.port_ = messageChannel.port1;
+    await connectPortFn('./zip.js', messageChannel.port2);
     return new Promise((resolve, reject) => {
-      // TODO: Only use Worker if it exists (like decompress).
-      // TODO: Remove need for pathToBitJS (like decompress).
-      this.worker_ = new Worker(this.pathToBitJS + `archive/zip.js`);
-      this.worker_.onerror = (evt) => {
-        console.log('Worker error: message = ' + evt.message);
-        throw evt.message;
+      this.port_.onerror = (evt) => {
+        console.log('Impl error: message = ' + evt.message);
+        reject(evt.message);
       };
-      this.worker_.onmessage = (evt) => {
+
+      this.port_.onmessage = (evt) => {
         if (typeof evt.data == 'string') {
-          // Just log any strings the worker pumps our way.
+          // Just log any strings the implementation pumps our way.
           console.log(evt.data);
         } else {
           switch (evt.data.type) {

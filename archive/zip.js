@@ -11,37 +11,42 @@
  * DEFLATE format: http://tools.ietf.org/html/rfc1951
  */
 
-// This file expects to be invoked as a Worker (see onmessage below).
 import { ByteBuffer } from '../io/bytebuffer.js';
 
-/**
- * The client sends messages to this Worker containing files to archive in order. The client
- * indicates to the Worker when the last file has been sent to be compressed.
- *
- * The Worker emits an event to indicate compression has started: { type: 'start' }
- * As the files compress, bytes are sent back in order: { type: 'compress', bytes: Uint8Array }
- * After the last file compresses, the Worker indicates finish by: { type 'finish' }
- *
- * Clients should append the bytes to a single buffer in the order they were received.
- */
+/** @type {MessagePort} */
+let hostPort;
 
 /**
- * @typedef FileInfo An object that is sent to this worker by the client to represent a file.
+ * The client sends a set of CompressFilesMessage to the MessagePort containing files to archive in
+ * order. The client sets isLastFile to true to indicate to the implementation when the last file
+ * has been sent to be compressed.
+ *
+ * The impl posts an event to the port indicating compression has started: { type: 'start' }.
+ * As each file compresses, bytes are sent back in order: { type: 'compress', bytes: Uint8Array }.
+ * After the last file compresses, we indicate finish by: { type 'finish' }
+ *
+ * The client should append the bytes to a single buffer in the order they were received.
+ */
+
+// TODO(bitjs): De-dupe this typedef and the one in compress.js.
+/**
+ * @typedef FileInfo An object that is sent by the client to represent a file.
  * @property {string} fileName The name of this file. TODO: Includes the path?
  * @property {number} lastModTime The number of ms since the Unix epoch (1970-01-01 at midnight).
  * @property {Uint8Array} fileData The raw bytes of the file.
  */
 
+// TODO(bitjs): Figure out where this typedef should live.
+/**
+ * @typedef CompressFilesMessage A message the client sends to the implementation.
+ * @property {FileInfo[]} files A set of files to add to the zip file.
+ * @property {boolean} isLastFile Indicates this is the last set of files to add to the zip file.
+ */
+
 // TODO: Support DEFLATE.
 // TODO: Support options that can let client choose levels of compression/performance.
 
-/**
- * Ideally these constants should be defined in a common isomorphic ES module. Unfortunately, the
- * state of JavaScript is such that modules cannot be shared easily across browsers, worker threads,
- * NodeJS environments, etc yet. Thus, these constants, as well as logic that should be extracted to
- * common modules and shared with unzip.js are not yet easily possible.
- */
-
+// TODO(bitjs): These constants should be defined in a common isomorphic ES module.
 const zLocalFileHeaderSignature = 0x04034b50;
 const zCentralFileHeaderSignature = 0x02014b50;
 const zEndOfCentralDirSignature = 0x06054b50;
@@ -231,39 +236,52 @@ function writeCentralFileDirectory() {
 }
 
 /**
- * @param {{data: {isLastFile?: boolean, files: FileInfo[]}}} evt The event for the Worker
- *     to process. It is an error to send any more events to the Worker if a previous event had
- *     isLastFile is set to true.
+ * @param {{data: CompressFilesMessage}} evt The event for the implementation to process. It is an
+ *     error to send any more events after a previous event had isLastFile is set to true.
  */
-onmessage = function(evt) {
+const onmessage = function(evt) {
   if (state === CompressorState.FINISHED) {
-    throw `The zip worker was sent a message after last file received.`;
+    throw `The zip implementation was sent a message after last file received.`;
   }
 
   if (state === CompressorState.NOT_STARTED) {
-    postMessage({ type: 'start' });
+    hostPort.postMessage({ type: 'start' });
   }
 
   state = CompressorState.COMPRESSING;
 
-  /** @type {FileInfo[]} */
-  const filesToCompress = evt.data.files;
+  const msg = evt.data;
+  const filesToCompress = msg.files;
   while (filesToCompress.length > 0) {
     const fileInfo = filesToCompress.shift();
     const fileBuffer = zipOneFile(fileInfo);
     filesCompressed.push(fileInfo);
     numBytesWritten += fileBuffer.data.byteLength;
-    this.postMessage({ type: 'compress', bytes: fileBuffer.data }, [ fileBuffer.data.buffer ]);
+    hostPort.postMessage({ type: 'compress', bytes: fileBuffer.data }, [ fileBuffer.data.buffer ]);
   }
 
   if (evt.data.isLastFile) {
     const centralBuffer = writeCentralFileDirectory();
     numBytesWritten += centralBuffer.data.byteLength;
-    this.postMessage({ type: 'compress', bytes: centralBuffer.data }, [ centralBuffer.data.buffer ]);
+    hostPort.postMessage({ type: 'compress', bytes: centralBuffer.data },
+        [ centralBuffer.data.buffer ]);
 
     state = CompressorState.FINISHED;
-    this.postMessage({ type: 'finish' });
+    hostPort.postMessage({ type: 'finish' });
   } else {
     state = CompressorState.WAITING;
   }
 };
+
+
+/**
+ * Connect the host to the zip implementation with the given MessagePort.
+ * @param {MessagePort} port
+ */
+export function connect(port) {
+  if (hostPort) {
+    throw `hostPort already connected`;
+  }
+  hostPort = port;
+  port.onmessage = onmessage;
+}
