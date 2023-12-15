@@ -4,7 +4,9 @@
 
 ## Introduction
 
-A set of dependency-free JavaScript modules to handle binary data in JS (using Typed Arrays).  Includes:
+A set of dependency-free JavaScript modules to handle binary data in JS (using
+[Typed Arrays](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray)).
+Includes:
 
   * bitjs/archive: Unarchiving files (unzip, unrar, untar) in JavaScript,
     implemented as Web Workers where supported, and allowing progressive
@@ -18,7 +20,7 @@ A set of dependency-free JavaScript modules to handle binary data in JS (using T
 
 ## Installation
 
-Install it using your favourite package manager, the package is registered under `@codedread/bitjs`. 
+Install it using your favourite package manager, the package is registered under `@codedread/bitjs`.
 ```bash
 npm install @codedread/bitjs
 ```
@@ -29,10 +31,11 @@ yarn add @codedread/bitjs
 
 ### Using in Node
 
-This module is an ES Module, which should work as expected in other projects using ES Modules. However,
-if you are using a project that uses CommonJs modules, it's a little tricker to use. One valid example
-of this is if a TypeScript project compiles to CommonJS, it will try to turn imports into require()
-statements, which will break. The fix for this (unfortunately) is to update your tsconfig.json:
+This module is an ES Module, which should work as expected in other projects using ES Modules.
+However, if you are using a project that uses CommonJs modules, it's a little tricker to use. One
+example of this is if a TypeScript project compiles to CommonJS, it will try to turn imports into
+require() statements, which will break. The fix for this (unfortunately) is to update your
+tsconfig.json:
 
 ```json
  "moduleResolution": "Node16",
@@ -48,93 +51,24 @@ const { getFullMIMEString } = await import('@codedread/bitjs');
 
 ### bitjs.archive
 
-This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar) providing unzip, unrar and untar capabilities via JavaScript in the browser. A prototype version of a compressor that creates Zip files is also present. The decompression/compression actually happens inside a Web Worker, when the runtime supports it (browsers, deno).
+This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar).
+Here is a simple example of unrar:
 
 #### Decompressing
 
 ```javascript
-import { Unzipper } from './bitjs/archive/decompress.js';
-const unzipper = new Unzipper(zipFileArrayBuffer);
-unzipper.addEventListener('progress', updateProgress);
-unzipper.addEventListener('extract', receiveOneFile);
-unzipper.addEventListener('finish', displayZipContents);
-unzipper.start();
-
-function updateProgress(e) {
-  // e.currentFilename is the file currently being unarchived/scanned.
-  // e.totalCompressedBytesRead has how many bytes have been unzipped so far
-}
-
-function receiveOneFile(e) {
-  // e.unarchivedFile.filename: string
-  // e.unarchivedFile.fileData: Uint8Array
-}
-
-function displayZipContents() {
-  // Now sort your received files and show them or whatever...
-}
+import { Unrarrer } from './bitjs/archive/decompress.js';
+const unrar = new Unrarrer(rarFileArrayBuffer);
+unrar.addEventListener('extract', (e) => {
+  const {filename, fileData} = e.unarchivedFile;
+  console.log(`Extracted ${filename} (${fileData.byteLength} bytes)`);
+  // Do something with fileData...
+});
+unrar.addEventListener('finish', () => console.log('Done'));
+unrar.start();
 ```
 
-The unarchivers also support progressively decoding while streaming the file, if you are receiving the zipped file from a slow place (a Cloud API, for instance).  For example:
-
-```javascript
-import { Unzipper } from './bitjs/archive/decompress.js';
-const unzipper = new Unzipper(anArrayBufferWithStartingBytes);
-unzipper.addEventListener('progress', updateProgress);
-unzipper.addEventListener('extract', receiveOneFile);
-unzipper.addEventListener('finish', displayZipContents);
-unzipper.start();
-...
-// after some time
-unzipper.update(anArrayBufferWithMoreBytes);
-...
-// after some more time
-unzipper.update(anArrayBufferWithYetMoreBytes);
-```
-
-##### A NodeJS Example
-
-```javascript
-  import * as fs from 'fs';
-  import { getUnarchiver } from './archive/decompress.js';
-
-  const nodeBuffer = fs.readFileSync('comic.cbz');
-  const ab = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.length);
-  const unarchiver = getUnarchiver(ab);
-  unarchiver.addEventListener('progress', () => process.stdout.write('.'));
-  unarchiver.addEventListener('extract', (evt) => {
-    const extractedFile = evt.unarchivedFile;
-    console.log(`${extractedFile.filename} (${extractedFile.fileData.byteLength} bytes)`);
-  });
-  unarchiver.addEventListener('finish', () => console.log(`Done!`));
-  unarchiver.start();
-```
-
-#### Compressing
-
-The Zipper only supports creating zip files without compression (store only) for now. The interface
-is pretty straightforward and there is no event-based / streaming API.
-
-```javascript
-import { Zipper } from './bitjs/archive/compress.js';
-const zipper = new Zipper();
-const now = Date.now();
-// Zip files foo.jpg and bar.txt.
-const zippedArrayBuffer = await zipper.start(
-  [
-    {
-      fileName: 'foo.jpg',
-      lastModTime: now,
-      fileData: fooArrayBuffer,
-    },
-    {
-      fileName: 'bar.txt',
-      lastModTime: now,
-      fileData: barArrayBuffer,
-    }
-  ],
-  true /* isLastFile */);
-```
+More explanation and examples are located on [the API page](./docs/bitjs.archive.md).
 
 ### bitjs.codecs
 
@@ -164,7 +98,8 @@ exec(cmd, (error, stdout) => {
 
 ### bitjs.file
 
-This package includes code for dealing with files.  It includes a sniffer which detects the type of file, given an ArrayBuffer.
+This package includes code for dealing with files.  It includes a sniffer which detects the type of
+file, given an ArrayBuffer.
 
 ```javascript
 import { findMimeType } from './bitjs/file/sniffer.js';
@@ -173,7 +108,8 @@ const mimeType = findMimeType(someArrayBuffer);
 
 ### bitjs.image
 
-This package includes code for dealing with binary images.  It includes a module for converting WebP images into alternative raster graphics formats (PNG/JPG).
+This package includes code for dealing with binary images.  It includes a module for converting WebP
+images into alternative raster graphics formats (PNG/JPG).
 
 ```javascript
 import { convertWebPtoPNG, convertWebPtoJPG } from './bitjs/image/webp-shim/webp-shim.js';
@@ -188,7 +124,8 @@ convertWebPtoPNG(webpBuffer).then(pngBuf => {
 
 ### bitjs.io
 
-This package includes stream objects for reading and writing binary data at the bit and byte level: BitStream, ByteStream.
+This package includes stream objects for reading and writing binary data at the bit and byte level:
+BitStream, ByteStream.
 
 ```javascript
 import { BitStream } from './bitjs/io/bitstream.js';
@@ -199,8 +136,13 @@ const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not a
 
 ## Reference
 
-* [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): A work-in-progress description of the RAR file format.
+* [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): A work-in-progress description of the
+RAR file format.
 
 ## History
 
-This project grew out of another project of mine, [kthoom](https://github.com/codedread/kthoom) (a comic book reader implemented in the browser).  This repository was automatically exported from [my original repository on GoogleCode](https://code.google.com/p/bitjs) and has undergone considerable changes and improvements since then, including adding streaming support, starter RarVM support, tests, many bug fixes, and updating the code to ES6.
+This project grew out of another project of mine, [kthoom](https://github.com/codedread/kthoom) (a
+comic book reader implemented in the browser).  This repository was automatically exported from
+[my original repository on GoogleCode](https://code.google.com/p/bitjs) and has undergone
+considerable changes and improvements since then, including adding streaming support, starter RarVM
+support, tests, many bug fixes, and updating the code to modern JavaScript and supported features.

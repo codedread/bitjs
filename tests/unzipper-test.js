@@ -26,7 +26,7 @@ async function getFiles(fileChangeEvt) {
 
   for (const b of buffers) {
     await new Promise((resolve, reject) => {
-      const unzipper = new Unzipper(b.buffer, { pathToBitJS: '../' });
+      const unzipper = new Unzipper(b.buffer);
       unzipper.addEventListener(UnarchiveEventType.FINISH, () => {
         fileNum++;
         resolve();

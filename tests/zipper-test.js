@@ -37,7 +37,6 @@ async function getFiles(fileChangeEvt) {
   result.innerHTML = `Loaded files`;
 
   const zipper = new Zipper({
-    pathToBitJS: '../',
     zipCompressionMethod: ZipCompressionMethod.DEFLATE,
   });
   byteArray = await zipper.start(fileInfos, true);

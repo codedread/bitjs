@@ -107,6 +107,7 @@ export class UnarchiveFinishEvent extends UnarchiveEvent {
   }
 }
 
+// TODO(bitjs): Fully document these. They are confusing.
 /**
  * Progress event.
  */
