@@ -134,6 +134,8 @@ const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the point
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
+<!-- TODO(bitjs): Provide better documentation -->
+
 ## Reference
 
 * [UnRar](http://codedread.github.io/bitjs/docs/unrar.html): A work-in-progress description of the

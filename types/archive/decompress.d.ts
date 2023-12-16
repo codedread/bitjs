@@ -44,6 +44,12 @@ export class Unarchiver extends EventTarget {
      */
     private port_;
     /**
+     * A function to call to disconnect the implementation from the host.
+     * @type {Function}
+     * @private
+     */
+    private disconnectFn_;
+    /**
      * The ArrayBuffer object.
      * @type {ArrayBuffer}
      * @protected
@@ -54,6 +60,13 @@ export class Unarchiver extends EventTarget {
      * @type {boolean}
      */
     debugMode_: boolean;
+    /**
+     * Overridden so that the type hints for eventType are specific.
+     * @param {'progress'|'extract'|'finish'} eventType
+     * @param {EventListenerOrEventListenerObject} listener
+     * @override
+     */
+    override addEventListener(eventType: 'progress' | 'extract' | 'finish', listener: EventListenerOrEventListenerObject): void;
     /**
      * This method must be overridden by the subclass to return the script filename.
      * @returns {string} The MIME type of the archive.
