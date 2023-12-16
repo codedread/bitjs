@@ -1,0 +1,20 @@
+This is a sample text file. This text file is large enough to make creating
+zip files more interesting, since compression has a chance to work on a larger
+sample file that has duplicate words in it.
+
+This is a sample text file. This text file is large enough to make creating
+zip files more interesting, since compression has a chance to work on a larger
+sample file that has duplicate words in it.
+
+This is a sample text file. This text file is large enough to make creating
+zip files more interesting, since compression has a chance to work on a larger
+sample file that has duplicate words in it.
+
+This is a sample text file. This text file is large enough to make creating
+zip files more interesting, since compression has a chance to work on a larger
+sample file that has duplicate words in it.
+
+This is a sample text file. This text file is large enough to make creating
+zip files more interesting, since compression has a chance to work on a larger
+sample file that has duplicate words in it.
+

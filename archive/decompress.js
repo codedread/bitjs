@@ -57,6 +57,13 @@ export class Unarchiver extends EventTarget {
   port_;
 
   /**
+   * A function to call to disconnect the implementation from the host.
+   * @type {Function}
+   * @private
+   */
+  disconnectFn_;
+
+  /**
    * @param {ArrayBuffer} arrayBuffer The Array Buffer. Note that this ArrayBuffer must not be
    *     referenced once it is sent to the Unarchiver, since it is marked as Transferable and sent
    *     to the decompress implementation.
@@ -85,6 +92,16 @@ export class Unarchiver extends EventTarget {
      * @type {boolean}
      */
     this.debugMode_ = !!(options.debug);
+  }
+
+  /**
+   * Overridden so that the type hints for eventType are specific.
+   * @param {'progress'|'extract'|'finish'} eventType 
+   * @param {EventListenerOrEventListenerObject} listener 
+   * @override
+   */
+  addEventListener(eventType, listener) {
+    super.addEventListener(eventType, listener);
   }
 
   /**
@@ -164,7 +181,9 @@ export class Unarchiver extends EventTarget {
    *     using the update() method.
    */
   async start() {
-    this.port_ = await getConnectedPort(this.getScriptFileName());
+    const impl = await getConnectedPort(this.getScriptFileName());
+    this.port_ = impl.hostPort;
+    this.disconnectFn_ = impl.disconnectFn;
     return new Promise((resolve, reject) => {
       this.port_.onerror = (evt) => {
         console.log('Impl error: message = ' + evt.message);
@@ -221,7 +240,9 @@ export class Unarchiver extends EventTarget {
   stop() {
     if (this.port_) {
       this.port_.close();
+      this.disconnectFn_();
       this.port_ = null;
+      this.disconnectFn_ = null;
     }
   }
 }

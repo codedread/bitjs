@@ -221,8 +221,28 @@ const onmessage = function (event) {
  */
 export function connect(port) {
   if (hostPort) {
-    throw `hostPort already connected`;
+    throw `hostPort already connected in untar.js`;
   }
   hostPort = port;
   port.onmessage = onmessage;
+}
+
+export function disconnect() {
+  if (!hostPort) {
+    throw `hostPort was not connected in unzip.js`;
+  }
+
+  hostPort = null;
+
+  unarchiveState = UnarchiveState.NOT_STARTED;
+  bytestream = null;
+  allLocalFiles = null;
+  logToConsole = false;
+  
+  currentFilename = '';
+  currentFileNumber = 0;
+  currentBytesUnarchivedInFile = 0;
+  currentBytesUnarchived = 0;
+  totalUncompressedBytesInArchive = 0;
+  totalFilesInArchive = 0;
 }

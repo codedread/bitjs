@@ -1,0 +1,6 @@
+{
+  "file formats": ["csv", "json", "txt"],
+  "tv shows": {
+    "it's": ["monty", "python's", "flying", "circus"]
+  }
+}

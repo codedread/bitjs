@@ -22,7 +22,6 @@ export class ByteStream {
    */
   constructor(ab, opt_offset, opt_length) {
     if (!(ab instanceof ArrayBuffer)) {
-      console.error(typeof ab);
       throw 'Error! ByteStream constructed with an invalid ArrayBuffer object';
     }
 

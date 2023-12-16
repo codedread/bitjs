@@ -80,7 +80,6 @@ const CompressorState = {
   FINISHED: 3,
 };
 let state = CompressorState.NOT_STARTED;
-let lastFileReceived = false;
 const crc32Table = createCRC32Table();
 
 /** Helper functions. */
@@ -280,8 +279,21 @@ const onmessage = function(evt) {
  */
 export function connect(port) {
   if (hostPort) {
-    throw `hostPort already connected`;
+    throw `hostPort already connected in zip.js`;
   }
   hostPort = port;
   port.onmessage = onmessage;
+}
+
+export function disconnect() {
+  if (!hostPort) {
+    throw `hostPort was not connected in unzip.js`;
+  }
+
+  hostPort = null;
+
+  centralDirectoryInfos = [];
+  numBytesWritten = 0;
+  state = CompressorState.NOT_STARTED;
+  lastFileReceived = false;
 }
