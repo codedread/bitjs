@@ -134,7 +134,7 @@ const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the point
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
-<!-- TODO(bitjs): Provide better documentation -->
+More explanation and examples are located on [the API page](./docs/bitjs.io.md).
 
 ## Reference
 
