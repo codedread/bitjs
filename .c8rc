@@ -2,11 +2,14 @@
   "check-coverage": true,
   "all": true,
   "include": [
+    "archive/*.js",
     "codecs/*.js",
     "file/*.js",
     "io/*.js"
   ],
   "exclude": [
+    "archive/archive.js",
+    "archive/webworker-wrapper.js",
     "io/*-worker.js"
   ],
   "reporter": [

@@ -13,7 +13,11 @@ const INPUT_FILES = [
 ];
 
 const ARCHIVE_FILES = [
-  'archive-rar.rar',
+  'archive-rar-store.rar',
+  'archive-rar-default.rar',
+  'archive-rar-smaller.rar',
+  'archive-rar-ma4.rar',
+  'archive-rar-ma5.rar',
   'archive-tar.tar',
   'archive-zip-store.zip',
   'archive-zip-faster.zip',
