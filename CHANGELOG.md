@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.7] - 2023-12-11
+## [1.1.7] - 2023-12-16
 
 ### Changed
 
-- decompress: Allow unarchiving in Node.
+- archive: Enable unarchiving/archiving in NodeJS.
+- Update unit test coverage and documentation.
 
 ## [1.1.6] - 2023-10-25
 
