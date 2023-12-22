@@ -23,6 +23,9 @@ export {
 } from './archive/decompress.js';
 export { getFullMIMEString, getShortMIMEString } from './codecs/codecs.js';
 export { findMimeType } from './file/sniffer.js';
+export { GifApplicationExtensionEvent, GifCommentExtensionEvent, GifGraphicControlExtensionEvent,
+         GifHeaderParseEvent, GifLogicalScreenParseEvent, GifParseEventType, GifParser,
+         GifPlainTextExtensionEvent, GifTableBasedImageEvent } from './image/parsers/gif.js';
 export { convertWebPtoPNG, convertWebPtoJPG } from './image/webp-shim/webp-shim.js';
 export { BitBuffer } from './io/bitbuffer.js';
 export { BitStream } from './io/bitstream.js';
