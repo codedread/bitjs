@@ -14,7 +14,7 @@ Includes:
   * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381
     MIME type string
   * bitjs/file: Detect the type of file from its binary signature.
-  * bitjs/image: Conversion of WebP images to PNG or JPEG.
+  * bitjs/image: Parsing GIF. Conversion of WebP to PNG or JPEG.
   * bitjs/io: Low-level classes for interpreting binary data (BitStream
     ByteStream).  For example, reading or peeking at N bits at a time.
 
@@ -107,9 +107,30 @@ const mimeType = findMimeType(someArrayBuffer);
 
 ### bitjs.image
 
-This package includes code for dealing with binary images.  It includes a module for converting WebP
-images into alternative raster graphics formats (PNG/JPG).
+This package includes code for dealing with binary images.  It includes general event-based parsers
+for images (GIF only, at the moment). It also includes a module for converting WebP images into
+alternative raster graphics formats (PNG/JPG). This latter module is deprecated, now that WebP
+images are well-supported in all browsers.
 
+#### GIF Parser
+```javascript
+import { GifParser } from './bitjs/image/parsers/gif.js'
+
+const parser = new GifParser(someArrayBuffer);
+parser.addEventListener('application_extension', evt => {
+  const appId = evt.applicationExtension.applicationIdentifier
+  const appAuthCode = new TextDecoder().decode(
+      evt.applicationExtension.applicationAuthenticationCode);
+  if (appId === 'XMP Data' && appAuthCode === 'XMP') {
+    /** @type {Uint8Array} */
+    const appData = evt.applicationExtension.applicationData;
+    // Do something with appData (parse the XMP).
+  }
+});
+parser.start();
+```
+
+#### WebP Converter
 ```javascript
 import { convertWebPtoPNG, convertWebPtoJPG } from './bitjs/image/webp-shim/webp-shim.js';
 // convertWebPtoPNG() takes in an ArrayBuffer containing the bytes of a WebP

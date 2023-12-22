@@ -4,6 +4,7 @@
   "include": [
     "archive/*.js",
     "codecs/*.js",
+    "image/parsers/*.js",
     "file/*.js",
     "io/*.js"
   ],

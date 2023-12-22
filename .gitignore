@@ -1,3 +1,4 @@
 coverage
+image/.DS_Store
 node_modules
 tests/archive.spec.notready.js
