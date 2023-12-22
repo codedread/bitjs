@@ -16,7 +16,7 @@ import { getConnectedPort } from './common.js';
  * @typedef FileInfo An object that is sent to the implementation to represent a file to zip.
  * @property {string} fileName The name of the file. TODO: Includes the path?
  * @property {number} lastModTime The number of ms since the Unix epoch (1970-01-01 at midnight).
- * @property {ArrayBuffer} fileData The bytes of the file.
+ * @property {Uint8Array} fileData The bytes of the file.
  */
 
 /**
@@ -76,6 +76,13 @@ export class Zipper {
   port_;
 
   /**
+   * A function to call to disconnect the implementation from the host.
+   * @type {Function}
+   * @private
+   */
+  disconnectFn_;
+
+  /**
    * @param {CompressorOptions} options
    */
   constructor(options) {
@@ -124,7 +131,9 @@ export class Zipper {
    *     of bytes.
    */
   async start(files, isLastFile) {
-    this.port_ = await getConnectedPort('./zip.js');
+    const impl = await getConnectedPort('./zip.js');
+    this.port_ = impl.hostPort;
+    this.disconnectFn_ = impl.disconnectFn;
     return new Promise((resolve, reject) => {
       this.port_.onerror = (evt) => {
         console.log('Impl error: message = ' + evt.message);
@@ -142,6 +151,10 @@ export class Zipper {
               break;
             case 'finish':
               this.compressState = CompressStatus.COMPLETE;
+              this.port_.close();
+              this.disconnectFn_();
+              this.port_ = null;
+              this.disconnectFn_ = null;
               resolve(this.byteArray);
               break;
             case 'compress':

@@ -29,13 +29,12 @@ or
 yarn add @codedread/bitjs
 ```
 
-### Using in Node
+### CommonJS/ESM in Node
 
 This module is an ES Module, which should work as expected in other projects using ES Modules.
-However, if you are using a project that uses CommonJs modules, it's a little tricker to use. One
-example of this is if a TypeScript project compiles to CommonJS, it will try to turn imports into
-require() statements, which will break. The fix for this (unfortunately) is to update your
-tsconfig.json:
+However, if you are using CommonJS modules, it's a little trickier to use. One example of this is
+if a TypeScript project compiles to CommonJS, it will try to turn imports into require() statements,
+which will break. The fix for this (unfortunately) is to update your tsconfig.json:
 
 ```json
  "moduleResolution": "Node16",

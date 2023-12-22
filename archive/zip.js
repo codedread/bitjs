@@ -155,7 +155,7 @@ function zipOneFile(file) {
   const fileHeaderSize = 30 + file.fileName.length;
 
   /** @type {ByteBuffer} */
-  const buffer = new ByteBuffer(fileHeaderSize + file.fileData.length);
+  const buffer = new ByteBuffer(fileHeaderSize + file.fileData.byteLength);
 
   buffer.writeNumber(zLocalFileHeaderSignature, 4); // Magic number.
   buffer.writeNumber(0x0A, 2); // Version.
@@ -292,8 +292,8 @@ export function disconnect() {
 
   hostPort = null;
 
+  filesCompressed = [];
   centralDirectoryInfos = [];
   numBytesWritten = 0;
   state = CompressorState.NOT_STARTED;
-  lastFileReceived = false;
 }
