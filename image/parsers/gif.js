@@ -431,7 +431,6 @@ export class GifParser extends EventTarget {
         const blockSize = this.bstream.readNumber(1);
         if (blockSize !== 11) throw `AE: Block size of ${blockSize}`;
 
-        // TODO: Extract EXIF / XMP / whatever.
         const applicationIdentifier = this.bstream.readString(8);
         const applicationAuthenticationCode = this.bstream.readBytes(3);
         const bytesArr = [];

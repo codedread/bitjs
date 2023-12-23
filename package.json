@@ -1,6 +1,6 @@
 {
   "name": "@codedread/bitjs",
-  "version": "1.1.8",
+  "version": "1.2.0",
   "description": "Binary Tools for JavaScript",
   "homepage": "https://github.com/codedread/bitjs",
   "author": "Jeff Schiller",
@@ -18,9 +18,11 @@
     "untar",
     "file",
     "codecs",
+    "gif",
     "mp4",
     "avc",
-    "webm"
+    "webm",
+    "webp"
   ],
   "main": "./index.js",
   "type": "module",
