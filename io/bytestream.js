@@ -13,6 +13,8 @@
  * This object allows you to peek and consume bytes as numbers and strings out
  * of a stream.  More bytes can be pushed into the back of the stream via the
  * push() method.
+ * By default, the stream is Little Endian (that is the least significant byte
+ * is first). To change to Big Endian, use setBigEndian().
  */
 export class ByteStream {
   /**
@@ -55,6 +57,21 @@ export class ByteStream {
      * @private
      */
     this.bytesRead_ = 0;
+
+    /**
+     * Whether the stream is little-endian (true) or big-endian (false).
+     * @type {boolean}
+     * @private
+     */
+    this.littleEndian_ = true;
+  }
+
+  setBigEndian() {
+    this.littleEndian_ = false;
+  }
+
+  setLittleEndian() {
+    this.littleEndian_ = true;
   }
 
   /**
@@ -117,7 +134,8 @@ export class ByteStream {
     let pageIndex = 0;
     let ptr = this.ptr;
     for (let i = 0; i < num; ++i) {
-      result |= (curPage[ptr++] << (i * 8));
+      const exp = (this.littleEndian_ ? i : (num - 1 - i)) * 8;
+      result |= (curPage[ptr++] << exp);
 
       if (ptr >= curPage.length) {
         curPage = this.pages_[pageIndex++];

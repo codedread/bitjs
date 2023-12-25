@@ -62,6 +62,31 @@ describe('bitjs.io.ByteStream', () => {
     expect(() => stream.readNumber(1)).to.throw();
   });
 
+  it('PeekAndRead_MultiByteNumber_BigEndian', () => {
+    array[3] = (1234 & 0xff);
+    array[2] = ((1234 >> 8) & 0xff);
+    const stream = new ByteStream(array.buffer);
+    stream.setBigEndian();
+    expect(stream.peekNumber(4)).equals(1234);
+    expect(stream.readNumber(4)).equals(1234);
+    expect(() => stream.readNumber(1)).to.throw();
+  });
+
+  it('PeekAndRead_MultiByteNumber_MultiEndian', () => {
+    array[1] = (4567 & 0xff);
+    array[0] = ((4567 >> 8) & 0xff);
+    array[2] = (1234 & 0xff);
+    array[3] = ((1234 >> 8) & 0xff);
+    const stream = new ByteStream(array.buffer);
+    stream.setBigEndian();
+    expect(stream.peekNumber(2)).equals(4567);
+    expect(stream.readNumber(2)).equals(4567);
+    stream.setLittleEndian();
+    expect(stream.peekNumber(2)).equals(1234);
+    expect(stream.readNumber(2)).equals(1234);
+    expect(() => stream.readNumber(1)).to.throw();
+  });
+
   it('PeekAndRead_SingleByteSignedNumber', () => {
     array[0] = -120;
     const stream = new ByteStream(array.buffer);
