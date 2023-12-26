@@ -195,9 +195,7 @@ export class GifParser extends EventTarget {
    */
   version;
 
-  /**
-   * @param {ArrayBuffer} ab 
-   */
+  /** @param {ArrayBuffer} ab */
   constructor(ab) {
     super();
     this.bstream = new ByteStream(ab);
