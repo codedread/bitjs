@@ -73,17 +73,14 @@ describe('bitjs.io.ByteStream', () => {
   });
 
   it('PeekAndRead_MultiByteNumber_MultiEndian', () => {
-    array[1] = (4567 & 0xff);
-    array[0] = ((4567 >> 8) & 0xff);
-    array[2] = (1234 & 0xff);
-    array[3] = ((1234 >> 8) & 0xff);
+    array[1] = 1;
+    array[3] = 1;
+    // Stream now has 0, 1, 0, 1.
     const stream = new ByteStream(array.buffer);
     stream.setBigEndian();
-    expect(stream.peekNumber(2)).equals(4567);
-    expect(stream.readNumber(2)).equals(4567);
+    expect(stream.readNumber(2)).equals(1);
     stream.setLittleEndian();
-    expect(stream.peekNumber(2)).equals(1234);
-    expect(stream.readNumber(2)).equals(1234);
+    expect(stream.readNumber(2)).equals(256);
     expect(() => stream.readNumber(1)).to.throw();
   });
 

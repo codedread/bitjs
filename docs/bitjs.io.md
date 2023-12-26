@@ -39,7 +39,7 @@ bstream.readBits(8); // (green) 0b10110100 = 180
 
 A ByteStream is a convenient way to read numbers and ASCII strings from a set of bytes. For example,
 interpreting 2 bytes in the stream as a number is done by calling `someByteStream.readNumber(2)`. By
-default, the byte stream is considered Little Endian, but can be toggled at any point using
+default, the byte stream is considered Little Endian, but can be changed at any point using
 `someByteStream.setBigEndian()` and toggled back with `someByteStream.setLittleEndian()`.
 
 By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumber(n)` exist for signed numbers.
@@ -50,7 +50,14 @@ By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumbe
   byteStream.readNumber(2); // skip two bytes.
   // Interpret next 2 bytes as the string length.
   const strLen = byteStream.readNumber(2); 
-  // Read in the rest of the ASCII string.
+  // Read in bytes as an ASCII string.
   const someString = byteStream.readNumber(strLen);
+  // Interpret next byte as an int8 (0xFF would be -1).
+  const someVal = byteStream.readSignedNumber(1);
   ...
 ```
+
+### Appending to the Stream
+
+If you get more bytes (for example, from an asynchronous process), you can add them to the end of the
+byte stream by using `someByteStream.push(nextBytesAsAnArrayBuffer)`.
