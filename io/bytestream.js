@@ -66,10 +66,12 @@ export class ByteStream {
     this.littleEndian_ = true;
   }
 
+  /** Big-Endian is sometimes called Motorola-style. */
   setBigEndian() {
     this.littleEndian_ = false;
   }
 
+  /** Little-Endian is sometimes called Intel-style. */
   setLittleEndian() {
     this.littleEndian_ = true;
   }
@@ -290,6 +292,27 @@ export class ByteStream {
     const strToReturn = this.peekString(n);
     this.movePointer_(n);
     return strToReturn;
+  }
+
+  /**
+   * Skips n bytes in the stream.
+   * @param {number} n The number of bytes to skip. Must be a positive integer.
+   */
+  skip(n) {
+    const num = parseInt(n, 10);
+    if (n !== num || num < 0) {
+      throw 'Error!  Called skip() with a non-positive integer';
+    } else if (num === 0) {
+      return;
+    }
+
+    const totalBytesLeft = this.getNumBytesLeft();
+    if (num > totalBytesLeft) {
+      throw 'Error!  Overflowed the byte stream while skip()! n=' + num +
+      ', ptr=' + this.ptr + ', bytes.length=' + this.getNumBytesLeft();
+    }
+
+    this.movePointer_(n);
   }
 
   /**

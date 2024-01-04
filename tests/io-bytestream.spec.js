@@ -202,6 +202,51 @@ describe('bitjs.io.ByteStream', () => {
     expect(str).equals('ABCDEFGHIJKL');
   });
 
+  describe('skip()', () => {
+    /** @type {ByteStream} */
+    let stream;
+
+    beforeEach(() => {
+      for (let i = 0; i < 4; ++i) array[i] = i;
+      stream = new ByteStream(array.buffer);  
+    });
+
+    it('skips bytes', () => {
+      stream.skip(2);
+      expect(stream.getNumBytesRead()).equals(2);
+      expect(stream.getNumBytesLeft()).equals(2);
+      expect(stream.readNumber(1)).equals(2);
+      expect(stream.readNumber(1)).equals(3);
+    });
+
+    it('skip(0) has no effect', () => {
+      stream.skip(0);
+      expect(stream.getNumBytesRead()).equals(0);
+      expect(stream.getNumBytesLeft()).equals(4);
+      expect(stream.readNumber(1)).equals(0);
+    });
+
+    it('skip() with negative throws an error', () => {
+      expect(() => stream.skip(-1)).throws();
+      expect(stream.getNumBytesLeft()).equals(4);
+    });
+
+    it('skip() past the end throws an error', () => {
+      expect(() => stream.skip(4)).does.not.throw();
+      expect(stream.getNumBytesLeft()).equals(0);
+      expect(() => stream.skip(1)).throws();
+    });
+
+    it('skip() works correct across pages of bytes', () => {
+      const extraArr = new Uint8Array(4);
+      for (let i = 0; i < 4; ++i) extraArr[i] = i + 4;
+      stream.push(extraArr.buffer);
+      expect(stream.readNumber(1)).equals(0);
+      stream.skip(5);
+      expect(stream.readNumber(1)).equals(6);
+    });
+  });
+
   it('Tee', () => {
     for (let i = 0; i < 4; ++i) array[i] = 65 + i;
     const stream = new ByteStream(array.buffer);
