@@ -147,3 +147,31 @@ is pretty straightforward and there is no event-based / streaming API.
     ],
     true /* isLastFile */);
 ```
+
+## Implementation Details
+
+All you generally need to worry about is calling getUnarchiver(), listen for events, and then `start()`. However, if you are interested in how it works under the covers, read on...
+
+The implementations are written in pure JavaScript and communicate with the host software (the thing that wants to do the unzipping) via a MessageChannel. The host and implementation each own a MessagePort and pass messages to each other through it. In a web browser, the implementation is invoked as a Web Worker to save the main UI thread from getting the CPU spins.
+
+```mermaid
+sequenceDiagram
+    participant Host Code
+    participant Port1
+    box Any JavaScript Context (could be a Web Worker)
+    participant Port2
+    participant unrar.js
+    end
+    Host Code->>Port1: postMessage(rar bytes)
+    Port1-->>Port2: (MessageChannel)
+    Port2->>unrar.js: onmessage(rar bytes)
+    Note right of unrar.js: unrar the thing
+
+    unrar.js->>Port2: postMessage(an extracted file)
+    Port2-->>Port1: (MessageChannel)
+    Port1->>Host Code: onmessage(an extracted file)
+
+    unrar.js->>Port2: postMessage(2nd extracted file)
+    Port2-->>Port1: (MessageChannel)
+    Port1->>Host Code: onmessage(2nd extracted file)
+```

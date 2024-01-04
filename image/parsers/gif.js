@@ -199,6 +199,8 @@ export class GifParser extends EventTarget {
   constructor(ab) {
     super();
     this.bstream = new ByteStream(ab);
+    // The entire GIF structure is Little-Endian (which is actually ByteStream's default).
+    this.bstream.setLittleEndian();
   }
 
   /**
