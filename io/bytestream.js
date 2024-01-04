@@ -297,6 +297,7 @@ export class ByteStream {
   /**
    * Skips n bytes in the stream.
    * @param {number} n The number of bytes to skip. Must be a positive integer.
+   * @returns {ByteStream} Returns this ByteStream for chaining.
    */
   skip(n) {
     const num = parseInt(n, 10);
@@ -313,6 +314,7 @@ export class ByteStream {
     }
 
     this.movePointer_(n);
+    return this;
   }
 
   /**

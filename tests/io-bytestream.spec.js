@@ -219,6 +219,11 @@ describe('bitjs.io.ByteStream', () => {
       expect(stream.readNumber(1)).equals(3);
     });
 
+    it('returns itself', () => {
+      const retVal = stream.skip(2);
+      expect(stream === retVal).equals(true);
+    });
+
     it('skip(0) has no effect', () => {
       stream.skip(0);
       expect(stream.getNumBytesRead()).equals(0);
@@ -256,6 +261,7 @@ describe('bitjs.io.ByteStream', () => {
     stream.push(anotherArray.buffer);
 
     const teed = stream.tee();
+    expect(teed !== stream).equals(true);
     teed.readBytes(5);
     expect(stream.getNumBytesLeft()).equals(8);
     expect(teed.getNumBytesLeft()).equals(3);

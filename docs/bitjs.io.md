@@ -42,16 +42,17 @@ interpreting 2 bytes in the stream as a number is done by calling `someByteStrea
 default, the byte stream is considered Little Endian, but can be changed at any point using
 `someByteStream.setBigEndian()` and toggled back with `someByteStream.setLittleEndian()`.
 
-By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumber(n)` exist for signed numbers.
+By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumber(n)` exist for
+signed numbers.
 
 ```javascript
   const byteStream = new ByteStream(someArrayBuffer);
   byteStream.setBigEndian();
-  byteStream.readNumber(2); // skip two bytes.
+  byteStream.skip(2); // skip two bytes.
   // Interpret next 2 bytes as the string length.
   const strLen = byteStream.readNumber(2); 
   // Read in bytes as an ASCII string.
-  const someString = byteStream.readNumber(strLen);
+  const someString = byteStream.readString(strLen);
   // Interpret next byte as an int8 (0xFF would be -1).
   const someVal = byteStream.readSignedNumber(1);
   ...
@@ -59,5 +60,20 @@ By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumbe
 
 ### Appending to the Stream
 
-If you get more bytes (for example, from an asynchronous process), you can add them to the end of the
-byte stream by using `someByteStream.push(nextBytesAsAnArrayBuffer)`.
+If you get more bytes (for example, from an asynchronous process), you can add them to the end of
+the byte stream by using `someByteStream.push(nextBytesAsAnArrayBuffer)`.
+
+### Forking / Teeing the stream.
+
+If you have a need to seek ahead to a different section of the stream of bytes, and want to later
+return to where you left off, you should use `tee()` method to make a copy of the ByteStream. This
+will let you seek to the appropriate spot to grab some bytes.
+
+```javascript
+  const byteStream = new ByteStream(someArrayBuffer);
+  const strLen = byteStream.readNumber(4); // Bytes 0-3.
+  const strOffset = byteStream.readNumber(4); // Bytes 4-7.
+  // Grab bytes at that offset...
+  const description = byteStream.tee().skip(offset).readString(strLen);
+  const someOtherVal = byteStream.readNumber(4); // Bytes 8-11
+```
