@@ -42,6 +42,8 @@ interpreting 2 bytes in the stream as a number is done by calling `someByteStrea
 default, the byte stream is considered Little Endian, but can be changed at any point using
 `someByteStream.setBigEndian()` and toggled back with `someByteStream.setLittleEndian()`.
 
+If you need to peek at bytes without advancing the pointer, use the `peek` methods.
+
 By default, numbers are unsigned, but `peekSignedNumber(n)` and `readSignedNumber(n)` exist for
 signed numbers.
 
