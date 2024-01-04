@@ -69,13 +69,16 @@ the byte stream by using `someByteStream.push(nextBytesAsAnArrayBuffer)`.
 
 If you have a need to seek ahead to a different section of the stream of bytes, and want to later
 return to where you left off, you should use `tee()` method to make a copy of the ByteStream. This
-will let you seek to the appropriate spot to grab some bytes.
+will let you seek to the appropriate spot to grab some bytes using the teed stream, while you can
+pick up where you left off with the original stream.
 
 ```javascript
-  const byteStream = new ByteStream(someArrayBuffer);
-  const strLen = byteStream.readNumber(4); // Bytes 0-3.
-  const strOffset = byteStream.readNumber(4); // Bytes 4-7.
-  // Grab bytes at that offset...
-  const description = byteStream.tee().skip(offset).readString(strLen);
-  const someOtherVal = byteStream.readNumber(4); // Bytes 8-11
+  const origStream = new ByteStream(someArrayBuffer);
+  const strLen = origStream.readNumber(4); // Bytes 0-3.
+  const strOffset = origStream.readNumber(4); // Bytes 4-7.
+  
+  const teedStream = origStream.tee();
+  const description = teedStream.skip(strOffset).readString(strLen);
+  
+  const someOtherVal = origStream.readNumber(4); // Bytes 8-11
 ```
