@@ -71,14 +71,20 @@ export class ByteStream {
     return this.littleEndian_;
   }
 
-  /** Big-Endian is sometimes called Motorola-style. */
-  setBigEndian() {
-    this.littleEndian_ = false;
+  /**
+   * Big-Endian is sometimes called Motorola-style.
+   * @param {boolean=} The value to set. If not present, the stream is set to big-endian.
+   */
+  setBigEndian(val = true) {
+    this.littleEndian_ = !val;
   }
 
-  /** Little-Endian is sometimes called Intel-style. */
-  setLittleEndian() {
-    this.littleEndian_ = true;
+  /**
+   * Little-Endian is sometimes called Intel-style.
+   * @param {boolean=} The value to set. If not present, the stream to little-endian.
+   */
+  setLittleEndian(val = true) {
+    this.littleEndian_ = val;
   }
 
   /**

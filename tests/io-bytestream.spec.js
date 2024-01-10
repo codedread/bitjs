@@ -78,9 +78,23 @@ describe('bitjs.io.ByteStream', () => {
     // Stream now has 0, 1, 0, 1.
     const stream = new ByteStream(array.buffer);
     stream.setBigEndian();
-    expect(stream.readNumber(2)).equals(1);
+    expect(stream.peekNumber(2)).equals(1);
+    stream.setBigEndian(false);
+    expect(stream.peekNumber(2)).equals(256);
+    stream.setBigEndian(true);
+    expect(stream.peekNumber(2)).equals(1);
+
+    stream.skip(2);
+
     stream.setLittleEndian();
-    expect(stream.readNumber(2)).equals(256);
+    expect(stream.peekNumber(2)).equals(256);
+    stream.setLittleEndian(false);
+    expect(stream.peekNumber(2)).equals(1);
+    stream.setLittleEndian(true);
+    expect(stream.peekNumber(2)).equals(256);
+
+    stream.skip(2);
+
     expect(() => stream.readNumber(1)).to.throw();
   });
 
