@@ -255,6 +255,8 @@ describe('bitjs.io.ByteStream', () => {
   it('Tee', () => {
     for (let i = 0; i < 4; ++i) array[i] = 65 + i;
     const stream = new ByteStream(array.buffer);
+    // Set non-default endianness.
+    stream.setBigEndian(true);
 
     const anotherArray = new Uint8Array(4);
     for (let i = 0; i < 4; ++i) anotherArray[i] = 69 + i;
@@ -265,5 +267,6 @@ describe('bitjs.io.ByteStream', () => {
     teed.readBytes(5);
     expect(stream.getNumBytesLeft()).equals(8);
     expect(teed.getNumBytesLeft()).equals(3);
+    expect(teed.isLittleEndian()).equals(stream.isLittleEndian());
   });
 });

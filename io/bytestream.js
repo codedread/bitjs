@@ -66,6 +66,11 @@ export class ByteStream {
     this.littleEndian_ = true;
   }
 
+  /** @returns {boolean} Whether the stream is little-endian. */
+  isLittleEndian() {
+    return this.littleEndian_;
+  }
+
   /** Big-Endian is sometimes called Motorola-style. */
   setBigEndian() {
     this.littleEndian_ = false;
@@ -78,6 +83,7 @@ export class ByteStream {
 
   /**
    * Returns how many bytes have been read in the stream since the beginning of time.
+   * @returns {number}
    */
   getNumBytesRead() {
     return this.bytesRead_;
@@ -85,6 +91,7 @@ export class ByteStream {
 
   /**
    * Returns how many bytes are currently in the stream left to be read.
+   * @returns {number}
    */
   getNumBytesLeft() {
     const bytesInCurrentPage = (this.bytes.byteLength - this.ptr);
@@ -334,6 +341,10 @@ export class ByteStream {
 
   /**
    * Creates a new ByteStream from this ByteStream that can be read / peeked.
+   * Note that the teed stream is a disconnected copy. If you push more bytes to the original
+   * stream, the copy does not get them.
+   * TODO: Assess whether the above causes more bugs than it avoids. (It would feel weird to me if
+   *       the teed stream shared some state with the original stream.)
    * @returns {ByteStream} A clone of this ByteStream.
    */
   tee() {
@@ -342,6 +353,7 @@ export class ByteStream {
     clone.ptr = this.ptr;
     clone.pages_ = this.pages_.slice();
     clone.bytesRead_ = this.bytesRead_;
+    clone.littleEndian_ = this.littleEndian_;
     return clone;
   }
 }
