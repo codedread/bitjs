@@ -82,3 +82,7 @@ pick up where you left off with the original stream.
   
   const someOtherVal = origStream.readNumber(4); // Bytes 8-11
 ```
+
+Note that the teed stream is not "connected" to the original stream. If you push new bytes to the
+original stream, the teed stream does not see them. If you find this behavior unexpected, please
+file a bug.
