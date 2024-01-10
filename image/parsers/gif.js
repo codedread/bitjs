@@ -29,7 +29,7 @@ export const GifParseEventType = {
  * @property {string} version
  */
 
-export class GifHeaderParseEvent extends Event {
+export class GifHeaderEvent extends Event {
   /** @param {GifHeader} header */
   constructor(header) {
     super(GifParseEventType.HEADER);
@@ -58,7 +58,7 @@ export class GifHeaderParseEvent extends Event {
  * @property {GifColor[]=} globalColorTable Only if globalColorTableFlag is true.
  */
 
-export class GifLogicalScreenParseEvent extends Event {
+export class GifLogicalScreenEvent extends Event {
   /** @param {GifLogicalScreen} */
   constructor(logicalScreen) {
     super(GifParseEventType.LOGICAL_SCREEN);
@@ -204,13 +204,83 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Overridden so that the type hints for eventType are specific.
-   * @param {'application_extension'|'comment_extension'|'graphical_control_extension'|'header'|'logical_screen'|'plain_text_extension'|'table_based_image'|'trailer'} eventType 
-   * @param {EventListenerOrEventListenerObject} listener 
-   * @override
+   * Type-safe way to bind a listener for a GifApplicationExtensionEvent.
+   * @param {function(GifApplicationExtensionEvent): void} listener
+   * @returns {GifParser} for chaining
    */
-  addEventListener(eventType, listener) {
-    super.addEventListener(eventType, listener);
+  onApplicationExtension(listener) {
+    super.addEventListener(GifParseEventType.APPLICATION_EXTENSION, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifCommentExtensionEvent.
+   * @param {function(GifCommentExtensionEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onCommentExtension(listener) {
+    super.addEventListener(GifParseEventType.COMMENT_EXTENSION, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifGraphicControlExtensionEvent.
+   * @param {function(GifGraphicControlExtensionEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onGraphicControlExtension(listener) {
+    super.addEventListener(GifParseEventType.GRAPHIC_CONTROL_EXTENSION, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifHeaderEvent.
+   * @param {function(GifHeaderEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onHeader(listener) {
+    super.addEventListener(GifParseEventType.HEADER, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifLogicalScreenEvent.
+   * @param {function(GifLogicalScreenEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onLogicalScreen(listener) {
+    super.addEventListener(GifParseEventType.LOGICAL_SCREEN, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifPlainTextExtensionEvent.
+   * @param {function(GifPlainTextExtensionEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onPlainTextExtension(listener) {
+    super.addEventListener(GifParseEventType.PLAIN_TEXT_EXTENSION, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifTableBasedImageEvent.
+   * @param {function(GifTableBasedImageEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onTableBasedImage(listener) {
+    super.addEventListener(GifParseEventType.TABLE_BASED_IMAGE, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a GifTrailerEvent.
+   * @param {function(GifTrailerEvent): void} listener
+   * @returns {GifParser} for chaining
+   */
+  onTrailer(listener) {
+    super.addEventListener(GifParseEventType.TRAILER, listener);
+    return this;
   }
 
   /**
@@ -224,7 +294,7 @@ export class GifParser extends EventTarget {
     const version = this.version = this.bstream.readString(3); // "87a" or "89a"
     if (!["87a", "89a"].includes(version)) throw `Bad version: ${version}`;
 
-    this.dispatchEvent(new GifHeaderParseEvent(
+    this.dispatchEvent(new GifHeaderEvent(
       /** @type {GifHeader} */ ({ version })
     ));
 
@@ -253,7 +323,7 @@ export class GifParser extends EventTarget {
         }));
       }
     }
-    this.dispatchEvent(new GifLogicalScreenParseEvent(
+    this.dispatchEvent(new GifLogicalScreenEvent(
       /** @type {GifLogicalScreen} */ ({
         logicalScreenWidth,
         logicalScreenHeight,
