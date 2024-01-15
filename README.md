@@ -14,7 +14,7 @@ Includes:
   * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381
     MIME type string
   * bitjs/file: Detect the type of file from its binary signature.
-  * bitjs/image: Parsing GIF. Conversion of WebP to PNG or JPEG.
+  * bitjs/image: Parsing GIF, JPEG. Conversion of WebP to PNG or JPEG.
   * bitjs/io: Low-level classes for interpreting binary data (BitStream
     ByteStream).  For example, reading or peeking at N bits at a time.
 
@@ -108,8 +108,8 @@ const mimeType = findMimeType(someArrayBuffer);
 ### bitjs.image
 
 This package includes code for dealing with binary images.  It includes general event-based parsers
-for images (GIF only, at the moment). It also includes a module for converting WebP images into
-alternative raster graphics formats (PNG/JPG). This latter module is deprecated, now that WebP
+for images (GIF and JPEG only, at the moment). It also includes a module for converting WebP images
+into alternative raster graphics formats (PNG/JPG). This latter module is deprecated, now that WebP
 images are well-supported in all browsers.
 
 #### GIF Parser
@@ -117,8 +117,8 @@ images are well-supported in all browsers.
 import { GifParser } from './bitjs/image/parsers/gif.js'
 
 const parser = new GifParser(someArrayBuffer);
-parser.addEventListener('application_extension', evt => {
-  const appId = evt.applicationExtension.applicationIdentifier
+parser.onApplicationExtension(evt => {
+  const appId = evt.applicationExtension.applicationIdentifier;
   const appAuthCode = new TextDecoder().decode(
       evt.applicationExtension.applicationAuthenticationCode);
   if (appId === 'XMP Data' && appAuthCode === 'XMP') {
@@ -128,6 +128,20 @@ parser.addEventListener('application_extension', evt => {
   }
 });
 parser.start();
+```
+
+#### JPEG Parser
+```javascript
+import { JpegParser } from './bitjs/image/parsers/jpeg.js'
+import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
+
+const parser = new JpegParser(someArrayBuffer);
+let exif;
+const parser = new JpegParser(ab);
+parser.onApp1Exif(evt => {
+  console.log(evt.exifValueMap.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
+});
+await parser.start();
 ```
 
 #### WebP Converter

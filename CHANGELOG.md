@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Added a GIF parser to bitjs.image.
+- Added GIF and JPEG parsers to bitjs.image.
 - Added a skip() method to ByteStream.
 
 ### Changed
