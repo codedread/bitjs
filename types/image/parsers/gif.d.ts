@@ -12,7 +12,7 @@ export namespace GifParseEventType {
  * @typedef GifHeader
  * @property {string} version
  */
-export class GifHeaderParseEvent extends Event {
+export class GifHeaderEvent extends Event {
     /** @param {GifHeader} header */
     constructor(header: GifHeader);
     /** @type {GifHeader} */
@@ -36,7 +36,7 @@ export class GifHeaderParseEvent extends Event {
  * @property {number} pixelAspectRatio
  * @property {GifColor[]=} globalColorTable Only if globalColorTableFlag is true.
  */
-export class GifLogicalScreenParseEvent extends Event {
+export class GifLogicalScreenEvent extends Event {
     /** @param {GifLogicalScreen} */
     constructor(logicalScreen: any);
     /** @type {GifLogicalScreen} */
@@ -134,9 +134,7 @@ export class GifTrailerEvent extends Event {
  *                                Comment Extension
  */
 export class GifParser extends EventTarget {
-    /**
-     * @param {ArrayBuffer} ab
-     */
+    /** @param {ArrayBuffer} ab */
     constructor(ab: ArrayBuffer);
     /**
      * @type {ByteStream}
@@ -149,12 +147,53 @@ export class GifParser extends EventTarget {
      */
     private version;
     /**
-     * Overridden so that the type hints for eventType are specific.
-     * @param {'application_extension'|'comment_extension'|'graphical_control_extension'|'header'|'logical_screen'|'plain_text_extension'|'table_based_image'|'trailer'} eventType
-     * @param {EventListenerOrEventListenerObject} listener
-     * @override
+     * Type-safe way to bind a listener for a GifApplicationExtensionEvent.
+     * @param {function(GifApplicationExtensionEvent): void} listener
+     * @returns {GifParser} for chaining
      */
-    override addEventListener(eventType: 'application_extension' | 'comment_extension' | 'graphical_control_extension' | 'header' | 'logical_screen' | 'plain_text_extension' | 'table_based_image' | 'trailer', listener: EventListenerOrEventListenerObject): void;
+    onApplicationExtension(listener: (arg0: GifApplicationExtensionEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifCommentExtensionEvent.
+     * @param {function(GifCommentExtensionEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onCommentExtension(listener: (arg0: GifCommentExtensionEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifGraphicControlExtensionEvent.
+     * @param {function(GifGraphicControlExtensionEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onGraphicControlExtension(listener: (arg0: GifGraphicControlExtensionEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifHeaderEvent.
+     * @param {function(GifHeaderEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onHeader(listener: (arg0: GifHeaderEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifLogicalScreenEvent.
+     * @param {function(GifLogicalScreenEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onLogicalScreen(listener: (arg0: GifLogicalScreenEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifPlainTextExtensionEvent.
+     * @param {function(GifPlainTextExtensionEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onPlainTextExtension(listener: (arg0: GifPlainTextExtensionEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifTableBasedImageEvent.
+     * @param {function(GifTableBasedImageEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onTableBasedImage(listener: (arg0: GifTableBasedImageEvent) => void): GifParser;
+    /**
+     * Type-safe way to bind a listener for a GifTrailerEvent.
+     * @param {function(GifTrailerEvent): void} listener
+     * @returns {GifParser} for chaining
+     */
+    onTrailer(listener: (arg0: GifTrailerEvent) => void): GifParser;
     /**
      * @returns {Promise<void>} A Promise that resolves when the parsing is complete.
      */

@@ -34,7 +34,7 @@ export const JpegParseEventType = {
 }
 
 /** @enum {number} */
-const JpegSegmentType = {
+export const JpegSegmentType = {
   SOF0: 0xC0,
   SOF1: 0xC1,
   SOF2: 0xC2,
@@ -155,14 +155,14 @@ export class JpegDefineHuffmanTableEvent extends Event {
 }
 
 /** @enum {number} */
-const JpegDctType = {
+export const JpegDctType = {
   BASELINE: 0,
   EXTENDED_SEQUENTIAL: 1,
   PROGRESSIVE: 2,
 };
 
 /** @enum {number} */
-const JpegComponentType = {
+export const JpegComponentType = {
   Y: 1,
   CB: 2,
   CR: 3,

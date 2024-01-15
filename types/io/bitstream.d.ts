@@ -28,7 +28,7 @@
  */
 export class BitStream {
     /**
-     * @param {ArrayBuffer} ab An ArrayBuffer object or a Uint8Array.
+     * @param {ArrayBuffer} ab An ArrayBuffer object.
      * @param {boolean} mtl Whether the stream reads bits from the byte starting with the
      *     most-significant-bit (bit 7) to least-significant (bit 0). False means the direction is
      *     from least-significant-bit (bit 0) to most-significant (bit 7).
@@ -62,7 +62,7 @@ export class BitStream {
     private bitsRead_;
     peekBits: (n: number, opt_movePointers: any) => number;
     /**
-     * Returns how many bites have been read in the stream since the beginning of time.
+     * Returns how many bits have been read in the stream since the beginning of time.
      * @returns {number}
      */
     getNumBitsRead(): number;

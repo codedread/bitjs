@@ -2,6 +2,8 @@
  * This object allows you to peek and consume bytes as numbers and strings out
  * of a stream.  More bytes can be pushed into the back of the stream via the
  * push() method.
+ * By default, the stream is Little Endian (that is the least significant byte
+ * is first). To change to Big Endian, use setBigEndian().
  */
 export class ByteStream {
     /**
@@ -35,11 +37,31 @@ export class ByteStream {
      */
     private bytesRead_;
     /**
+     * Whether the stream is little-endian (true) or big-endian (false).
+     * @type {boolean}
+     * @private
+     */
+    private littleEndian_;
+    /** @returns {boolean} Whether the stream is little-endian. */
+    isLittleEndian(): boolean;
+    /**
+     * Big-Endian is sometimes called Motorola-style.
+     * @param {boolean=} val The value to set. If not present, the stream is set to big-endian.
+     */
+    setBigEndian(val?: boolean | undefined): void;
+    /**
+     * Little-Endian is sometimes called Intel-style.
+     * @param {boolean=} val The value to set. If not present, the stream is set to little-endian.
+     */
+    setLittleEndian(val?: boolean | undefined): void;
+    /**
      * Returns how many bytes have been read in the stream since the beginning of time.
+     * @returns {number}
      */
     getNumBytesRead(): number;
     /**
      * Returns how many bytes are currently in the stream left to be read.
+     * @returns {number}
      */
     getNumBytesLeft(): number;
     /**
@@ -105,12 +127,22 @@ export class ByteStream {
      */
     readString(n: number): string;
     /**
+     * Skips n bytes in the stream.
+     * @param {number} n The number of bytes to skip. Must be a positive integer.
+     * @returns {ByteStream} Returns this ByteStream for chaining.
+     */
+    skip(n: number): ByteStream;
+    /**
      * Feeds more bytes into the back of the stream.
      * @param {ArrayBuffer} ab
      */
     push(ab: ArrayBuffer): void;
     /**
      * Creates a new ByteStream from this ByteStream that can be read / peeked.
+     * Note that the teed stream is a disconnected copy. If you push more bytes to the original
+     * stream, the copy does not get them.
+     * TODO: Assess whether the above causes more bugs than it avoids. (It would feel weird to me if
+     *       the teed stream shared some state with the original stream.)
      * @returns {ByteStream} A clone of this ByteStream.
      */
     tee(): ByteStream;

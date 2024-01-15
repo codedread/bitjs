@@ -136,8 +136,6 @@ import { JpegParser } from './bitjs/image/parsers/jpeg.js'
 import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
 
 const parser = new JpegParser(someArrayBuffer);
-let exif;
-const parser = new JpegParser(ab);
 parser.onApp1Exif(evt => {
   console.log(evt.exifValueMap.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
 });
