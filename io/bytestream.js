@@ -81,7 +81,7 @@ export class ByteStream {
 
   /**
    * Little-Endian is sometimes called Intel-style.
-   * @param {boolean=} The value to set. If not present, the stream to little-endian.
+   * @param {boolean=} The value to set. If not present, the stream is set to little-endian.
    */
   setLittleEndian(val = true) {
     this.littleEndian_ = val;
