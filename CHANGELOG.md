@@ -2,14 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2024-01-??
+## [1.2.0] - 2024-01-15
 
 ### Added
 
-- Added GIF and JPEG parsers to bitjs.image.
-- Added a skip() method to ByteStream.
-
-### Changed
+- image: Added GIF and JPEG event-based parsers.
+- io: Added a skip() method to ByteStream.
 
 ## [1.1.7] - 2023-12-16
 
