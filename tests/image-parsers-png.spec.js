@@ -2,10 +2,10 @@ import * as fs from 'node:fs';
 import 'mocha';
 import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
-import { fail } from 'node:assert';
 
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
+/** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 
 function getPngParser(fileName) {
   const nodeBuf = fs.readFileSync(fileName);
@@ -45,6 +45,19 @@ describe('bitjs.image.parsers.PngParser', () => {
         expect(err.startsWith('Bad PNG signature')).equals(true);
       }
     });
+  });
+
+  it('extracts PLTE', async () => {
+    /** @type {PngPalette} */
+    let palette;
+    await getPngParser('tests/image-testfiles/tbbn3p08.png')
+        .onPalette(evt => palette = evt.palette)
+        .start();
+    expect(palette.entries.length).equals(246);
+    const entry = palette.entries[1];
+    expect(entry.red).equals(128);
+    expect(entry.green).equals(86);
+    expect(entry.blue).equals(86);
   });
 
   it('extracts IDAT', async () => {

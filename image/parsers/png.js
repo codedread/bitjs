@@ -14,6 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://en.wikipedia.org/wiki/PNG#File_format
 // https://www.w3.org/TR/2003/REC-PNG-20031110
 
+let DEBUG = false;
 const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
 /** @enum {string} */
@@ -220,8 +221,9 @@ export class PngParser extends EventTarget {
             });
           }
 
+          /** @type {PngPalette} */
           const palette = {
-            paletteEntries,
+            entries: paletteEntries,
           };
 
           this.dispatchEvent(new PngPaletteEvent(palette));
@@ -240,7 +242,7 @@ export class PngParser extends EventTarget {
           break;
 
         default:
-          console.log(`Found an unhandled chunk: ${chunk.chunkType}`);
+          if (DEBUG) console.log(`Found an unhandled chunk: ${chunk.chunkType}`);
           break;
       }
     } while (chunk.chunkType !== 'IEND');
@@ -295,4 +297,4 @@ async function main() {
   }
 }
 
-main();
+// main();
