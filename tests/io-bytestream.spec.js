@@ -239,10 +239,11 @@ describe('bitjs.io.ByteStream', () => {
     });
 
     it('skip(0) has no effect', () => {
-      stream.skip(0);
+      const retVal = stream.skip(0);
       expect(stream.getNumBytesRead()).equals(0);
       expect(stream.getNumBytesLeft()).equals(4);
       expect(stream.readNumber(1)).equals(0);
+      expect(retVal === stream).equals(true);
     });
 
     it('skip() with negative throws an error', () => {

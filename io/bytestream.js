@@ -317,7 +317,7 @@ export class ByteStream {
     if (n !== num || num < 0) {
       throw 'Error!  Called skip() with a non-positive integer';
     } else if (num === 0) {
-      return;
+      return this;
     }
 
     const totalBytesLeft = this.getNumBytesLeft();
