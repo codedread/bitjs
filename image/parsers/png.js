@@ -14,12 +14,14 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://en.wikipedia.org/wiki/PNG#File_format
 // https://www.w3.org/TR/2003/REC-PNG-20031110
 
+// let DEBUG = true;
 let DEBUG = false;
 const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
 /** @enum {string} */
 export const PngParseEventType = {
   IHDR: 'image_header',
+  gAMA: 'image_gamma',
   PLTE: 'palette',
   IDAT: 'image_data',
 };
@@ -56,6 +58,15 @@ export class PngImageHeaderEvent extends Event {
     super(PngParseEventType.IHDR);
     /** @type {PngImageHeader} */
     this.imageHeader = header;
+  }
+}
+
+export class PngImageGammaEvent extends Event {
+  /** @param {number} */
+  constructor(gamma) {
+    super(PngParseEventType.gAMA);
+    /** @type {number} */
+    this.gamma = gamma;
   }
 }
 
@@ -133,6 +144,16 @@ export class PngParser extends EventTarget {
   }
 
   /**
+   * Type-safe way to bind a listener for a PngImageGammaEvent.
+   * @param {function(PngImageGammaEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onGamma(listener) {
+    super.addEventListener(PngParseEventType.gAMA, listener);
+    return this;
+  }
+
+  /**
    * Type-safe way to bind a listener for a PngPaletteEvent.
    * @param {function(PngPaletteEvent): void} listener
    * @returns {PngParser} for chaining
@@ -202,6 +223,12 @@ export class PngParser extends EventTarget {
           this.colorType = header.colorType;
 
           this.dispatchEvent(new PngImageHeaderEvent(header));
+          break;
+
+        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11gAMA
+        case 'gAMA':
+          if (length !== 4) throw `Bad length for gAMA: ${length}`;
+          this.dispatchEvent(new PngImageGammaEvent(chStream.readNumber(4)));
           break;
 
         // https://www.w3.org/TR/2003/REC-PNG-20031110/#11PLTE
@@ -282,8 +309,11 @@ async function main() {
     parser.onImageHeader(evt => {
       // console.dir(evt.imageHeader);
     });
+    parser.onGamma(evt => {
+      // console.dir(evt.imageGamma);
+    });
     parser.onPalette(evt => {
-      console.dir(evt.palette);
+      // console.dir(evt.palette);
     });
     parser.onImageData(evt => {
       // console.dir(evt);

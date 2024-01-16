@@ -5,6 +5,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
+/** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 
 function getPngParser(fileName) {
@@ -45,6 +46,15 @@ describe('bitjs.image.parsers.PngParser', () => {
         expect(err.startsWith('Bad PNG signature')).equals(true);
       }
     });
+  });
+
+  it('extracts gAMA', async () => {
+    /** @type {number} */
+    let gamma;
+    await getPngParser('tests/image-testfiles/g05n3p04.png')
+        .onGamma(evt => gamma = evt.gamma)
+        .start();
+    expect(gamma).equals(55000);
   });
 
   it('extracts PLTE', async () => {
