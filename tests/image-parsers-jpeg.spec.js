@@ -4,12 +4,8 @@ import { expect } from 'chai';
 import { JpegParser } from '../image/parsers/jpeg.js';
 import { ExifDataFormat, ExifTagNumber } from '../image/parsers/exif.js';
 
-/**
- * @typedef {import('../image/parsers/jpeg.js').JpegStartOfFrame} JpegStartOfFrame
- */
-/**
- * @typedef {import('../image/parsers/exif.js').ExifValue} ExifValue
- */
+/** @typedef {import('../image/parsers/jpeg.js').JpegStartOfFrame} JpegStartOfFrame */
+/** @typedef {import('../image/parsers/exif.js').ExifValue} ExifValue */
 
 const FILE_LONG_DESC = 'tests/image-testfiles/long_description.jpg'
 

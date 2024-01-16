@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2024-01-??
+
+### Added
+
+- image: Added PNG event-based parser.
+
+### Changed
+
+- io: Fix ByteStream bug where skip(0) did not return the ByteStream.
+
 ## [1.2.0] - 2024-01-15
 
 ### Added
