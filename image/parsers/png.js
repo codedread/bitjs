@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tEXt, tIME, zTXt.
+// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tIME, zTXt.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -22,13 +22,17 @@ const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
 /** @enum {string} */
 export const PngParseEventType = {
+  // Critical chunks.
+  IDAT: 'image_data',
   IHDR: 'image_header',
+  PLTE: 'palette',
+
+  // Ancillary chunks.
+  cHRM: 'chromaticities_white_point',
   gAMA: 'image_gamma',
   sBIT: 'significant_bits',
-  cHRM: 'chromaticities_white_point',
-  PLTE: 'palette',
+  tEXt: 'textual_data',
   tRNS: 'transparency',
-  IDAT: 'image_data',
 };
 
 /** @enum {number} */
@@ -168,6 +172,21 @@ export class PngImageDataEvent extends Event {
 }
 
 /**
+ * @typedef PngTextualData
+ * @property {string} keyword
+ * @property {string=} textString
+ */
+
+export class PngTextualDataEvent extends Event {
+  /** @param {PngTextualData} textualData */
+  constructor(textualData) {
+    super(PngParseEventType.tEXt);
+    /** @type {PngTextualData} */
+    this.textualData = textualData;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -203,12 +222,12 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngImageHeaderEvent.
-   * @param {function(PngImageHeaderEvent): void} listener
+   * Type-safe way to bind a listener for a PngChromaticiesEvent.
+   * @param {function(PngChromaticiesEvent): void} listener
    * @returns {PngParser} for chaining
    */
-  onImageHeader(listener) {
-    super.addEventListener(PngParseEventType.IHDR, listener);
+  onChromaticities(listener) {
+    super.addEventListener(PngParseEventType.cHRM, listener);
     return this;
   }
 
@@ -223,22 +242,22 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngSignificantBitsEvent.
-   * @param {function(PngSignificantBitsEvent): void} listener
+   * Type-safe way to bind a listener for a PngImageDataEvent.
+   * @param {function(PngImageDataEvent): void} listener
    * @returns {PngParser} for chaining
    */
-  onSignificantBits(listener) {
-    super.addEventListener(PngParseEventType.sBIT, listener);
+  onImageData(listener) {
+    super.addEventListener(PngParseEventType.IDAT, listener);
     return this;
   }
 
   /**
-   * Type-safe way to bind a listener for a PngChromaticiesEvent.
-   * @param {function(PngChromaticiesEvent): void} listener
+   * Type-safe way to bind a listener for a PngImageHeaderEvent.
+   * @param {function(PngImageHeaderEvent): void} listener
    * @returns {PngParser} for chaining
    */
-  onChromaticities(listener) {
-    super.addEventListener(PngParseEventType.cHRM, listener);
+  onImageHeader(listener) {
+    super.addEventListener(PngParseEventType.IHDR, listener);
     return this;
   }
 
@@ -253,22 +272,32 @@ export class PngParser extends EventTarget {
   }
 
   /**
+   * Type-safe way to bind a listener for a PngSignificantBitsEvent.
+   * @param {function(PngSignificantBitsEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onSignificantBits(listener) {
+    super.addEventListener(PngParseEventType.sBIT, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngTextualDataEvent.
+   * @param {function(PngTextualDataEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onTextualData(listener) {
+    super.addEventListener(PngParseEventType.tEXt, listener);
+    return this;
+  }
+
+  /**
    * Type-safe way to bind a listener for a PngTransparencyEvent.
    * @param {function(PngTransparencyEvent): void} listener
    * @returns {PngParser} for chaining
    */
   onTransparency(listener) {
     super.addEventListener(PngParseEventType.tRNS, listener);
-    return this;
-  }
-
-  /**
-   * Type-safe way to bind a listener for a PngImageDataEvent.
-   * @param {function(PngImageDataEvent): void} listener
-   * @returns {PngParser} for chaining
-   */
-  onImageData(listener) {
-    super.addEventListener(PngParseEventType.IDAT, listener);
     return this;
   }
 
@@ -404,6 +433,18 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngPaletteEvent(this.palette));
           break;
 
+        // https://www.w3.org/TR/png-3/#11tEXt
+        case 'tEXt':
+          const byteArr = chStream.peekBytes(length);
+          const nullIndex = byteArr.indexOf(0);
+          /** @type {PngTextualData} */
+          const textualData = {
+            keyword: chStream.readString(nullIndex),
+            textString: chStream.skip(1).readString(length - nullIndex - 1),
+          };
+          this.dispatchEvent(new PngTextualDataEvent(textualData));
+          break;
+
         // https://www.w3.org/TR/png-3/#11tRNS
         case 'tRNS':
           if (this.colorType === undefined) throw `tRNS before IHDR`;
@@ -506,6 +547,9 @@ async function main() {
     });
     parser.onImageData(evt => {
       // console.dir(evt);
+    });
+    parser.onTextualData(evt => {
+      // console.dir(evt.textualData);
     });
 
     try {

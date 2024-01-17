@@ -108,7 +108,7 @@ const mimeType = findMimeType(someArrayBuffer);
 ### bitjs.image
 
 This package includes code for dealing with binary images.  It includes general event-based parsers
-for images (GIF and JPEG only, at the moment). It also includes a module for converting WebP images
+for images (GIF, JPEG, PNG). It also includes a module for converting WebP images
 into alternative raster graphics formats (PNG/JPG). This latter module is deprecated, now that WebP
 images are well-supported in all browsers.
 

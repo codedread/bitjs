@@ -9,6 +9,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
+/** @typedef {import('../image/parsers/png.js').PngTextualData} PngTextualData */
 /** @typedef {import('../image/parsers/png.js').PngTransparency} PngTransparency */
 
 function getPngParser(fileName) {
@@ -149,5 +150,20 @@ describe('bitjs.image.parsers.PngParser', () => {
 
     expect(data.rawImageData.byteLength).equals(2205);
     expect(data.rawImageData[0]).equals(120);
+  });
+
+  it('extracts tEXt', async () => {
+    /** @type {PngTextualData[]} */
+    let textualDataArr = [];
+
+    await getPngParser('tests/image-testfiles/ctzn0g04.png')
+        .onTextualData(evt => { textualDataArr.push(evt.textualData) })
+        .start();
+
+    expect(textualDataArr.length).equals(2);
+    expect(textualDataArr[0].keyword).equals('Title');
+    expect(textualDataArr[0].textString).equals('PngSuite');
+    expect(textualDataArr[1].keyword).equals('Author');
+    expect(textualDataArr[1].textString).equals('Willem A.J. van Schaik\n(willem@schaik.com)');
   });
 });
