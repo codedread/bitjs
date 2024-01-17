@@ -8,6 +8,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
+/** @typedef {import('../image/parsers/png.js').PngTransparency} PngTransparency */
 
 function getPngParser(fileName) {
   const nodeBuf = fs.readFileSync(fileName);
@@ -82,6 +83,43 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(entry.red).equals(128);
     expect(entry.green).equals(86);
     expect(entry.blue).equals(86);
+  });
+
+  describe('tRNS', () => {
+    it('extracts alpha palette', async () => {
+      /** @type {PngTransparency} */
+      let transparency;
+      await getPngParser('tests/image-testfiles/tbbn3p08.png')
+          .onTransparency(evt => transparency = evt.transparency)
+          .start();
+
+      expect(transparency.alphaPalette.length).equals(1);
+      expect(transparency.alphaPalette[0]).equals(0);
+    });
+
+    it('extracts 8-bit RGB transparency', async () => {
+      /** @type {PngTransparency} */
+      let transparency;
+      await getPngParser('tests/image-testfiles/tbrn2c08.png')
+          .onTransparency(evt => transparency = evt.transparency)
+          .start();
+
+      expect(transparency.redSampleValue).equals(255);
+      expect(transparency.blueSampleValue).equals(255);
+      expect(transparency.greenSampleValue).equals(255);
+    });
+
+    it('extracts 16-bit RGB transparency', async () => {
+      /** @type {PngTransparency} */
+      let transparency;
+      await getPngParser('tests/image-testfiles/tbgn2c16.png')
+          .onTransparency(evt => transparency = evt.transparency)
+          .start();
+
+      expect(transparency.redSampleValue).equals(65535);
+      expect(transparency.blueSampleValue).equals(65535);
+      expect(transparency.greenSampleValue).equals(65535);
+    });
   });
 
   it('extracts IDAT', async () => {

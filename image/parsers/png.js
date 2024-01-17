@@ -11,8 +11,10 @@
 import * as fs from 'node:fs'; // TODO: Remove.
 import { ByteStream } from '../../io/bytestream.js';
 
-// https://en.wikipedia.org/wiki/PNG#File_format
 // https://www.w3.org/TR/2003/REC-PNG-20031110
+// https://en.wikipedia.org/wiki/PNG#File_format
+
+// TODO: Ancillary chunks bKGD, cHRM, hIST, iTXt, pHYs, sPLT, tEXt, tIME, zTXt.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -24,6 +26,7 @@ export const PngParseEventType = {
   gAMA: 'image_gamma',
   sBIT: 'significant_bits',
   PLTE: 'palette',
+  tRNS: 'transparency',
   IDAT: 'image_data',
 };
 
@@ -111,6 +114,24 @@ export class PngPaletteEvent extends Event {
 }
 
 /**
+ * @typedef PngTransparency
+ * @property {number=} greySampleValue Populated for color type 0.
+ * @property {number=} redSampleValue Populated for color type 2.
+ * @property {number=} blueSampleValue Populated for color type 2.
+ * @property {number=} greenSampleValue Populated for color type 2.
+ * @property {number[]=} alphaPalette Populated for color type 3.
+ */
+
+export class PngTransparencyEvent extends Event {
+  /** @param {PngTransparency} */
+  constructor(transparency) {
+    super(PngParseEventType.tRNS);
+    /** @type {PngTransparency} */
+    this.transparency = transparency;
+  }
+}
+
+/**
  * @typedef PngImageData
  * @property {Uint8Array} rawImageData
  */
@@ -144,6 +165,13 @@ export class PngParser extends EventTarget {
    * @private
    */
   colorType;
+
+  /**
+   * @type {PngPalette}
+   * @private
+   */
+  palette;
+
 
   /** @param {ArrayBuffer} ab */
   constructor(ab) {
@@ -189,6 +217,16 @@ export class PngParser extends EventTarget {
    */
   onPalette(listener) {
     super.addEventListener(PngParseEventType.PLTE, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngTransparencyEvent.
+   * @param {function(PngTransparencyEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onTransparency(listener) {
+    super.addEventListener(PngParseEventType.tRNS, listener);
     return this;
   }
 
@@ -266,22 +304,22 @@ export class PngParser extends EventTarget {
           /** @type {PngSignificantBits} */
           const sigBits = {};
 
-          const badLengthErr = `Weird sBIT length for color type ${this.colorType}: ${length}`;
+          const sbitBadLengthErr = `Weird sBIT length for color type ${this.colorType}: ${length}`;
           if (this.colorType === PngColorType.GREYSCALE) {
-            if (length !== 1) throw badLengthErr;
+            if (length !== 1) throw sbitBadLengthErr;
             sigBits.significant_greyscale = chStream.readNumber(1);
           } else if (this.colorType === PngColorType.TRUE_COLOR ||
               this.colorType === PngColorType.INDEXED_COLOR) {
-            if (length !== 3) throw badLengthErr;
+            if (length !== 3) throw sbitBadLengthErr;
             sigBits.significant_red = chStream.readNumber(1);
             sigBits.significant_green = chStream.readNumber(1);
             sigBits.significant_blue = chStream.readNumber(1);
           } else if (this.colorType === PngColorType.GREYSCALE_WITH_ALPHA) {
-            if (length !== 2) throw badLengthErr;
+            if (length !== 2) throw sbitBadLengthErr;
             sigBits.significant_greyscale = chStream.readNumber(1);
             sigBits.significant_alpha = chStream.readNumber(1);
           } else if (this.colorType === PngColorType.TRUE_COLOR_WITH_ALPHA) {
-            if (length !== 4) throw badLengthErr;
+            if (length !== 4) throw sbitBadLengthErr;
             sigBits.significant_red = chStream.readNumber(1);
             sigBits.significant_green = chStream.readNumber(1);
             sigBits.significant_blue = chStream.readNumber(1);
@@ -309,11 +347,45 @@ export class PngParser extends EventTarget {
           }
 
           /** @type {PngPalette} */
-          const palette = {
+          this.palette = {
             entries: paletteEntries,
           };
 
-          this.dispatchEvent(new PngPaletteEvent(palette));
+          this.dispatchEvent(new PngPaletteEvent(this.palette));
+          break;
+
+        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11tRNS
+        case 'tRNS':
+          if (this.colorType === undefined) throw `tRNS before IHDR`;
+          if (this.colorType === PngColorType.GREYSCALE_WITH_ALPHA ||
+              this.colorType === PngColorType.TRUE_COLOR_WITH_ALPHA) {
+            throw `tRNS with color type ${this.colorType}`;
+          }
+
+          /** @type {PngTransparency} */
+          const transparency = {};
+
+          const trnsBadLengthErr = `Weird sBIT length for color type ${this.colorType}: ${length}`;
+          if (this.colorType === PngColorType.GREYSCALE) {
+            if (length !== 2) throw trnsBadLengthErr;
+            transparency.greySampleValue = chStream.readNumber(2);
+          } else if (this.colorType === PngColorType.TRUE_COLOR) {
+            if (length !== 6) throw trnsBadLengthErr;
+            // Oddly the order is RBG instead of RGB :-/
+            transparency.redSampleValue = chStream.readNumber(2);
+            transparency.blueSampleValue = chStream.readNumber(2);
+            transparency.greenSampleValue = chStream.readNumber(2);
+          } else if (this.colorType === PngColorType.INDEXED_COLOR) {
+            if (!this.palette) throw `tRNS before PLTE`;
+            if (length > this.palette.entries.length) throw `More tRNS entries than palette`;
+
+            transparency.alphaPalette = [];
+            for (let a = 0; a < length; ++a) {
+              transparency.alphaPalette.push(chStream.readNumber(1));
+            }
+          }
+
+          this.dispatchEvent(new PngTransparencyEvent(transparency));
           break;
 
         // https://www.w3.org/TR/2003/REC-PNG-20031110/#11IDAT
@@ -371,10 +443,13 @@ async function main() {
       // console.dir(evt.imageGamma);
     });
     parser.onSignificantBits(evt => {
-      console.dir(evt.sigBits);
+      // console.dir(evt.sigBits);
     });
     parser.onPalette(evt => {
       // console.dir(evt.palette);
+    });
+    parser.onTransparency(evt => {
+      // console.dir(evt.transparency);
     });
     parser.onImageData(evt => {
       // console.dir(evt);
