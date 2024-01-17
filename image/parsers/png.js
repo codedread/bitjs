@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tIME, zTXt.
+// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tIME.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -33,6 +33,7 @@ export const PngParseEventType = {
   sBIT: 'significant_bits',
   tEXt: 'textual_data',
   tRNS: 'transparency',
+  zTXt: 'compressed_textual_data',
 };
 
 /** @enum {number} */
@@ -187,6 +188,22 @@ export class PngTextualDataEvent extends Event {
 }
 
 /**
+ * @typedef PngCompressedTextualData
+ * @property {string} keyword
+ * @property {number} compressionMethod Only value supported is 0 for deflate compression.
+ * @property {Uint8Array=} compressedText
+ */
+
+export class PngCompressedTextualDataEvent extends Event {
+  /** @param {PngCompressedTextualData} compressedTextualData */
+  constructor(compressedTextualData) {
+    super(PngParseEventType.zTXt);
+    /** @type {PngCompressedTextualData} */
+    this.compressedTextualData = compressedTextualData;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -228,6 +245,16 @@ export class PngParser extends EventTarget {
    */
   onChromaticities(listener) {
     super.addEventListener(PngParseEventType.cHRM, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngCompressedTextualDataEvent.
+   * @param {function(PngCompressedTextualDataEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onCompressedTextualData(listener) {
+    super.addEventListener(PngParseEventType.zTXt, listener);
     return this;
   }
 
@@ -479,6 +506,20 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngTransparencyEvent(transparency));
           break;
 
+        // https://www.w3.org/TR/png-3/#11zTXt
+        case 'zTXt':
+          const compressedByteArr = chStream.peekBytes(length);
+          const compressedNullIndex = compressedByteArr.indexOf(0);
+
+          /** @type {PngCompressedTextualData} */
+          const compressedTextualData = {
+            keyword: chStream.readString(compressedNullIndex),
+            compressionMethod: chStream.skip(1).readNumber(1),
+            compressedText: chStream.readBytes(length - compressedNullIndex - 2),
+          };
+          this.dispatchEvent(new PngCompressedTextualDataEvent(compressedTextualData));
+          break;
+
         // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
@@ -550,6 +591,9 @@ async function main() {
     });
     parser.onTextualData(evt => {
       // console.dir(evt.textualData);
+    });
+    parser.onCompressedTextualData(evt => {
+      // console.dir(evt.compressedTextualData);
     });
 
     try {

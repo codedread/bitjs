@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
 
 /** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
+/** @typedef {import('../image/parsers/png.js').PngCompressedTextualData} PngCompressedTextualData */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
@@ -165,5 +166,18 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(textualDataArr[0].textString).equals('PngSuite');
     expect(textualDataArr[1].keyword).equals('Author');
     expect(textualDataArr[1].textString).equals('Willem A.J. van Schaik\n(willem@schaik.com)');
+  });
+
+  it('extracts zTXt', async () => {
+    /** @type {PngCompressedTextualData} */
+    let data;
+
+    await getPngParser('tests/image-testfiles/ctzn0g04.png')
+        .onCompressedTextualData(evt => { data = evt.compressedTextualData })
+        .start();
+    
+    expect(data.keyword).equals('Disclaimer');
+    expect(data.compressionMethod).equals(0);
+    expect(data.compressedText.byteLength).equals(17);
   });
 });
