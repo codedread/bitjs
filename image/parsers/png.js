@@ -22,6 +22,7 @@ const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 export const PngParseEventType = {
   IHDR: 'image_header',
   gAMA: 'image_gamma',
+  sBIT: 'significant_bits',
   PLTE: 'palette',
   IDAT: 'image_data',
 };
@@ -67,6 +68,24 @@ export class PngImageGammaEvent extends Event {
     super(PngParseEventType.gAMA);
     /** @type {number} */
     this.gamma = gamma;
+  }
+}
+
+/**
+ * @typedef PngSignificantBits
+ * @property {number=} significant_greyscale Populated for color types 0, 4.
+ * @property {number=} significant_red Populated for color types 2, 3, 6.
+ * @property {number=} significant_green Populated for color types 2, 3, 6.
+ * @property {number=} significant_blue Populated for color types 2, 3, 6.
+ * @property {number=} significant_alpha Populated for color types 4, 6.
+ */
+
+export class PngSignificantBitsEvent extends Event {
+  /** @param {PngSignificantBits} */
+  constructor(sigBits) {
+    super(PngParseEventType.sBIT);
+    /** @type {PngSignificantBits} */
+    this.sigBits = sigBits;
   }
 }
 
@@ -154,6 +173,16 @@ export class PngParser extends EventTarget {
   }
 
   /**
+   * Type-safe way to bind a listener for a PngSignificantBitsEvent.
+   * @param {function(PngSignificantBitsEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onSignificantBits(listener) {
+    super.addEventListener(PngParseEventType.sBIT, listener);
+    return this;
+  }
+
+  /**
    * Type-safe way to bind a listener for a PngPaletteEvent.
    * @param {function(PngPaletteEvent): void} listener
    * @returns {PngParser} for chaining
@@ -231,6 +260,37 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngImageGammaEvent(chStream.readNumber(4)));
           break;
 
+        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11sBIT
+        case 'sBIT':
+          if (this.colorType === undefined) throw `sBIT before IHDR`;
+          /** @type {PngSignificantBits} */
+          const sigBits = {};
+
+          const badLengthErr = `Weird sBIT length for color type ${this.colorType}: ${length}`;
+          if (this.colorType === PngColorType.GREYSCALE) {
+            if (length !== 1) throw badLengthErr;
+            sigBits.significant_greyscale = chStream.readNumber(1);
+          } else if (this.colorType === PngColorType.TRUE_COLOR ||
+              this.colorType === PngColorType.INDEXED_COLOR) {
+            if (length !== 3) throw badLengthErr;
+            sigBits.significant_red = chStream.readNumber(1);
+            sigBits.significant_green = chStream.readNumber(1);
+            sigBits.significant_blue = chStream.readNumber(1);
+          } else if (this.colorType === PngColorType.GREYSCALE_WITH_ALPHA) {
+            if (length !== 2) throw badLengthErr;
+            sigBits.significant_greyscale = chStream.readNumber(1);
+            sigBits.significant_alpha = chStream.readNumber(1);
+          } else if (this.colorType === PngColorType.TRUE_COLOR_WITH_ALPHA) {
+            if (length !== 4) throw badLengthErr;
+            sigBits.significant_red = chStream.readNumber(1);
+            sigBits.significant_green = chStream.readNumber(1);
+            sigBits.significant_blue = chStream.readNumber(1);
+            sigBits.significant_alpha = chStream.readNumber(1);
+          }
+
+          this.dispatchEvent(new PngSignificantBitsEvent(sigBits));
+          break;
+
         // https://www.w3.org/TR/2003/REC-PNG-20031110/#11PLTE
         case 'PLTE':
           if (this.colorType === undefined) throw `PLTE before IHDR`;
@@ -300,8 +360,6 @@ basn0g02.png	bgbn4a08.png	cs5n3p08.png	f03n0g08.png	g10n2c08.png	ps2n2c16.png	s0
 
 async function main() {
   for (const fileName of FILES) {
-    if (!fileName.includes('3p')) continue;
-
     console.log(`file: ${fileName}`);
     const nodeBuf = fs.readFileSync(fileName);
     const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
@@ -311,6 +369,9 @@ async function main() {
     });
     parser.onGamma(evt => {
       // console.dir(evt.imageGamma);
+    });
+    parser.onSignificantBits(evt => {
+      console.dir(evt.sigBits);
     });
     parser.onPalette(evt => {
       // console.dir(evt.palette);

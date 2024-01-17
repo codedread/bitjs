@@ -3,10 +3,11 @@ import 'mocha';
 import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
 
-/** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
+/** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
+/** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
 
 function getPngParser(fileName) {
   const nodeBuf = fs.readFileSync(fileName);
@@ -55,6 +56,19 @@ describe('bitjs.image.parsers.PngParser', () => {
         .onGamma(evt => gamma = evt.gamma)
         .start();
     expect(gamma).equals(55000);
+  });
+
+  it('extracts sBIT', async () => {
+    /** @type {PngSignificantBits} */
+    let sBits;
+    await getPngParser('tests/image-testfiles/cs3n2c16.png')
+        .onSignificantBits(evt => sBits = evt.sigBits)
+        .start();
+    expect(sBits.significant_red).equals(13);
+    expect(sBits.significant_green).equals(13);
+    expect(sBits.significant_blue).equals(13);
+    expect(sBits.significant_greyscale).equals(undefined);
+    expect(sBits.significant_alpha).equals(undefined);
   });
 
   it('extracts PLTE', async () => {
