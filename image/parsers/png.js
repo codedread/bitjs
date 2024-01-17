@@ -11,10 +11,10 @@
 import * as fs from 'node:fs'; // TODO: Remove.
 import { ByteStream } from '../../io/bytestream.js';
 
-// https://www.w3.org/TR/2003/REC-PNG-20031110
+// https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks bKGD, cHRM, hIST, iTXt, pHYs, sPLT, tEXt, tIME, zTXt.
+// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tEXt, tIME, zTXt.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -25,6 +25,7 @@ export const PngParseEventType = {
   IHDR: 'image_header',
   gAMA: 'image_gamma',
   sBIT: 'significant_bits',
+  cHRM: 'chromaticities_white_point',
   PLTE: 'palette',
   tRNS: 'transparency',
   IDAT: 'image_data',
@@ -93,6 +94,27 @@ export class PngSignificantBitsEvent extends Event {
 }
 
 /**
+ * @typedef PngChromaticies
+ * @property {number} whitePointX
+ * @property {number} whitePointY
+ * @property {number} redX
+ * @property {number} redY
+ * @property {number} greenX
+ * @property {number} greenY
+ * @property {number} blueX
+ * @property {number} blueY
+ */
+
+export class PngChromaticitiesEvent extends Event {
+  /** @param {PngChromaticies} chromaticities */
+  constructor(chromaticities) {
+    super(PngParseEventType.cHRM);
+    /** @type {PngChromaticies} */
+    this.chromaticities = chromaticities;
+  }
+}
+
+/**
  * @typedef PngColor
  * @property {number} red
  * @property {number} green
@@ -105,7 +127,7 @@ export class PngSignificantBitsEvent extends Event {
  */
 
 export class PngPaletteEvent extends Event {
-  /** @param {PngPalette} */
+  /** @param {PngPalette} palette */
   constructor(palette) {
     super(PngParseEventType.PLTE);
     /** @type {PngPalette} */
@@ -123,7 +145,7 @@ export class PngPaletteEvent extends Event {
  */
 
 export class PngTransparencyEvent extends Event {
-  /** @param {PngTransparency} */
+  /** @param {PngTransparency} transparency */
   constructor(transparency) {
     super(PngParseEventType.tRNS);
     /** @type {PngTransparency} */
@@ -137,7 +159,7 @@ export class PngTransparencyEvent extends Event {
  */
 
 export class PngImageDataEvent extends Event {
-  /** @param {PngImageData} */
+  /** @param {PngImageData} data */
   constructor(data) {
     super(PngParseEventType.IDAT);
     /** @type {PngImageData} */
@@ -211,6 +233,16 @@ export class PngParser extends EventTarget {
   }
 
   /**
+   * Type-safe way to bind a listener for a PngChromaticiesEvent.
+   * @param {function(PngChromaticiesEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onChromaticities(listener) {
+    super.addEventListener(PngParseEventType.cHRM, listener);
+    return this;
+  }
+
+  /**
    * Type-safe way to bind a listener for a PngPaletteEvent.
    * @param {function(PngPaletteEvent): void} listener
    * @returns {PngParser} for chaining
@@ -261,7 +293,7 @@ export class PngParser extends EventTarget {
 
       const chStream = chunk.chunkStream;
       switch (chunk.chunkType) {
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11IHDR
+        // https://www.w3.org/TR/png-3/#11IHDR
         case 'IHDR':
           if (this.colorType) throw `Found multiple IHDR chunks`;
           /** @type {PngImageHeader} */
@@ -292,13 +324,13 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngImageHeaderEvent(header));
           break;
 
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11gAMA
+        // https://www.w3.org/TR/png-3/#11gAMA
         case 'gAMA':
           if (length !== 4) throw `Bad length for gAMA: ${length}`;
           this.dispatchEvent(new PngImageGammaEvent(chStream.readNumber(4)));
           break;
 
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11sBIT
+        // https://www.w3.org/TR/png-3/#11sBIT
         case 'sBIT':
           if (this.colorType === undefined) throw `sBIT before IHDR`;
           /** @type {PngSignificantBits} */
@@ -329,7 +361,25 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngSignificantBitsEvent(sigBits));
           break;
 
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11PLTE
+        // https://www.w3.org/TR/png-3/#11cHRM
+        case 'cHRM':
+          if (length !== 32) throw `Weird length for cHRM chunk: ${length}`;
+
+          /** @type {PngChromaticies} */
+          const chromaticities = {
+            whitePointX: chStream.readNumber(4),
+            whitePointY: chStream.readNumber(4),
+            redX: chStream.readNumber(4),
+            redY: chStream.readNumber(4),
+            greenX: chStream.readNumber(4),
+            greenY: chStream.readNumber(4),
+            blueX: chStream.readNumber(4),
+            blueY: chStream.readNumber(4),
+          };
+          this.dispatchEvent(new PngChromaticitiesEvent(chromaticities));
+          break;
+
+        // https://www.w3.org/TR/png-3/#11PLTE
         case 'PLTE':
           if (this.colorType === undefined) throw `PLTE before IHDR`;
           if (this.colorType === PngColorType.GREYSCALE ||
@@ -354,7 +404,7 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngPaletteEvent(this.palette));
           break;
 
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11tRNS
+        // https://www.w3.org/TR/png-3/#11tRNS
         case 'tRNS':
           if (this.colorType === undefined) throw `tRNS before IHDR`;
           if (this.colorType === PngColorType.GREYSCALE_WITH_ALPHA ||
@@ -388,7 +438,7 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngTransparencyEvent(transparency));
           break;
 
-        // https://www.w3.org/TR/2003/REC-PNG-20031110/#11IDAT
+        // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
           const data = {
@@ -444,6 +494,9 @@ async function main() {
     });
     parser.onSignificantBits(evt => {
       // console.dir(evt.sigBits);
+    });
+    parser.onChromaticities(evt => {
+      // console.dir(evt.chromaticities);
     });
     parser.onPalette(evt => {
       // console.dir(evt.palette);

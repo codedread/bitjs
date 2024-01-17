@@ -3,6 +3,7 @@ import 'mocha';
 import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
 
+/** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
@@ -70,6 +71,22 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(sBits.significant_blue).equals(13);
     expect(sBits.significant_greyscale).equals(undefined);
     expect(sBits.significant_alpha).equals(undefined);
+  });
+
+  it('extracts cHRM', async () => {
+    /** @type {PngChromaticies} */
+    let chromaticities;
+    await getPngParser('tests/image-testfiles/ccwn2c08.png')
+        .onChromaticities(evt => chromaticities = evt.chromaticities)
+        .start();
+    expect(chromaticities.whitePointX).equals(31270);
+    expect(chromaticities.whitePointY).equals(32900);
+    expect(chromaticities.redX).equals(64000);
+    expect(chromaticities.redY).equals(33000);
+    expect(chromaticities.greenX).equals(30000);
+    expect(chromaticities.greenY).equals(60000);
+    expect(chromaticities.blueX).equals(15000);
+    expect(chromaticities.blueY).equals(6000);
   });
 
   it('extracts PLTE', async () => {
