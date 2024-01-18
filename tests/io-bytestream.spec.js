@@ -214,6 +214,9 @@ describe('bitjs.io.ByteStream', () => {
 
     const str = stream.readString(12);
     expect(str).equals('ABCDEFGHIJKL');
+
+    const str2 = stream.readString(0);
+    expect(str2).equals('');
   });
 
   describe('skip()', () => {

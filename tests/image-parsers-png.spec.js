@@ -8,6 +8,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
+/** @typedef {import('../image/parsers/png.js').PngIntlTextualData} PngIntlTextualData */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
 /** @typedef {import('../image/parsers/png.js').PngTextualData} PngTextualData */
@@ -184,5 +185,20 @@ describe('bitjs.image.parsers.PngParser', () => {
     const decompressedStream = blob.stream().pipeThrough(new DecompressionStream('deflate'));
     const decompressedText = await new Response(decompressedStream).text();
     expect(decompressedText).equals('Freeware.');
+  });
+
+  it('extracts iTXt', async () => {
+    /** @type {PngIntlTextualData[]} */
+    let data = [];
+
+    await getPngParser('tests/image-testfiles/ctjn0g04.png')
+        .onIntlTextualData(evt => { data.push(evt.intlTextualdata) })
+        .start();
+
+    expect(data.length).equals(6);
+    expect(data[1].keyword).equals('Author');
+    expect(data[1].compressionFlag).equals(0)
+    expect(data[5].keyword).equals('Disclaimer');
+    // TODO: Test this better!
   });
 });

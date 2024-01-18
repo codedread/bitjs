@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks bKGD, eXIf, hIST, iTXt, pHYs, sPLT, tIME.
+// TODO: Ancillary chunks bKGD, eXIf, hIST, pHYs, sPLT, tIME.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -30,6 +30,7 @@ export const PngParseEventType = {
   // Ancillary chunks.
   cHRM: 'chromaticities_white_point',
   gAMA: 'image_gamma',
+  iTXt: 'intl_text_data',
   sBIT: 'significant_bits',
   tEXt: 'textual_data',
   tRNS: 'transparency',
@@ -204,6 +205,25 @@ export class PngCompressedTextualDataEvent extends Event {
 }
 
 /**
+ * @typedef PngIntlTextualData
+ * @property {string} keyword
+ * @property {number} compressionFlag 0 for uncompressed, 1 for compressed.
+ * @property {number} compressionMethod 0 means zlib defalt when compressionFlag is 1.
+ * @property {string=} languageTag
+ * @property {string=} translatedKeyword
+ * @property {Uint8Array} text The raw UTF-8 text (may be compressed).
+ */
+
+export class PngIntlTextualDataEvent extends Event {
+  /** @param {PngIntlTextualData} intlTextualdata */
+  constructor(intlTextualdata) {
+    super(PngParseEventType.iTXt);
+    /** @type {PngIntlTextualData} */
+    this.intlTextualdata = intlTextualdata;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -285,6 +305,16 @@ export class PngParser extends EventTarget {
    */
   onImageHeader(listener) {
     super.addEventListener(PngParseEventType.IHDR, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngIntlTextualDataEvent.
+   * @param {function(PngIntlTextualDataEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onIntlTextualData(listener) {
+    super.addEventListener(PngParseEventType.iTXt, listener);
     return this;
   }
 
@@ -520,6 +550,29 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngCompressedTextualDataEvent(compressedTextualData));
           break;
 
+        // https://www.w3.org/TR/png-3/#11iTXt
+        case 'iTXt':
+          const intlByteArr = chStream.peekBytes(length);
+          const intlNull0 = intlByteArr.indexOf(0);
+          const intlNull1 = intlByteArr.indexOf(0, intlNull0 + 1);
+          const intlNull2 = intlByteArr.indexOf(0, intlNull1 + 1);
+          if (intlNull0 === -1) throw `iTXt: Did not have one null`;
+          if (intlNull1 === -1) throw `iTXt: Did not have two nulls`;
+          if (intlNull2 === -1) throw `iTXt: Did not have three nulls`;
+
+          /** @type {PngIntlTextualData} */
+          const intlTextData = {
+            keyword: chStream.readString(intlNull0),
+            compressionFlag: chStream.skip(1).readNumber(1),
+            compressionMethod: chStream.readNumber(1),
+            languageTag: (intlNull1 - intlNull0 > 1) ? chStream.readString(intlNull1 - intlNull0 - 1) : undefined,
+            translatedKeyword: (intlNull2 - intlNull1 > 1) ? chStream.skip(1).readString(intlNull2 - intlNull1 - 1) : undefined,
+            text: chStream.skip(1).readBytes(length - intlNull2 - 1),
+          };
+
+          this.dispatchEvent(new PngIntlTextualDataEvent(intlTextData));
+          break;
+
         // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
@@ -594,6 +647,9 @@ async function main() {
     });
     parser.onCompressedTextualData(evt => {
       // console.dir(evt.compressedTextualData);
+    });
+    parser.onIntlTextualData(evt => {
+      // console.dir(evt.intlTextualdata);
     });
 
     try {
