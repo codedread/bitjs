@@ -179,5 +179,10 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(data.keyword).equals('Disclaimer');
     expect(data.compressionMethod).equals(0);
     expect(data.compressedText.byteLength).equals(17);
+
+    const blob = new Blob([data.compressedText.buffer]);
+    const decompressedStream = blob.stream().pipeThrough(new DecompressionStream('deflate'));
+    const decompressedText = await new Response(decompressedStream).text();
+    expect(decompressedText).equals('Freeware.');
   });
 });
