@@ -3,6 +3,7 @@ import 'mocha';
 import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
 
+/** @typedef {import('../image/parsers/png.js').PngBackgroundColor} PngBackgroundColor */
 /** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
 /** @typedef {import('../image/parsers/png.js').PngCompressedTextualData} PngCompressedTextualData */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
@@ -200,5 +201,36 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(data[1].compressionFlag).equals(0)
     expect(data[5].keyword).equals('Disclaimer');
     // TODO: Test this better!
+  });
+
+  describe('bKGD', () => {
+    it('greyscale', async () => {
+      /** @type {PngBackgroundColor} */
+      let bc;
+      await getPngParser('tests/image-testfiles/bggn4a16.png')
+          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .start();
+      expect(bc.greyscale).equals(43908);
+    });
+
+    it('rgb', async () => {
+      /** @type {PngBackgroundColor} */
+      let bc;
+      await getPngParser('tests/image-testfiles/tbrn2c08.png')
+          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .start();
+      expect(bc.red).equals(255);
+      expect(bc.green).equals(0);
+      expect(bc.blue).equals(0);
+    });
+
+    it('paletteIndex', async () => {
+      /** @type {PngBackgroundColor} */
+      let bc;
+      await getPngParser('tests/image-testfiles/tbbn3p08.png')
+          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .start();
+      expect(bc.paletteIndex).equals(245);
+    });
   });
 });

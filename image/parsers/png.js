@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks bKGD, eXIf, hIST, pHYs, sPLT, tIME.
+// TODO: Ancillary chunks eXIf, hIST, pHYs, sPLT, tIME.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -28,6 +28,7 @@ export const PngParseEventType = {
   PLTE: 'palette',
 
   // Ancillary chunks.
+  bKGD: 'background_color',
   cHRM: 'chromaticities_white_point',
   gAMA: 'image_gamma',
   iTXt: 'intl_text_data',
@@ -224,6 +225,24 @@ export class PngIntlTextualDataEvent extends Event {
 }
 
 /**
+ * @typedef PngBackgroundColor
+ * @property {number=} greyscale Only for color types 0 and 4.
+ * @property {number=} red Only for color types 2 and 6.
+ * @property {number=} green Only for color types 2 and 6.
+ * @property {number=} blue Only for color types 2 and 6.
+ * @property {number=} paletteIndex Only for color type 3.
+ */
+
+export class PngBackgroundColorEvent extends Event {
+  /** @param {PngBackgroundColor} backgroundColor */
+  constructor(backgroundColor) {
+    super(PngParseEventType.bKGD);
+    /** @type {PngBackgroundColor} */
+    this.backgroundColor = backgroundColor;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -256,6 +275,16 @@ export class PngParser extends EventTarget {
     super();
     this.bstream = new ByteStream(ab);
     this.bstream.setBigEndian();
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngBackgroundColorEvent.
+   * @param {function(PngBackgroundColorEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onBackgroundColor(listener) {
+    super.addEventListener(PngParseEventType.bKGD, listener);
+    return this;
   }
 
   /**
@@ -414,6 +443,28 @@ export class PngParser extends EventTarget {
         case 'gAMA':
           if (length !== 4) throw `Bad length for gAMA: ${length}`;
           this.dispatchEvent(new PngImageGammaEvent(chStream.readNumber(4)));
+          break;
+
+        // https://www.w3.org/TR/png-3/#11bKGD
+        case 'bKGD':
+          if (this.colorType === undefined) throw `bKGD before IHDR`;
+          if (this.colorType === PngColorType.INDEXED_COLOR && !this.palette) throw `bKGD before PLTE`;
+          /** @type {PngBackgroundColor} */
+          const bkgdColor = {};
+
+          if (this.colorType === PngColorType.GREYSCALE ||
+              this.colorType === PngColorType.GREYSCALE_WITH_ALPHA) {
+            bkgdColor.greyscale = chStream.readNumber(2);
+          } else if (this.colorType === PngColorType.TRUE_COLOR ||
+              this.colorType === PngColorType.TRUE_COLOR_WITH_ALPHA) {
+            bkgdColor.red = chStream.readNumber(2);
+            bkgdColor.green = chStream.readNumber(2);
+            bkgdColor.blue = chStream.readNumber(2);
+          } else if (this.colorType === PngColorType.INDEXED_COLOR) {
+            bkgdColor.paletteIndex = chStream.readNumber(1);
+          }
+
+          this.dispatchEvent(new PngBackgroundColorEvent(bkgdColor));
           break;
 
         // https://www.w3.org/TR/png-3/#11sBIT
@@ -651,6 +702,9 @@ async function main() {
     parser.onIntlTextualData(evt => {
       // console.dir(evt.intlTextualdata);
     });
+    parser.onBackgroundColor(evt => {
+      // console.dir(evt.backgroundColor);
+    })
 
     try {
       await parser.start();
