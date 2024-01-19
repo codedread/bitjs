@@ -1,3 +1,13 @@
+/*
+ * exif.js
+ *
+ * Parse EXIF.
+ *
+ * Licensed under the MIT License
+ *
+ * Copyright(c) 2024 Google Inc.
+ */
+
 import { ByteStream } from '../../io/bytestream.js';
 
 /** @enum {number} */
