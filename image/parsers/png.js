@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks eXIf, hIST, pHYs, sPLT.
+// TODO: Ancillary chunks eXIf, hIST, sPLT.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -32,6 +32,7 @@ export const PngParseEventType = {
   cHRM: 'chromaticities_white_point',
   gAMA: 'image_gamma',
   iTXt: 'intl_text_data',
+  pHYs: 'physical_pixel_dims',
   sBIT: 'significant_bits',
   tEXt: 'textual_data',
   tIME: 'last_mod_time',
@@ -262,6 +263,27 @@ export class PngLastModTimeEvent extends Event {
   }
 }
 
+export const PngUnitSpecifier = {
+  UNKNOWN: 0,
+  METRE: 1,
+};
+
+/**
+ * @typedef PngPhysicalPixelDimensions
+ * @property {number} pixelPerUnitX
+ * @property {number} pixelPerUnitY
+ * @property {PngUnitSpecifier} unitSpecifier
+ */
+
+export class PngPhysicalPixelDimensionsEvent extends Event {
+  /** @param {PngPhysicalPixelDimensions} physicalPixelDimensions */
+  constructor(physicalPixelDimensions) {
+    super(PngParseEventType.pHYs);
+    /** @type {PngPhysicalPixelDimensions} */
+    this.physicalPixelDimensions = physicalPixelDimensions;
+  }
+}
+
 /**
  * @typedef PngChunk Internal use only.
  * @property {number} length
@@ -368,8 +390,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngLastModTime.
-   * @param {function(PngLastModTime): void} listener
+   * Type-safe way to bind a listener for a PngLastModTimeEvent.
+   * @param {function(PngLastModTimeEvent): void} listener
    * @returns {PngParser} for chaining
    */
   onLastModTime(listener) {
@@ -384,6 +406,16 @@ export class PngParser extends EventTarget {
    */
   onPalette(listener) {
     super.addEventListener(PngParseEventType.PLTE, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngPhysicalPixelDimensionsEvent.
+   * @param {function(PngPhysicalPixelDimensionsEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onPhysicalPixelDimensions(listener) {
+    super.addEventListener(PngParseEventType.pHYs, listener);
     return this;
   }
 
@@ -571,6 +603,21 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngPaletteEvent(this.palette));
           break;
 
+        // https://www.w3.org/TR/png-3/#11pHYs
+        case 'pHYs':
+          /** @type {physicalPixelDimensions} */
+          const pixelDims = {
+            pixelPerUnitX: chStream.readNumber(4),
+            pixelPerUnitY: chStream.readNumber(4),
+            unitSpecifier: chStream.readNumber(1),
+          };
+          if (!Object.values(PngUnitSpecifier).includes(pixelDims.unitSpecifier)) {
+            throw `Bad pHYs unit specifier: ${pixelDims.unitSpecifier}`;
+          }
+
+          this.dispatchEvent(new PngPhysicalPixelDimensionsEvent(pixelDims));
+          break;
+
         // https://www.w3.org/TR/png-3/#11tEXt
         case 'tEXt':
           const byteArr = chStream.peekBytes(length);
@@ -750,7 +797,10 @@ async function main() {
       // console.dir(evt.backgroundColor);
     });
     parser.onLastModTime(evt => {
-      console.dir(evt.lastModTime);
+      // console.dir(evt.lastModTime);
+    });
+    parser.onPhysicalPixelDimensions(evt => {
+      // console.dir(evt.physicalPixelDimensions);
     });
 
     try {

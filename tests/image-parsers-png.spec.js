@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import 'mocha';
 import { expect } from 'chai';
-import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/png.js';
+import { PngColorType, PngInterlaceMethod, PngUnitSpecifier, PngParser } from '../image/parsers/png.js';
 
 /** @typedef {import('../image/parsers/png.js').PngBackgroundColor} PngBackgroundColor */
 /** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
@@ -12,6 +12,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 /** @typedef {import('../image/parsers/png.js').PngIntlTextualData} PngIntlTextualData */
 /** @typedef {import('../image/parsers/png.js').PngLastModTime} PngLastModTime */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
+/** @typedef {import('../image/parsers/png.js').PngPhysicalPixelDimensions} PngPhysicalPixelDimensions */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
 /** @typedef {import('../image/parsers/png.js').PngTextualData} PngTextualData */
 /** @typedef {import('../image/parsers/png.js').PngTransparency} PngTransparency */
@@ -247,5 +248,16 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(lastModTime.hour).equals(23);
     expect(lastModTime.minute).equals(59);
     expect(lastModTime.second).equals(59);
+  });
+
+  it('extracts pHYs', async () => {
+    /** @type {PngPhysicalPixelDimensions} */
+    let pixelDims;
+    await getPngParser('tests/image-testfiles/cdun2c08.png')
+        .onPhysicalPixelDimensions(evt => { pixelDims = evt.physicalPixelDimensions })
+        .start();
+    expect(pixelDims.pixelPerUnitX).equals(1000);
+    expect(pixelDims.pixelPerUnitY).equals(1000);
+    expect(pixelDims.unitSpecifier).equals(PngUnitSpecifier.METRE);
   });
 });
