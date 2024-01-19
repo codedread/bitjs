@@ -13,7 +13,7 @@
  * @template T
  * @param {string} type The event type.
  * @param {T} data The event data.
- * @return {CustomEvent<T>} The new event.
+ * @returns {CustomEvent<T>} The new event.
  */
 export function createEvent(type, data) {
   return new CustomEvent(type, { detail: data });
