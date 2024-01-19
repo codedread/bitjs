@@ -14,7 +14,7 @@ Includes:
   * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381
     MIME type string
   * bitjs/file: Detect the type of file from its binary signature.
-  * bitjs/image: Parsing GIF, JPEG. Conversion of WebP to PNG or JPEG.
+  * bitjs/image: Parsing GIF, JPEG, PNG. Conversion of WebP to PNG or JPEG.
   * bitjs/io: Low-level classes for interpreting binary data (BitStream
     ByteStream).  For example, reading or peeking at N bits at a time.
 
@@ -107,10 +107,10 @@ const mimeType = findMimeType(someArrayBuffer);
 
 ### bitjs.image
 
-This package includes code for dealing with binary images.  It includes general event-based parsers
-for images (GIF, JPEG, PNG). It also includes a module for converting WebP images
-into alternative raster graphics formats (PNG/JPG). This latter module is deprecated, now that WebP
-images are well-supported in all browsers.
+This package includes code for dealing with binary images.  It includes low-level, event-based
+parsers for GIF, JPEG, and PNG images. It also includes a module for converting WebP images into
+alternative raster graphics formats (PNG/JPG), though this latter module is deprecated, now that
+WebP images are well-supported in all browsers.
 
 #### GIF Parser
 ```javascript
@@ -134,10 +134,8 @@ parser.start();
 import { JpegParser } from './bitjs/image/parsers/jpeg.js'
 import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
 
-const parser = new JpegParser(someArrayBuffer);
-parser.onApp1Exif(evt => {
-  console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
-});
+const parser = new JpegParser(someArrayBuffer)
+    .onApp1Exif(evt => console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue));
 await parser.start();
 ```
 
@@ -147,9 +145,8 @@ import { PngParser } from './bitjs/image/parsers/png.js'
 import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
 
 const parser = new PngParser(someArrayBuffer);
-parser.onExifProfile(evt => {
-  console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
-});
+    .onExifProfile(evt => console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue))
+    .onTextualData(evt => console.dir(evt.detail));
 await parser.start();
 ```
 
