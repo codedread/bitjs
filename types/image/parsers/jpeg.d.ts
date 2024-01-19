@@ -82,11 +82,6 @@ export namespace JpegComponentType {
  * @property {number} successiveApproximationBitPosition
  * @property {Uint8Array} rawImageData
  */
-export class JpegStartOfScanEvent extends Event {
-    constructor(sos: any);
-    /** @type {JpegStartOfScan} */
-    sos: JpegStartOfScan;
-}
 export class JpegParser extends EventTarget {
     /** @param {ArrayBuffer} ab */
     constructor(ab: ArrayBuffer);

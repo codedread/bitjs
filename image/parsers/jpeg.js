@@ -159,14 +159,6 @@ export const JpegComponentType = {
  * @property {Uint8Array} rawImageData
  */
 
-export class JpegStartOfScanEvent extends Event {
-  constructor(sos) {
-    super(JpegParseEventType.START_OF_SCAN);
-    /** @type {JpegStartOfScan} */
-    this.sos = sos;
-  }
-}
-
 export class JpegParser extends EventTarget {
   /**
    * @type {ByteStream}

@@ -10,6 +10,7 @@
 
 import { ByteStream } from '../../io/bytestream.js';
 import { getExifProfile } from './exif.js';
+import { createEvent } from './parsers.js';
 
 /** @typedef {import('./exif.js').ExifValue} ExifValue */
 
@@ -69,24 +70,6 @@ export const PngInterlaceMethod = {
  * @property {number} interlaceMethod
  */
 
-export class PngImageHeaderEvent extends Event {
-  /** @param {PngImageHeader} */
-  constructor(header) {
-    super(PngParseEventType.IHDR);
-    /** @type {PngImageHeader} */
-    this.imageHeader = header;
-  }
-}
-
-export class PngImageGammaEvent extends Event {
-  /** @param {number} */
-  constructor(gamma) {
-    super(PngParseEventType.gAMA);
-    /** @type {number} */
-    this.gamma = gamma;
-  }
-}
-
 /**
  * @typedef PngSignificantBits
  * @property {number=} significant_greyscale Populated for color types 0, 4.
@@ -96,17 +79,8 @@ export class PngImageGammaEvent extends Event {
  * @property {number=} significant_alpha Populated for color types 4, 6.
  */
 
-export class PngSignificantBitsEvent extends Event {
-  /** @param {PngSignificantBits} */
-  constructor(sigBits) {
-    super(PngParseEventType.sBIT);
-    /** @type {PngSignificantBits} */
-    this.sigBits = sigBits;
-  }
-}
-
 /**
- * @typedef PngChromaticies
+ * @typedef PngChromaticities
  * @property {number} whitePointX
  * @property {number} whitePointY
  * @property {number} redX
@@ -116,15 +90,6 @@ export class PngSignificantBitsEvent extends Event {
  * @property {number} blueX
  * @property {number} blueY
  */
-
-export class PngChromaticitiesEvent extends Event {
-  /** @param {PngChromaticies} chromaticities */
-  constructor(chromaticities) {
-    super(PngParseEventType.cHRM);
-    /** @type {PngChromaticies} */
-    this.chromaticities = chromaticities;
-  }
-}
 
 /**
  * @typedef PngColor
@@ -138,15 +103,6 @@ export class PngChromaticitiesEvent extends Event {
  * @property {PngColor[]} entries
  */
 
-export class PngPaletteEvent extends Event {
-  /** @param {PngPalette} palette */
-  constructor(palette) {
-    super(PngParseEventType.PLTE);
-    /** @type {PngPalette} */
-    this.palette = palette;
-  }
-}
-
 /**
  * @typedef PngTransparency
  * @property {number=} greySampleValue Populated for color type 0.
@@ -156,28 +112,10 @@ export class PngPaletteEvent extends Event {
  * @property {number[]=} alphaPalette Populated for color type 3.
  */
 
-export class PngTransparencyEvent extends Event {
-  /** @param {PngTransparency} transparency */
-  constructor(transparency) {
-    super(PngParseEventType.tRNS);
-    /** @type {PngTransparency} */
-    this.transparency = transparency;
-  }
-}
-
 /**
  * @typedef PngImageData
  * @property {Uint8Array} rawImageData
  */
-
-export class PngImageDataEvent extends Event {
-  /** @param {PngImageData} data */
-  constructor(data) {
-    super(PngParseEventType.IDAT);
-    /** @type {PngImageData} */
-    this.data = data;
-  }
-}
 
 /**
  * @typedef PngTextualData
@@ -185,30 +123,12 @@ export class PngImageDataEvent extends Event {
  * @property {string=} textString
  */
 
-export class PngTextualDataEvent extends Event {
-  /** @param {PngTextualData} textualData */
-  constructor(textualData) {
-    super(PngParseEventType.tEXt);
-    /** @type {PngTextualData} */
-    this.textualData = textualData;
-  }
-}
-
 /**
  * @typedef PngCompressedTextualData
  * @property {string} keyword
  * @property {number} compressionMethod Only value supported is 0 for deflate compression.
  * @property {Uint8Array=} compressedText
  */
-
-export class PngCompressedTextualDataEvent extends Event {
-  /** @param {PngCompressedTextualData} compressedTextualData */
-  constructor(compressedTextualData) {
-    super(PngParseEventType.zTXt);
-    /** @type {PngCompressedTextualData} */
-    this.compressedTextualData = compressedTextualData;
-  }
-}
 
 /**
  * @typedef PngIntlTextualData
@@ -220,15 +140,6 @@ export class PngCompressedTextualDataEvent extends Event {
  * @property {Uint8Array} text The raw UTF-8 text (may be compressed).
  */
 
-export class PngIntlTextualDataEvent extends Event {
-  /** @param {PngIntlTextualData} intlTextualdata */
-  constructor(intlTextualdata) {
-    super(PngParseEventType.iTXt);
-    /** @type {PngIntlTextualData} */
-    this.intlTextualdata = intlTextualdata;
-  }
-}
-
 /**
  * @typedef PngBackgroundColor
  * @property {number=} greyscale Only for color types 0 and 4.
@@ -237,15 +148,6 @@ export class PngIntlTextualDataEvent extends Event {
  * @property {number=} blue Only for color types 2 and 6.
  * @property {number=} paletteIndex Only for color type 3.
  */
-
-export class PngBackgroundColorEvent extends Event {
-  /** @param {PngBackgroundColor} backgroundColor */
-  constructor(backgroundColor) {
-    super(PngParseEventType.bKGD);
-    /** @type {PngBackgroundColor} */
-    this.backgroundColor = backgroundColor;
-  }
-}
 
 /**
  * @typedef PngLastModTime
@@ -256,15 +158,6 @@ export class PngBackgroundColorEvent extends Event {
  * @property {number} minute Zero-based. Value from 0-59.
  * @property {number} second Zero-based. Value from 0-60 to allow for leap-seconds.
  */
-
-export class PngLastModTimeEvent extends Event {
-  /** @param {PngLastModTime} lastModTime */
-  constructor(lastModTime) {
-    super(PngParseEventType.tIME);
-    /** @type {PngLastModTime} */
-    this.lastModTime = lastModTime;
-  }
-}
 
 export const PngUnitSpecifier = {
   UNKNOWN: 0,
@@ -278,39 +171,12 @@ export const PngUnitSpecifier = {
  * @property {PngUnitSpecifier} unitSpecifier
  */
 
-export class PngPhysicalPixelDimensionsEvent extends Event {
-  /** @param {PngPhysicalPixelDimensions} physicalPixelDimensions */
-  constructor(physicalPixelDimensions) {
-    super(PngParseEventType.pHYs);
-    /** @type {PngPhysicalPixelDimensions} */
-    this.physicalPixelDimensions = physicalPixelDimensions;
-  }
-}
-
 /** @typedef {Map<number, ExifValue>} PngExifProfile */
-
-export class PngExifProfileEvent extends Event {
-  /** @param {PngExifProfile} exifProfile */
-  constructor(exifProfile) {
-    super(PngParseEventType.eXIf);
-    /** @type {PngExifProfile} */
-    this.exifProfile = exifProfile;
-  }
-}
 
 /**
  * @typedef PngHistogram
  * @property {number[]} frequencies The # of frequencies matches the # of palette entries.
  */
-
-export class PngHistogramEvent extends Event {
-  /** @param {PngHistogram} histogram */
-  constructor(histogram) {
-    super(PngParseEventType.hIST);
-    /** @type {PngHistogram} */
-    this.histogram = histogram;
-  }
-}
 
 /**
  * @typedef PngSuggestedPaletteEntry
@@ -327,15 +193,6 @@ export class PngHistogramEvent extends Event {
  * @property {number} sampleDepth Either 8 or 16.
  * @property {PngSuggestedPaletteEntry[]} entries
  */
-
-export class PngSuggestedPaletteEvent extends Event {
-  /** @param {PngSuggestedPalette} suggestedPalette */
-  constructor(suggestedPalette) {
-    super(PngParseEventType.sPLT);
-    /** @type {PngSuggestedPalette} */
-    this.suggestedPalette = suggestedPalette;
-  }
-}
 
 /**
  * @typedef PngChunk Internal use only.
@@ -372,8 +229,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngBackgroundColorEvent.
-   * @param {function(PngBackgroundColorEvent): void} listener
+   * Type-safe way to bind a listener for a PngBackgroundColor.
+   * @param {function(CustomEvent<PngBackgroundColor>): void} listener
    * @returns {PngParser} for chaining
    */
   onBackgroundColor(listener) {
@@ -382,8 +239,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngChromaticiesEvent.
-   * @param {function(PngChromaticiesEvent): void} listener
+   * Type-safe way to bind a listener for a PngChromaticities.
+   * @param {function(CustomEvent<PngChromaticities>): void} listener
    * @returns {PngParser} for chaining
    */
   onChromaticities(listener) {
@@ -392,8 +249,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngCompressedTextualDataEvent.
-   * @param {function(PngCompressedTextualDataEvent): void} listener
+   * Type-safe way to bind a listener for a PngCompressedTextualData.
+   * @param {function(CustomEvent<PngCompressedTextualData>): void} listener
    * @returns {PngParser} for chaining
    */
   onCompressedTextualData(listener) {
@@ -402,8 +259,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngExifProfileEvent.
-   * @param {function(PngExifProfileEvent): void} listener
+   * Type-safe way to bind a listener for a PngExifProfile.
+   * @param {function(CustomEvent<PngExifProfile>): void} listener
    * @returns {PngParser} for chaining
    */
   onExifProfile(listener) {
@@ -412,8 +269,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngImageGammaEvent.
-   * @param {function(PngImageGammaEvent): void} listener
+   * Type-safe way to bind a listener for a PngImageGamma.
+   * @param {function(CustomEvent<number>): void} listener
    * @returns {PngParser} for chaining
    */
   onGamma(listener) {
@@ -422,8 +279,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngHistogramEvent.
-   * @param {function(PngHistogramEvent): void} listener
+   * Type-safe way to bind a listener for a PngHistogram.
+   * @param {function(CustomEvent<PngHistogram>): void} listener
    * @returns {PngParser} for chaining
    */
   onHistogram(listener) {
@@ -432,8 +289,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngImageDataEvent.
-   * @param {function(PngImageDataEvent): void} listener
+   * Type-safe way to bind a listener for a PngImageData.
+   * @param {function(CustomEvent<PngImageData>): void} listener
    * @returns {PngParser} for chaining
    */
   onImageData(listener) {
@@ -442,8 +299,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngImageHeaderEvent.
-   * @param {function(PngImageHeaderEvent): void} listener
+   * Type-safe way to bind a listener for a PngImageHeader.
+   * @param {function(CustomEvent<PngImageHeader>): void} listener
    * @returns {PngParser} for chaining
    */
   onImageHeader(listener) {
@@ -452,8 +309,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngIntlTextualDataEvent.
-   * @param {function(PngIntlTextualDataEvent): void} listener
+   * Type-safe way to bind a listener for a PngIntlTextualData.
+   * @param {function(CustomEvent<PngIntlTextualData>): void} listener
    * @returns {PngParser} for chaining
    */
   onIntlTextualData(listener) {
@@ -462,8 +319,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngLastModTimeEvent.
-   * @param {function(PngLastModTimeEvent): void} listener
+   * Type-safe way to bind a listener for a PngLastModTime.
+   * @param {function(CustomEvent<PngLastModTime>): void} listener
    * @returns {PngParser} for chaining
    */
   onLastModTime(listener) {
@@ -472,8 +329,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngPaletteEvent.
-   * @param {function(PngPaletteEvent): void} listener
+   * Type-safe way to bind a listener for a PngPalette.
+   * @param {function(CustomEvent<PngPalette>): void} listener
    * @returns {PngParser} for chaining
    */
   onPalette(listener) {
@@ -482,8 +339,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngPhysicalPixelDimensionsEvent.
-   * @param {function(PngPhysicalPixelDimensionsEvent): void} listener
+   * Type-safe way to bind a listener for a PngPhysicalPixelDimensions.
+   * @param {function(CustomEvent<PngPhysicalPixelDimensions>): void} listener
    * @returns {PngParser} for chaining
    */
   onPhysicalPixelDimensions(listener) {
@@ -492,8 +349,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngSignificantBitsEvent.
-   * @param {function(PngSignificantBitsEvent): void} listener
+   * Type-safe way to bind a listener for a PngSignificantBits.
+   * @param {function(CustomEvent<PngSignificantBits>): void} listener
    * @returns {PngParser} for chaining
    */
   onSignificantBits(listener) {
@@ -502,8 +359,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngSuggestedPaletteEvent.
-   * @param {function(PngSuggestedPaletteEvent): void} listener
+   * Type-safe way to bind a listener for a PngSuggestedPalette.
+   * @param {function(CustomEvent<PngSuggestedPalette>): void} listener
    * @returns {PngParser} for chaining
    */
   onSuggestedPalette(listener) {
@@ -512,8 +369,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngTextualDataEvent.
-   * @param {function(PngTextualDataEvent): void} listener
+   * Type-safe way to bind a listener for a PngTextualData.
+   * @param {function(CustomEvent<PngTextualData>): void} listener
    * @returns {PngParser} for chaining
    */
   onTextualData(listener) {
@@ -522,8 +379,8 @@ export class PngParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a PngTransparencyEvent.
-   * @param {function(PngTransparencyEvent): void} listener
+   * Type-safe way to bind a listener for a PngTransparency.
+   * @param {function(CustomEvent<PngTransparency>): void} listener
    * @returns {PngParser} for chaining
    */
   onTransparency(listener) {
@@ -580,13 +437,13 @@ export class PngParser extends EventTarget {
 
           this.colorType = header.colorType;
 
-          this.dispatchEvent(new PngImageHeaderEvent(header));
+          this.dispatchEvent(createEvent(PngParseEventType.IHDR, header));
           break;
 
         // https://www.w3.org/TR/png-3/#11gAMA
         case 'gAMA':
           if (length !== 4) throw `Bad length for gAMA: ${length}`;
-          this.dispatchEvent(new PngImageGammaEvent(chStream.readNumber(4)));
+          this.dispatchEvent(createEvent(PngParseEventType.gAMA, chStream.readNumber(4)));
           break;
 
         // https://www.w3.org/TR/png-3/#11bKGD
@@ -608,7 +465,7 @@ export class PngParser extends EventTarget {
             bkgdColor.paletteIndex = chStream.readNumber(1);
           }
 
-          this.dispatchEvent(new PngBackgroundColorEvent(bkgdColor));
+          this.dispatchEvent(createEvent(PngParseEventType.bKGD, bkgdColor));
           break;
 
         // https://www.w3.org/TR/png-3/#11sBIT
@@ -639,14 +496,14 @@ export class PngParser extends EventTarget {
             sigBits.significant_alpha = chStream.readNumber(1);
           }
 
-          this.dispatchEvent(new PngSignificantBitsEvent(sigBits));
+          this.dispatchEvent(createEvent(PngParseEventType.sBIT, sigBits));
           break;
 
         // https://www.w3.org/TR/png-3/#11cHRM
         case 'cHRM':
           if (length !== 32) throw `Weird length for cHRM chunk: ${length}`;
 
-          /** @type {PngChromaticies} */
+          /** @type {PngChromaticities} */
           const chromaticities = {
             whitePointX: chStream.readNumber(4),
             whitePointY: chStream.readNumber(4),
@@ -657,7 +514,7 @@ export class PngParser extends EventTarget {
             blueX: chStream.readNumber(4),
             blueY: chStream.readNumber(4),
           };
-          this.dispatchEvent(new PngChromaticitiesEvent(chromaticities));
+          this.dispatchEvent(createEvent(PngParseEventType.cHRM, chromaticities));
           break;
 
         // https://www.w3.org/TR/png-3/#11PLTE
@@ -682,7 +539,7 @@ export class PngParser extends EventTarget {
             entries: paletteEntries,
           };
 
-          this.dispatchEvent(new PngPaletteEvent(this.palette));
+          this.dispatchEvent(createEvent(PngParseEventType.PLTE, this.palette));
           break;
 
         // https://www.w3.org/TR/png-3/#11pHYs
@@ -697,7 +554,7 @@ export class PngParser extends EventTarget {
             throw `Bad pHYs unit specifier: ${pixelDims.unitSpecifier}`;
           }
 
-          this.dispatchEvent(new PngPhysicalPixelDimensionsEvent(pixelDims));
+          this.dispatchEvent(createEvent(PngParseEventType.pHYs, pixelDims));
           break;
 
         // https://www.w3.org/TR/png-3/#11tEXt
@@ -709,7 +566,7 @@ export class PngParser extends EventTarget {
             keyword: chStream.readString(nullIndex),
             textString: chStream.skip(1).readString(length - nullIndex - 1),
           };
-          this.dispatchEvent(new PngTextualDataEvent(textualData));
+          this.dispatchEvent(createEvent(PngParseEventType.tEXt, textualData));
           break;
 
         // https://www.w3.org/TR/png-3/#11tIME
@@ -723,7 +580,7 @@ export class PngParser extends EventTarget {
             minute: chStream.readNumber(1),
             second: chStream.readNumber(1),
           };
-          this.dispatchEvent(new PngLastModTimeEvent(lastModTime));
+          this.dispatchEvent(createEvent(PngParseEventType.tIME, lastModTime));
           break;
 
         // https://www.w3.org/TR/png-3/#11tRNS
@@ -757,7 +614,7 @@ export class PngParser extends EventTarget {
             }
           }
 
-          this.dispatchEvent(new PngTransparencyEvent(transparency));
+          this.dispatchEvent(createEvent(PngParseEventType.tRNS, transparency));
           break;
 
         // https://www.w3.org/TR/png-3/#11zTXt
@@ -771,7 +628,7 @@ export class PngParser extends EventTarget {
             compressionMethod: chStream.skip(1).readNumber(1),
             compressedText: chStream.readBytes(length - compressedNullIndex - 2),
           };
-          this.dispatchEvent(new PngCompressedTextualDataEvent(compressedTextualData));
+          this.dispatchEvent(createEvent(PngParseEventType.zTXt, compressedTextualData));
           break;
 
         // https://www.w3.org/TR/png-3/#11iTXt
@@ -794,13 +651,13 @@ export class PngParser extends EventTarget {
             text: chStream.skip(1).readBytes(length - intlNull2 - 1),
           };
 
-          this.dispatchEvent(new PngIntlTextualDataEvent(intlTextData));
+          this.dispatchEvent(createEvent(PngParseEventType.iTXt, intlTextData));
           break;
 
         // https://www.w3.org/TR/png-3/#eXIf
         case 'eXIf':
           const exifValueMap = getExifProfile(chStream);
-          this.dispatchEvent(new PngExifProfileEvent(exifValueMap));
+          this.dispatchEvent(createEvent(PngParseEventType.eXIf, exifValueMap));
           break;
 
         // https://www.w3.org/TR/png-3/#11hIST
@@ -814,7 +671,7 @@ export class PngParser extends EventTarget {
             hist.frequencies.push(chStream.readNumber(2));
           }
 
-          this.dispatchEvent(new PngHistogramEvent(hist));
+          this.dispatchEvent(createEvent(PngParseEventType.hIST, hist));
           break;
 
         // https://www.w3.org/TR/png-3/#11sPLT
@@ -850,7 +707,7 @@ export class PngParser extends EventTarget {
             });
           }
 
-          this.dispatchEvent(new PngSuggestedPaletteEvent(sPalette));
+          this.dispatchEvent(createEvent(PngParseEventType.sPLT, sPalette));
           break;
 
         // https://www.w3.org/TR/png-3/#11IDAT
@@ -859,7 +716,7 @@ export class PngParser extends EventTarget {
           const data = {
             rawImageData: chStream.readBytes(chunk.length),
           };
-          this.dispatchEvent(new PngImageDataEvent(data));
+          this.dispatchEvent(createEvent(PngParseEventType.IDAT, data));
           break;
 
         case 'IEND':

@@ -6,11 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- image: Added PNG event-based parser.
+- image: Added PNG event-based parser (all critical and most ancillary chunks).
 
 ### Changed
 
 - io: Fix ByteStream bug where skip(0) did not return the ByteStream.
+
+### Removed
+
+- image: Removed all custom parser events and just use CustomEvent.
 
 ## [1.2.0] - 2024-01-15
 

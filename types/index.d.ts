@@ -21,9 +21,25 @@ export type JpegDefineHuffmanTable = import('./image/parsers/jpeg.js').JpegDefin
 export type JpegDefineQuantizationTable = import('./image/parsers/jpeg.js').JpegDefineQuantizationTable;
 export type JpegStartOfFrame = import('./image/parsers/jpeg.js').JpegStartOfFrame;
 export type JpegStartOfScan = import('./image/parsers/jpeg.js').JpegStartOfScan;
+export type PngBackgroundColor = import('./image/parsers/png.js').PngBackgroundColor;
+export type PngChromaticies = import('./image/parsers/png.js').PngChromaticities;
+export type PngCompressedTextualData = import('./image/parsers/png.js').PngCompressedTextualData;
+export type PngHistogram = import('./image/parsers/png.js').PngHistogram;
+export type PngImageData = import('./image/parsers/png.js').PngImageData;
+export type PngImageGamma = import('./image/parsers/png.js').PngImageGamma;
+export type PngImageHeader = import('./image/parsers/png.js').PngImageHeader;
+export type PngIntlTextualData = import('./image/parsers/png.js').PngIntlTextualData;
+export type PngLastModTime = import('./image/parsers/png.js').PngLastModTime;
+export type PngPalette = import('./image/parsers/png.js').PngPalette;
+export type PngPhysicalPixelDimensions = import('./image/parsers/png.js').PngPhysicalPixelDimensions;
+export type PngSignificantBits = import('./image/parsers/png.js').PngSignificantBits;
+export type PngSuggestedPalette = import('./image/parsers/png.js').PngSuggestedPalette;
+export type PngTextualData = import('./image/parsers/png.js').PngTextualData;
+export type PngTransparency = import('./image/parsers/png.js').PngTransparency;
 export { UnarchiveEvent, UnarchiveEventType, UnarchiveInfoEvent, UnarchiveErrorEvent, UnarchiveStartEvent, UnarchiveFinishEvent, UnarchiveProgressEvent, UnarchiveExtractEvent, Unarchiver, Unzipper, Unrarrer, Untarrer, getUnarchiver } from "./archive/decompress.js";
 export { getFullMIMEString, getShortMIMEString } from "./codecs/codecs.js";
 export { GifParseEventType, GifParser } from "./image/parsers/gif.js";
 export { JpegComponentType, JpegDctType, JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType, JpegParser, JpegSegmentType } from "./image/parsers/jpeg.js";
+export { PngParseEventType, PngParser } from "./image/parsers/png.js";
 export { convertWebPtoPNG, convertWebPtoJPG } from "./image/webp-shim/webp-shim.js";
 //# sourceMappingURL=index.d.ts.map

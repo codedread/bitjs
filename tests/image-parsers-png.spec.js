@@ -7,7 +7,7 @@ import { ExifDataFormat, ExifTagNumber } from '../image/parsers/exif.js';
 /** @typedef {import('../image/parsers/exif.js').ExifValue} ExifValue */
 
 /** @typedef {import('../image/parsers/png.js').PngBackgroundColor} PngBackgroundColor */
-/** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
+/** @typedef {import('../image/parsers/png.js').PngChromaticities} PngChromaticies */
 /** @typedef {import('../image/parsers/png.js').PngCompressedTextualData} PngCompressedTextualData */
 /** @typedef {import('../image/parsers/png.js').PngHistogram} PngHistogram */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
@@ -35,7 +35,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       let header;
 
       await getPngParser('tests/image-testfiles/PngSuite.png')
-          .onImageHeader(evt => { header = evt.imageHeader })
+          .onImageHeader(evt => { header = evt.detail })
           .start();
 
       expect(header.width).equals(256);
@@ -53,7 +53,7 @@ describe('bitjs.image.parsers.PngParser', () => {
 
       try {
         await getPngParser('tests/image-testfiles/xs1n0g01.png')
-            .onImageHeader(evt => { header = evt.imageHeader })
+            .onImageHeader(evt => { header = evt.detail })
             .start();
         throw new Error(`PngParser did not throw an error for corrupt PNG signature`);
       } catch (err) {
@@ -66,7 +66,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {number} */
     let gamma;
     await getPngParser('tests/image-testfiles/g05n3p04.png')
-        .onGamma(evt => gamma = evt.gamma)
+        .onGamma(evt => gamma = evt.detail)
         .start();
     expect(gamma).equals(55000);
   });
@@ -75,7 +75,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngSignificantBits} */
     let sBits;
     await getPngParser('tests/image-testfiles/cs3n2c16.png')
-        .onSignificantBits(evt => sBits = evt.sigBits)
+        .onSignificantBits(evt => sBits = evt.detail)
         .start();
     expect(sBits.significant_red).equals(13);
     expect(sBits.significant_green).equals(13);
@@ -88,7 +88,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngChromaticies} */
     let chromaticities;
     await getPngParser('tests/image-testfiles/ccwn2c08.png')
-        .onChromaticities(evt => chromaticities = evt.chromaticities)
+        .onChromaticities(evt => chromaticities = evt.detail)
         .start();
     expect(chromaticities.whitePointX).equals(31270);
     expect(chromaticities.whitePointY).equals(32900);
@@ -104,7 +104,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngPalette} */
     let palette;
     await getPngParser('tests/image-testfiles/tbbn3p08.png')
-        .onPalette(evt => palette = evt.palette)
+        .onPalette(evt => palette = evt.detail)
         .start();
     expect(palette.entries.length).equals(246);
     const entry = palette.entries[1];
@@ -118,7 +118,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngTransparency} */
       let transparency;
       await getPngParser('tests/image-testfiles/tbbn3p08.png')
-          .onTransparency(evt => transparency = evt.transparency)
+          .onTransparency(evt => transparency = evt.detail)
           .start();
 
       expect(transparency.alphaPalette.length).equals(1);
@@ -129,7 +129,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngTransparency} */
       let transparency;
       await getPngParser('tests/image-testfiles/tbrn2c08.png')
-          .onTransparency(evt => transparency = evt.transparency)
+          .onTransparency(evt => transparency = evt.detail)
           .start();
 
       expect(transparency.redSampleValue).equals(255);
@@ -141,7 +141,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngTransparency} */
       let transparency;
       await getPngParser('tests/image-testfiles/tbgn2c16.png')
-          .onTransparency(evt => transparency = evt.transparency)
+          .onTransparency(evt => transparency = evt.detail)
           .start();
 
       expect(transparency.redSampleValue).equals(65535);
@@ -155,7 +155,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     let data;
 
     await getPngParser('tests/image-testfiles/PngSuite.png')
-        .onImageData(evt => { data = evt.data })
+        .onImageData(evt => { data = evt.detail })
         .start();
 
     expect(data.rawImageData.byteLength).equals(2205);
@@ -167,7 +167,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     let textualDataArr = [];
 
     await getPngParser('tests/image-testfiles/ctzn0g04.png')
-        .onTextualData(evt => { textualDataArr.push(evt.textualData) })
+        .onTextualData(evt => { textualDataArr.push(evt.detail) })
         .start();
 
     expect(textualDataArr.length).equals(2);
@@ -182,7 +182,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     let data;
 
     await getPngParser('tests/image-testfiles/ctzn0g04.png')
-        .onCompressedTextualData(evt => { data = evt.compressedTextualData })
+        .onCompressedTextualData(evt => { data = evt.detail })
         .start();
     
     expect(data.keyword).equals('Disclaimer');
@@ -200,7 +200,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     let data = [];
 
     await getPngParser('tests/image-testfiles/ctjn0g04.png')
-        .onIntlTextualData(evt => { data.push(evt.intlTextualdata) })
+        .onIntlTextualData(evt => { data.push(evt.detail) })
         .start();
 
     expect(data.length).equals(6);
@@ -215,7 +215,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngBackgroundColor} */
       let bc;
       await getPngParser('tests/image-testfiles/bggn4a16.png')
-          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .onBackgroundColor(evt => { bc = evt.detail })
           .start();
       expect(bc.greyscale).equals(43908);
     });
@@ -224,7 +224,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngBackgroundColor} */
       let bc;
       await getPngParser('tests/image-testfiles/tbrn2c08.png')
-          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .onBackgroundColor(evt => { bc = evt.detail })
           .start();
       expect(bc.red).equals(255);
       expect(bc.green).equals(0);
@@ -235,7 +235,7 @@ describe('bitjs.image.parsers.PngParser', () => {
       /** @type {PngBackgroundColor} */
       let bc;
       await getPngParser('tests/image-testfiles/tbbn3p08.png')
-          .onBackgroundColor(evt => { bc = evt.backgroundColor })
+          .onBackgroundColor(evt => { bc = evt.detail })
           .start();
       expect(bc.paletteIndex).equals(245);
     });
@@ -245,7 +245,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngLastModTime} */
     let lastModTime;
     await getPngParser('tests/image-testfiles/cm9n0g04.png')
-        .onLastModTime(evt => { lastModTime = evt.lastModTime })
+        .onLastModTime(evt => { lastModTime = evt.detail })
         .start();
     expect(lastModTime.year).equals(1999);
     expect(lastModTime.month).equals(12);
@@ -259,7 +259,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngPhysicalPixelDimensions} */
     let pixelDims;
     await getPngParser('tests/image-testfiles/cdun2c08.png')
-        .onPhysicalPixelDimensions(evt => { pixelDims = evt.physicalPixelDimensions })
+        .onPhysicalPixelDimensions(evt => { pixelDims = evt.detail })
         .start();
     expect(pixelDims.pixelPerUnitX).equals(1000);
     expect(pixelDims.pixelPerUnitY).equals(1000);
@@ -270,7 +270,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngPhysicalPixelDimensions} */
     let exif;
     await getPngParser('tests/image-testfiles/exif2c08.png')
-        .onExifProfile(evt => { exif = evt.exifProfile })
+        .onExifProfile(evt => { exif = evt.detail })
         .start();
 
     const descVal = exif.get(ExifTagNumber.COPYRIGHT);
@@ -284,8 +284,8 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngHistogram} */
     let hist;
     await getPngParser('tests/image-testfiles/ch1n3p04.png')
-        .onHistogram(evt => { hist = evt.histogram })
-        .onPalette(evt => { palette = evt.palette })
+        .onHistogram(evt => { hist = evt.detail })
+        .onPalette(evt => { palette = evt.detail })
         .start();
 
     expect(hist.frequencies.length).equals(palette.entries.length);
@@ -297,7 +297,7 @@ describe('bitjs.image.parsers.PngParser', () => {
     /** @type {PngSuggestedPalette} */
     let sPalette;
     await getPngParser('tests/image-testfiles/ps1n0g08.png')
-        .onSuggestedPalette(evt => { sPalette = evt.suggestedPalette })
+        .onSuggestedPalette(evt => { sPalette = evt.detail })
         .start();
 
     expect(sPalette.entries.length).equals(216);
