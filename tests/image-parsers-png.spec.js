@@ -2,6 +2,9 @@ import * as fs from 'node:fs';
 import 'mocha';
 import { expect } from 'chai';
 import { PngColorType, PngInterlaceMethod, PngUnitSpecifier, PngParser } from '../image/parsers/png.js';
+import { ExifDataFormat, ExifTagNumber } from '../image/parsers/exif.js';
+
+/** @typedef {import('../image/parsers/exif.js').ExifValue} ExifValue */
 
 /** @typedef {import('../image/parsers/png.js').PngBackgroundColor} PngBackgroundColor */
 /** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
@@ -259,5 +262,17 @@ describe('bitjs.image.parsers.PngParser', () => {
     expect(pixelDims.pixelPerUnitX).equals(1000);
     expect(pixelDims.pixelPerUnitY).equals(1000);
     expect(pixelDims.unitSpecifier).equals(PngUnitSpecifier.METRE);
+  });
+
+  it('extracts eXIf', async () => {
+    /** @type {PngPhysicalPixelDimensions} */
+    let exif;
+    await getPngParser('tests/image-testfiles/exif2c08.png')
+        .onExifProfile(evt => { exif = evt.exifProfile })
+        .start();
+
+    const descVal = exif.get(ExifTagNumber.COPYRIGHT);
+    expect(descVal.dataFormat).equals(ExifDataFormat.ASCII_STRING);
+    expect(descVal.stringValue).equals('2017 Willem van Schaik');
   });
 });

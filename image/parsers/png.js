@@ -10,11 +10,14 @@
 
 import * as fs from 'node:fs'; // TODO: Remove.
 import { ByteStream } from '../../io/bytestream.js';
+import { getExifProfile } from './exif.js';
+
+/** @typedef {import('./exif.js').ExifValue} ExifValue */
 
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks eXIf, hIST, sPLT.
+// TODO: Ancillary chunks: hIST, sPLT.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -30,6 +33,7 @@ export const PngParseEventType = {
   // Ancillary chunks.
   bKGD: 'background_color',
   cHRM: 'chromaticities_white_point',
+  eXIf: 'exif_profile',
   gAMA: 'image_gamma',
   iTXt: 'intl_text_data',
   pHYs: 'physical_pixel_dims',
@@ -284,6 +288,17 @@ export class PngPhysicalPixelDimensionsEvent extends Event {
   }
 }
 
+/** @typedef {Map<number, ExifValue>} PngExifProfile */
+
+export class PngExifProfileEvent extends Event {
+  /** @param {PngExifProfile} exifProfile */
+  constructor(exifProfile) {
+    super(PngParseEventType.eXIf);
+    /** @type {PngExifProfile} */
+    this.exifProfile = exifProfile;
+  }
+}
+
 /**
  * @typedef PngChunk Internal use only.
  * @property {number} length
@@ -346,6 +361,16 @@ export class PngParser extends EventTarget {
    */
   onCompressedTextualData(listener) {
     super.addEventListener(PngParseEventType.zTXt, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngExifProfileEvent.
+   * @param {function(PngExifProfileEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onExifProfile(listener) {
+    super.addEventListener(PngParseEventType.eXIf, listener);
     return this;
   }
 
@@ -715,6 +740,12 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngIntlTextualDataEvent(intlTextData));
           break;
 
+        // https://www.w3.org/TR/png-3/#eXIf
+        case 'eXIf':
+          const exifValueMap = getExifProfile(chStream);
+          this.dispatchEvent(new PngExifProfileEvent(exifValueMap));
+          break;
+
         // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
@@ -801,6 +832,9 @@ async function main() {
     });
     parser.onPhysicalPixelDimensions(evt => {
       // console.dir(evt.physicalPixelDimensions);
+    });
+    parser.onExifProfile(evt => {
+      // console.dir(evt.exifProfile);
     });
 
     try {
