@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.1] - 2024-01-??
+## [1.2.1] - 2024-01-19
 
 ### Added
 
@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
-- image: Removed all custom parser events and just use CustomEvent.
+- image: Removed all custom parser Events and just use CustomEvent.
 
 ## [1.2.0] - 2024-01-15
 
