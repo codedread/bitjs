@@ -10,6 +10,7 @@ import { PngColorType, PngInterlaceMethod, PngParser } from '../image/parsers/pn
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
 /** @typedef {import('../image/parsers/png.js').PngIntlTextualData} PngIntlTextualData */
+/** @typedef {import('../image/parsers/png.js').PngLastModTime} PngLastModTime */
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
 /** @typedef {import('../image/parsers/png.js').PngTextualData} PngTextualData */
@@ -232,5 +233,19 @@ describe('bitjs.image.parsers.PngParser', () => {
           .start();
       expect(bc.paletteIndex).equals(245);
     });
+  });
+
+  it('extracts tIME', async () => {
+    /** @type {PngLastModTime} */
+    let lastModTime;
+    await getPngParser('tests/image-testfiles/cm9n0g04.png')
+        .onLastModTime(evt => { lastModTime = evt.lastModTime })
+        .start();
+    expect(lastModTime.year).equals(1999);
+    expect(lastModTime.month).equals(12);
+    expect(lastModTime.day).equals(31);
+    expect(lastModTime.hour).equals(23);
+    expect(lastModTime.minute).equals(59);
+    expect(lastModTime.second).equals(59);
   });
 });

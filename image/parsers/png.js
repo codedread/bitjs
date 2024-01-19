@@ -14,7 +14,7 @@ import { ByteStream } from '../../io/bytestream.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks eXIf, hIST, pHYs, sPLT, tIME.
+// TODO: Ancillary chunks eXIf, hIST, pHYs, sPLT.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -34,6 +34,7 @@ export const PngParseEventType = {
   iTXt: 'intl_text_data',
   sBIT: 'significant_bits',
   tEXt: 'textual_data',
+  tIME: 'last_mod_time',
   tRNS: 'transparency',
   zTXt: 'compressed_textual_data',
 };
@@ -243,6 +244,25 @@ export class PngBackgroundColorEvent extends Event {
 }
 
 /**
+ * @typedef PngLastModTime
+ * @property {number} year Four-digit year.
+ * @property {number} month One-based. Value from 1-12.
+ * @property {number} day One-based. Value from 1-31.
+ * @property {number} hour Zero-based. Value from 0-23.
+ * @property {number} minute Zero-based. Value from 0-59.
+ * @property {number} second Zero-based. Value from 0-60 to allow for leap-seconds.
+ */
+
+export class PngLastModTimeEvent extends Event {
+  /** @param {PngLastModTime} lastModTime */
+  constructor(lastModTime) {
+    super(PngParseEventType.tIME);
+    /** @type {PngLastModTime} */
+    this.lastModTime = lastModTime;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -344,6 +364,16 @@ export class PngParser extends EventTarget {
    */
   onIntlTextualData(listener) {
     super.addEventListener(PngParseEventType.iTXt, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngLastModTime.
+   * @param {function(PngLastModTime): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onLastModTime(listener) {
+    super.addEventListener(PngParseEventType.tIME, listener);
     return this;
   }
 
@@ -553,6 +583,20 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngTextualDataEvent(textualData));
           break;
 
+        // https://www.w3.org/TR/png-3/#11tIME
+        case 'tIME':
+          /** @type {PngLastModTime} */
+          const lastModTime = {
+            year: chStream.readNumber(2),
+            month: chStream.readNumber(1),
+            day: chStream.readNumber(1),
+            hour: chStream.readNumber(1),
+            minute: chStream.readNumber(1),
+            second: chStream.readNumber(1),
+          };
+          this.dispatchEvent(new PngLastModTimeEvent(lastModTime));
+          break;
+
         // https://www.w3.org/TR/png-3/#11tRNS
         case 'tRNS':
           if (this.colorType === undefined) throw `tRNS before IHDR`;
@@ -704,7 +748,10 @@ async function main() {
     });
     parser.onBackgroundColor(evt => {
       // console.dir(evt.backgroundColor);
-    })
+    });
+    parser.onLastModTime(evt => {
+      console.dir(evt.lastModTime);
+    });
 
     try {
       await parser.start();
