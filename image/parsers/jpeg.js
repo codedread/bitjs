@@ -10,6 +10,7 @@
 
 import { ByteStream } from '../../io/bytestream.js';
 import { getExifProfile } from './exif.js';
+import { createEvent } from './parsers.js';
 
 /** @typedef {import('./exif.js').ExifValue} ExifValue */
 
@@ -73,15 +74,6 @@ export const JpegDensityUnits = {
  * @property {Uint8Array} thumbnailData RGB data. Size is 3 x thumbnailWidth x thumbnailHeight.
  */
 
-export class JpegApp0MarkerEvent extends Event {
-  /** @param {JpegApp0Marker} */
-  constructor(segment) {
-    super(JpegParseEventType.APP0_MARKER);
-    /** @type {JpegApp0Marker} */
-    this.app0Marker = segment;
-  }
-}
-
 /** @enum {number} */
 export const JpegExtensionThumbnailFormat = {
   JPEG: 0x10,
@@ -95,23 +87,7 @@ export const JpegExtensionThumbnailFormat = {
  * @property {Uint8Array} thumbnailData Raw thumbnail data
  */
 
-export class JpegApp0ExtensionEvent extends Event {
-  /** @param {JpegApp0Extension} */
-  constructor(segment) {
-    super(JpegParseEventType.APP0_EXTENSION);
-    /** @type {JpegApp0Extension} */
-    this.app0Extension = segment;
-  }
-}
-
-export class JpegApp1ExifEvent extends Event {
-  /** @param {Map<number, ExifValue>} exifValueMap */
-  constructor(exifValueMap) {
-    super(JpegParseEventType.APP1_EXIF);
-    /** @type {Map<number, ExifValue>} */
-    this.exifValueMap = exifValueMap;
-  }
-}
+/** @typedef {Map<number, ExifValue>} JpegExifProfile */
 
 /**
  * @typedef JpegDefineQuantizationTable
@@ -119,15 +95,6 @@ export class JpegApp1ExifEvent extends Event {
  * @property {number} precision (0=byte, 1=word).
  * @property {number[]} tableValues 64 numbers representing the quantization table.
  */
-
-export class JpegDefineQuantizationTableEvent extends Event {
-  /** @param {JpegDefineQuantizationTable} table */
-  constructor(table) {
-    super(JpegParseEventType.DEFINE_QUANTIZATION_TABLE);
-    /** @type {JpegDefineQuantizationTable} */
-    this.quantizationTable = table;
-  }
-}
 
 /** @enum {number} */
 export const JpegHuffmanTableType = {
@@ -142,15 +109,6 @@ export const JpegHuffmanTableType = {
  * @property {number[]} numberOfSymbols A 16-byte array specifying the # of symbols of each length.
  * @property {number[]} symbols
  */
-
-export class JpegDefineHuffmanTableEvent extends Event {
-  /** @param {JpegDefineHuffmanTable} table */
-  constructor(table) {
-    super(JpegParseEventType.DEFINE_HUFFMAN_TABLE);
-    /** @type {JpegDefineHuffmanTable} */
-    this.huffmanTable = table;
-  }
-}
 
 /** @enum {number} */
 export const JpegDctType = {
@@ -185,15 +143,6 @@ export const JpegComponentType = {
  * @property {number} numberOfComponents Usually 1, 3, or 4.
  * @property {JpegComponentDetail[]} componentDetails
  */
-
-export class JpegStartOfFrameEvent extends Event {
-  /** @param {JpegStartOfFrame} sof */
-  constructor(sof) {
-    super(JpegParseEventType.START_OF_FRAME);
-    /** @type {JpegStartOfFrame} */
-    this.startOfFrame = sof;
-  }
-}
 
 /**
  * @typedef JpegStartOfScan
@@ -238,8 +187,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegApp0MarkerEvent.
-   * @param {function(JpegApp0MarkerEvent): void} listener
+   * Type-safe way to bind a listener for a JpegApp0Marker.
+   * @param {function(CustomEvent<JpegApp0Marker>): void} listener
    * @returns {JpegParser} for chaining
    */
   onApp0Marker(listener) {
@@ -248,8 +197,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegApp0ExtensionEvent.
-   * @param {function(JpegApp0MarkerEvent): void} listener
+   * Type-safe way to bind a listener for a JpegApp0Extension.
+   * @param {function(CustomEvent<JpegApp0Extension>): void} listener
    * @returns {JpegParser} for chaining
    */
   onApp0Extension(listener) {
@@ -258,8 +207,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegApp1ExifEvent.
-   * @param {function(JpegApp1ExifEvent): void} listener
+   * Type-safe way to bind a listener for a JpegExifProfile.
+   * @param {function(CustomEvent<JpegExifProfile>): void} listener
    * @returns {JpegParser} for chaining
    */
   onApp1Exif(listener) {
@@ -268,8 +217,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegDefineQuantizationTableEvent.
-   * @param {function(JpegDefineQuantizationTableEvent): void} listener
+   * Type-safe way to bind a listener for a JpegDefineQuantizationTable.
+   * @param {function(CustomEvent<JpegDefineQuantizationTable>): void} listener
    * @returns {JpegParser} for chaining
    */
   onDefineQuantizationTable(listener) {
@@ -278,8 +227,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegDefineHuffmanTableEvent.
-   * @param {function(JpegDefineHuffmanTableEvent): void} listener
+   * Type-safe way to bind a listener for a JpegDefineHuffmanTable.
+   * @param {function(CustomEvent<JpegDefineHuffmanTable>): void} listener
    * @returns {JpegParser} for chaining
    */
   onDefineHuffmanTable(listener) {
@@ -288,8 +237,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegStartOfFrameEvent.
-   * @param {function(JpegStartOfFrameEvent): void} listener
+   * Type-safe way to bind a listener for a JpegStartOfFrame.
+   * @param {function(CustomEvent<JpegStartOfFrame>): void} listener
    * @returns {JpegParser} for chaining
    */
   onStartOfFrame(listener) {
@@ -298,8 +247,8 @@ export class JpegParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a JpegStartOfScanEvent.
-   * @param {function(JpegStartOfScanEvent): void} listener
+   * Type-safe way to bind a listener for a JpegStartOfScan.
+   * @param {function(CustomEvent<JpegStartOfScan>): void} listener
    * @returns {JpegParser} for chaining
    */
   onStartOfScan(listener) {
@@ -345,7 +294,7 @@ export class JpegParser extends EventTarget {
             yThumbnail,
             thumbnailData: this.bstream.readBytes(3 * xThumbnail * yThumbnail),
           };
-          this.dispatchEvent(new JpegApp0MarkerEvent(app0MarkerSegment));  
+          this.dispatchEvent(createEvent(JpegParseEventType.APP0_MARKER, app0MarkerSegment));  
         }
         else if (identifier === 'JFXX') {
           if (!this.hasApp0MarkerSegment) throw `JFXX found without JFIF`;
@@ -364,7 +313,7 @@ export class JpegParser extends EventTarget {
             thumbnailFormat,
             thumbnailData,
           };
-          this.dispatchEvent(new JpegApp0ExtensionEvent(app0ExtensionSegment));
+          this.dispatchEvent(createEvent(JpegParseEventType.APP0_EXTENSION, app0ExtensionSegment));
         }
         else {
           throw `Bad APP0 identifier: ${identifier}`;
@@ -387,7 +336,7 @@ export class JpegParser extends EventTarget {
         if (this.bstream.readNumber(2) !== 0) throw `No null byte termination`;
 
         const exifValueMap = getExifProfile(this.bstream);
-        this.dispatchEvent(new JpegApp1ExifEvent(exifValueMap));
+        this.dispatchEvent(createEvent(JpegParseEventType.APP1_EXIF, exifValueMap));
 
         this.bstream = skipAheadStream;
       } // End of APP1
@@ -418,7 +367,7 @@ export class JpegParser extends EventTarget {
             precision,
             tableValues,
           };
-          this.dispatchEvent(new JpegDefineQuantizationTableEvent(table));
+          this.dispatchEvent(createEvent(JpegParseEventType.DEFINE_QUANTIZATION_TABLE, table));
 
           ptr += (1 + valSize * 64);
         }
@@ -452,7 +401,7 @@ export class JpegParser extends EventTarget {
             numberOfSymbols,
             symbols,
           };
-          this.dispatchEvent(new JpegDefineHuffmanTableEvent(table));
+          this.dispatchEvent(createEvent(JpegParseEventType.DEFINE_HUFFMAN_TABLE, table));
 
           ptr += (1 + 16 + numCodes);
         }
@@ -497,7 +446,7 @@ export class JpegParser extends EventTarget {
           componentDetails,
         };
 
-        this.dispatchEvent(new JpegStartOfFrameEvent(sof));
+        this.dispatchEvent(createEvent(JpegParseEventType.START_OF_FRAME, sof));
       } // End of SOF0, SOF1, SOF2
       else if (jpegMarker === JpegSegmentType.SOS) {
         this.bstream.setBigEndian();
@@ -536,7 +485,7 @@ export class JpegParser extends EventTarget {
         // NOTE: The below will have the null bytes after every 0xFF value.
         sos.rawImageData = rawImageDataStream.readBytes(numBytes);
 
-        this.dispatchEvent(new JpegStartOfScanEvent(sos));
+        this.dispatchEvent(createEvent(JpegParseEventType.START_OF_SCAN, sos));
       } // End of SOS
       else {
         this.bstream.setBigEndian();

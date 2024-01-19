@@ -20,8 +20,8 @@ describe('bitjs.image.parsers.JpegParser', () => {
     let sof;
 
     const parser = new JpegParser(ab)
-        .onApp1Exif(evt => { exif = evt.exifValueMap })
-        .onStartOfFrame(evt => { sof = evt.startOfFrame });
+        .onApp1Exif(evt => { exif = evt.detail })
+        .onStartOfFrame(evt => { sof = evt.detail });
     await parser.start();
 
     const descVal = exif.get(ExifTagNumber.IMAGE_DESCRIPTION);

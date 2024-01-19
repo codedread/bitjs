@@ -35,11 +35,9 @@ export {
 export { getFullMIMEString, getShortMIMEString } from './codecs/codecs.js';
 export { findMimeType } from './file/sniffer.js';
 export { GifParseEventType, GifParser } from './image/parsers/gif.js';
-export { JpegApp0ExtensionEvent, JpegApp0MarkerEvent, JpegApp1ExifEvent, JpegComponentType,
-         JpegDctType, JpegDefineHuffmanTableEvent, JpegDefineQuantizationTableEvent,
-         JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType,
-         JpegParser, JpegSegmentType, JpegStartOfFrameEvent,
-         JpegStartOfScanEvent } from './image/parsers/jpeg.js';
+export { JpegComponentType, JpegDctType, JpegDensityUnits, JpegExtensionThumbnailFormat,
+         JpegHuffmanTableType, JpegParseEventType, JpegParser,
+         JpegSegmentType } from './image/parsers/jpeg.js';
 export { convertWebPtoPNG, convertWebPtoJPG } from './image/webp-shim/webp-shim.js';
 export { BitBuffer } from './io/bitbuffer.js';
 export { BitStream } from './io/bitstream.js';

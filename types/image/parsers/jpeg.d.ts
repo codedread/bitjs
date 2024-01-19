@@ -27,74 +27,16 @@ export namespace JpegDensityUnits {
     const PIXELS_PER_INCH: number;
     const PIXELS_PER_CM: number;
 }
-/**
- * @typedef JpegApp0Marker
- * @property {string} jfifVersion Like '1.02'.
- * @property {JpegDensityUnits} densityUnits
- * @property {number} xDensity
- * @property {number} yDensity
- * @property {number} xThumbnail
- * @property {number} yThumbnail
- * @property {Uint8Array} thumbnailData RGB data. Size is 3 x thumbnailWidth x thumbnailHeight.
- */
-export class JpegApp0MarkerEvent extends Event {
-    /** @param {JpegApp0Marker} */
-    constructor(segment: any);
-    /** @type {JpegApp0Marker} */
-    app0Marker: JpegApp0Marker;
-}
 export type JpegExtensionThumbnailFormat = number;
 export namespace JpegExtensionThumbnailFormat {
     const JPEG: number;
     const ONE_BYTE_PER_PIXEL_PALETTIZED: number;
     const THREE_BYTES_PER_PIXEL_RGB: number;
 }
-/**
- * @typedef JpegApp0Extension
- * @property {JpegExtensionThumbnailFormat} thumbnailFormat
- * @property {Uint8Array} thumbnailData Raw thumbnail data
- */
-export class JpegApp0ExtensionEvent extends Event {
-    /** @param {JpegApp0Extension} */
-    constructor(segment: any);
-    /** @type {JpegApp0Extension} */
-    app0Extension: JpegApp0Extension;
-}
-export class JpegApp1ExifEvent extends Event {
-    /** @param {Map<number, ExifValue>} exifValueMap */
-    constructor(exifValueMap: Map<number, import("./exif.js").ExifValue>);
-    /** @type {Map<number, ExifValue>} */
-    exifValueMap: Map<number, import("./exif.js").ExifValue>;
-}
-/**
- * @typedef JpegDefineQuantizationTable
- * @property {number} tableNumber Table/component number.
- * @property {number} precision (0=byte, 1=word).
- * @property {number[]} tableValues 64 numbers representing the quantization table.
- */
-export class JpegDefineQuantizationTableEvent extends Event {
-    /** @param {JpegDefineQuantizationTable} table */
-    constructor(table: JpegDefineQuantizationTable);
-    /** @type {JpegDefineQuantizationTable} */
-    quantizationTable: JpegDefineQuantizationTable;
-}
 export type JpegHuffmanTableType = number;
 export namespace JpegHuffmanTableType {
     const DC: number;
     const AC: number;
-}
-/**
- * @typedef JpegDefineHuffmanTable
- * @property {number} tableNumber Table/component number (0-3).
- * @property {JpegHuffmanTableType} tableType Either DC or AC.
- * @property {number[]} numberOfSymbols A 16-byte array specifying the # of symbols of each length.
- * @property {number[]} symbols
- */
-export class JpegDefineHuffmanTableEvent extends Event {
-    /** @param {JpegDefineHuffmanTable} table */
-    constructor(table: JpegDefineHuffmanTable);
-    /** @type {JpegDefineHuffmanTable} */
-    huffmanTable: JpegDefineHuffmanTable;
 }
 export type JpegDctType = number;
 export namespace JpegDctType {
@@ -126,12 +68,6 @@ export namespace JpegComponentType {
  * @property {number} numberOfComponents Usually 1, 3, or 4.
  * @property {JpegComponentDetail[]} componentDetails
  */
-export class JpegStartOfFrameEvent extends Event {
-    /** @param {JpegStartOfFrame} sof */
-    constructor(sof: JpegStartOfFrame);
-    /** @type {JpegStartOfFrame} */
-    startOfFrame: JpegStartOfFrame;
-}
 /**
  * @typedef JpegStartOfScan
  * @property {number} componentsInScan
@@ -165,47 +101,47 @@ export class JpegParser extends EventTarget {
      */
     private hasApp0MarkerSegment;
     /**
-     * Type-safe way to bind a listener for a JpegApp0MarkerEvent.
-     * @param {function(JpegApp0MarkerEvent): void} listener
+     * Type-safe way to bind a listener for a JpegApp0Marker.
+     * @param {function(CustomEvent<JpegApp0Marker>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onApp0Marker(listener: (arg0: JpegApp0MarkerEvent) => void): JpegParser;
+    onApp0Marker(listener: (arg0: CustomEvent<JpegApp0Marker>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegApp0ExtensionEvent.
-     * @param {function(JpegApp0MarkerEvent): void} listener
+     * Type-safe way to bind a listener for a JpegApp0Extension.
+     * @param {function(CustomEvent<JpegApp0Extension>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onApp0Extension(listener: (arg0: JpegApp0MarkerEvent) => void): JpegParser;
+    onApp0Extension(listener: (arg0: CustomEvent<JpegApp0Extension>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegApp1ExifEvent.
-     * @param {function(JpegApp1ExifEvent): void} listener
+     * Type-safe way to bind a listener for a JpegExifProfile.
+     * @param {function(CustomEvent<JpegExifProfile>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onApp1Exif(listener: (arg0: JpegApp1ExifEvent) => void): JpegParser;
+    onApp1Exif(listener: (arg0: CustomEvent<JpegExifProfile>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegDefineQuantizationTableEvent.
-     * @param {function(JpegDefineQuantizationTableEvent): void} listener
+     * Type-safe way to bind a listener for a JpegDefineQuantizationTable.
+     * @param {function(CustomEvent<JpegDefineQuantizationTable>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onDefineQuantizationTable(listener: (arg0: JpegDefineQuantizationTableEvent) => void): JpegParser;
+    onDefineQuantizationTable(listener: (arg0: CustomEvent<JpegDefineQuantizationTable>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegDefineHuffmanTableEvent.
-     * @param {function(JpegDefineHuffmanTableEvent): void} listener
+     * Type-safe way to bind a listener for a JpegDefineHuffmanTable.
+     * @param {function(CustomEvent<JpegDefineHuffmanTable>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onDefineHuffmanTable(listener: (arg0: JpegDefineHuffmanTableEvent) => void): JpegParser;
+    onDefineHuffmanTable(listener: (arg0: CustomEvent<JpegDefineHuffmanTable>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegStartOfFrameEvent.
-     * @param {function(JpegStartOfFrameEvent): void} listener
+     * Type-safe way to bind a listener for a JpegStartOfFrame.
+     * @param {function(CustomEvent<JpegStartOfFrame>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onStartOfFrame(listener: (arg0: JpegStartOfFrameEvent) => void): JpegParser;
+    onStartOfFrame(listener: (arg0: CustomEvent<JpegStartOfFrame>) => void): JpegParser;
     /**
-     * Type-safe way to bind a listener for a JpegStartOfScanEvent.
-     * @param {function(JpegStartOfScanEvent): void} listener
+     * Type-safe way to bind a listener for a JpegStartOfScan.
+     * @param {function(CustomEvent<JpegStartOfScan>): void} listener
      * @returns {JpegParser} for chaining
      */
-    onStartOfScan(listener: (arg0: JpegStartOfScanEvent) => void): JpegParser;
+    onStartOfScan(listener: (arg0: CustomEvent<JpegStartOfScan>) => void): JpegParser;
     /** @returns {Promise<void>} A Promise that resolves when the parsing is complete. */
     start(): Promise<void>;
 }
@@ -232,6 +168,7 @@ export type JpegApp0Extension = {
      */
     thumbnailData: Uint8Array;
 };
+export type JpegExifProfile = Map<number, import("./exif.js").ExifValue>;
 export type JpegDefineQuantizationTable = {
     /**
      * Table/component number.

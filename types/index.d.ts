@@ -24,6 +24,6 @@ export type JpegStartOfScan = import('./image/parsers/jpeg.js').JpegStartOfScan;
 export { UnarchiveEvent, UnarchiveEventType, UnarchiveInfoEvent, UnarchiveErrorEvent, UnarchiveStartEvent, UnarchiveFinishEvent, UnarchiveProgressEvent, UnarchiveExtractEvent, Unarchiver, Unzipper, Unrarrer, Untarrer, getUnarchiver } from "./archive/decompress.js";
 export { getFullMIMEString, getShortMIMEString } from "./codecs/codecs.js";
 export { GifParseEventType, GifParser } from "./image/parsers/gif.js";
-export { JpegApp0ExtensionEvent, JpegApp0MarkerEvent, JpegApp1ExifEvent, JpegComponentType, JpegDctType, JpegDefineHuffmanTableEvent, JpegDefineQuantizationTableEvent, JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType, JpegParser, JpegSegmentType, JpegStartOfFrameEvent, JpegStartOfScanEvent } from "./image/parsers/jpeg.js";
+export { JpegComponentType, JpegDctType, JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType, JpegParser, JpegSegmentType } from "./image/parsers/jpeg.js";
 export { convertWebPtoPNG, convertWebPtoJPG } from "./image/webp-shim/webp-shim.js";
 //# sourceMappingURL=index.d.ts.map
