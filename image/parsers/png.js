@@ -16,6 +16,8 @@ import { getExifProfile } from './exif.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
+let DEBUG = false;
+
 const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
 /** @enum {string} */
