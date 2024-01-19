@@ -5,6 +5,12 @@
  * @returns {ExifValue}
  */
 export function getExifValue(stream: ByteStream, lookAheadStream: ByteStream, DEBUG?: boolean): ExifValue;
+/**
+ * Reads the entire EXIF profile. The first 2 bytes in the stream must be the TIFF marker (II/MM).
+ * @param {ByteStream} stream
+ * @returns {Map<number, ExifValue} A map of all EXIF values found. The key is the EXIF tag number.
+ */
+export function getExifProfile(stream: ByteStream): Map<number, ExifValue>;
 export type ExifTagNumber = number;
 export namespace ExifTagNumber {
     const IMAGE_DESCRIPTION: number;

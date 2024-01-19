@@ -15,18 +15,18 @@ describe('bitjs.image.parsers.GifParser', () => {
     let trailerFound = false;
     let comment;
     parser.onLogicalScreen(evt => {
-      const {logicalScreenWidth, logicalScreenHeight} = evt.logicalScreen;
+      const {logicalScreenWidth, logicalScreenHeight} = evt.detail;
       expect(logicalScreenWidth).equals(32);
       expect(logicalScreenHeight).equals(52);
     });
     parser.onTableBasedImage(evt => {
-      const {imageWidth, imageHeight} = evt.tableBasedImage;
+      const {imageWidth, imageHeight} = evt.detail;
       expect(imageWidth).equals(32);
       expect(imageHeight).equals(52);
     });
-    parser.onCommentExtension(evt => comment = evt.comment);
+    parser.onCommentExtension(evt => comment = evt.detail);
     parser.onTrailer(evt => trailerFound = true);
-    
+
     await parser.start();
     
     expect(trailerFound).equals(true);
@@ -42,10 +42,10 @@ describe('bitjs.image.parsers.GifParser', () => {
     let appAuthCode;
     let hasAppData = false;
     parser.onApplicationExtension(evt => {
-      appId = evt.applicationExtension.applicationIdentifier
+      appId = evt.detail.applicationIdentifier
       appAuthCode = new TextDecoder().decode(
-          evt.applicationExtension.applicationAuthenticationCode);
-      hasAppData = evt.applicationExtension.applicationData.byteLength > 0;
+          evt.detail.applicationAuthenticationCode);
+      hasAppData = evt.detail.applicationData.byteLength > 0;
     });
     
     await parser.start();

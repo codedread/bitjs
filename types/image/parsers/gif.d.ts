@@ -12,12 +12,6 @@ export namespace GifParseEventType {
  * @typedef GifHeader
  * @property {string} version
  */
-export class GifHeaderEvent extends Event {
-    /** @param {GifHeader} header */
-    constructor(header: GifHeader);
-    /** @type {GifHeader} */
-    header: GifHeader;
-}
 /**
  * @typedef GifColor
  * @property {number} red
@@ -36,12 +30,6 @@ export class GifHeaderEvent extends Event {
  * @property {number} pixelAspectRatio
  * @property {GifColor[]=} globalColorTable Only if globalColorTableFlag is true.
  */
-export class GifLogicalScreenEvent extends Event {
-    /** @param {GifLogicalScreen} */
-    constructor(logicalScreen: any);
-    /** @type {GifLogicalScreen} */
-    logicalScreen: GifLogicalScreen;
-}
 /**
  * @typedef GifTableBasedImage
  * @property {number} imageLeftPosition
@@ -56,12 +44,6 @@ export class GifLogicalScreenEvent extends Event {
  * @property {number} lzwMinimumCodeSize
  * @property {Uint8Array} imageData
  */
-export class GifTableBasedImageEvent extends Event {
-    /** @param {GifTableBasedImage} img */
-    constructor(img: GifTableBasedImage);
-    /** @type {GifTableBasedImage} */
-    tableBasedImage: GifTableBasedImage;
-}
 /**
  * @typedef GifGraphicControlExtension
  * @property {number} disposalMethod
@@ -70,22 +52,10 @@ export class GifTableBasedImageEvent extends Event {
  * @property {number} delayTime
  * @property {number} transparentColorIndex
  */
-export class GifGraphicControlExtensionEvent extends Event {
-    /** @param {GifGraphicControlExtension} ext */
-    constructor(ext: GifGraphicControlExtension);
-    /** @type {GifGraphicControlExtension} */
-    graphicControlExtension: GifGraphicControlExtension;
-}
 /**
  * @typedef GifCommentExtension
  * @property {string} comment
  */
-export class GifCommentExtensionEvent extends Event {
-    /** @param {string} comment */
-    constructor(comment: string);
-    /** @type {string} */
-    comment: string;
-}
 /**
  * @typedef GifPlainTextExtension
  * @property {number} textGridLeftPosition
@@ -98,27 +68,12 @@ export class GifCommentExtensionEvent extends Event {
  * @property {number} textBackgroundColorIndex
  * @property {string} plainText
  */
-export class GifPlainTextExtensionEvent extends Event {
-    /** @param {GifPlainTextExtension} ext */
-    constructor(ext: GifPlainTextExtension);
-    /** @type {GifPlainTextExtension} */
-    plainTextExtension: GifPlainTextExtension;
-}
 /**
  * @typedef GifApplicationExtension
  * @property {string} applicationIdentifier
  * @property {Uint8Array} applicationAuthenticationCode
  * @property {Uint8Array} applicationData
  */
-export class GifApplicationExtensionEvent extends Event {
-    /** @param {GifApplicationExtension} ext */
-    constructor(ext: GifApplicationExtension);
-    /** @type {GifApplicationExtension} */
-    applicationExtension: GifApplicationExtension;
-}
-export class GifTrailerEvent extends Event {
-    constructor();
-}
 /**
  * The Grammar.
  *
@@ -147,53 +102,53 @@ export class GifParser extends EventTarget {
      */
     private version;
     /**
-     * Type-safe way to bind a listener for a GifApplicationExtensionEvent.
-     * @param {function(GifApplicationExtensionEvent): void} listener
+     * Type-safe way to bind a listener for a GifApplicationExtension.
+     * @param {function(CustomEvent<GifApplicationExtension>): void} listener
      * @returns {GifParser} for chaining
      */
-    onApplicationExtension(listener: (arg0: GifApplicationExtensionEvent) => void): GifParser;
+    onApplicationExtension(listener: (arg0: CustomEvent<GifApplicationExtension>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifCommentExtensionEvent.
-     * @param {function(GifCommentExtensionEvent): void} listener
+     * Type-safe way to bind a listener for a GifCommentExtension.
+     * @param {function(CustomEvent<GifCommentExtension>): void} listener
      * @returns {GifParser} for chaining
      */
-    onCommentExtension(listener: (arg0: GifCommentExtensionEvent) => void): GifParser;
+    onCommentExtension(listener: (arg0: CustomEvent<GifCommentExtension>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifGraphicControlExtensionEvent.
-     * @param {function(GifGraphicControlExtensionEvent): void} listener
+     * Type-safe way to bind a listener for a GifGraphicControlExtension.
+     * @param {function(CustomEvent<GifGraphicControlExtension>): void} listener
      * @returns {GifParser} for chaining
      */
-    onGraphicControlExtension(listener: (arg0: GifGraphicControlExtensionEvent) => void): GifParser;
+    onGraphicControlExtension(listener: (arg0: CustomEvent<GifGraphicControlExtension>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifHeaderEvent.
-     * @param {function(GifHeaderEvent): void} listener
+     * Type-safe way to bind a listener for a GifHeader.
+     * @param {function(CustomEvent<GifHeader>): void} listener
      * @returns {GifParser} for chaining
      */
-    onHeader(listener: (arg0: GifHeaderEvent) => void): GifParser;
+    onHeader(listener: (arg0: CustomEvent<GifHeader>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifLogicalScreenEvent.
-     * @param {function(GifLogicalScreenEvent): void} listener
+     * Type-safe way to bind a listener for a GifLogicalScreen.
+     * @param {function(CustomEvent<GifLogicalScreen>): void} listener
      * @returns {GifParser} for chaining
      */
-    onLogicalScreen(listener: (arg0: GifLogicalScreenEvent) => void): GifParser;
+    onLogicalScreen(listener: (arg0: CustomEvent<GifLogicalScreen>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifPlainTextExtensionEvent.
-     * @param {function(GifPlainTextExtensionEvent): void} listener
+     * Type-safe way to bind a listener for a GifPlainTextExtension.
+     * @param {function(CustomEvent<GifPlainTextExtension>): void} listener
      * @returns {GifParser} for chaining
      */
-    onPlainTextExtension(listener: (arg0: GifPlainTextExtensionEvent) => void): GifParser;
+    onPlainTextExtension(listener: (arg0: CustomEvent<GifPlainTextExtension>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifTableBasedImageEvent.
-     * @param {function(GifTableBasedImageEvent): void} listener
+     * Type-safe way to bind a listener for a GifTableBasedImage.
+     * @param {function(CustomEvent<GifTableBasedImage>): void} listener
      * @returns {GifParser} for chaining
      */
-    onTableBasedImage(listener: (arg0: GifTableBasedImageEvent) => void): GifParser;
+    onTableBasedImage(listener: (arg0: CustomEvent<GifTableBasedImage>) => void): GifParser;
     /**
-     * Type-safe way to bind a listener for a GifTrailerEvent.
-     * @param {function(GifTrailerEvent): void} listener
+     * Type-safe way to bind a listener for the GifTrailer.
+     * @param {function(CustomEvent): void} listener
      * @returns {GifParser} for chaining
      */
-    onTrailer(listener: (arg0: GifTrailerEvent) => void): GifParser;
+    onTrailer(listener: (arg0: CustomEvent) => void): GifParser;
     /**
      * @returns {Promise<void>} A Promise that resolves when the parsing is complete.
      */

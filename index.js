@@ -34,9 +34,7 @@ export {
 } from './archive/decompress.js';
 export { getFullMIMEString, getShortMIMEString } from './codecs/codecs.js';
 export { findMimeType } from './file/sniffer.js';
-export { GifApplicationExtensionEvent, GifCommentExtensionEvent, GifGraphicControlExtensionEvent,
-         GifHeaderEvent, GifLogicalScreenEvent, GifParseEventType, GifParser,
-         GifPlainTextExtensionEvent, GifTableBasedImageEvent } from './image/parsers/gif.js';
+export { GifParseEventType, GifParser } from './image/parsers/gif.js';
 export { JpegApp0ExtensionEvent, JpegApp0MarkerEvent, JpegApp1ExifEvent, JpegComponentType,
          JpegDctType, JpegDefineHuffmanTableEvent, JpegDefineQuantizationTableEvent,
          JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType,

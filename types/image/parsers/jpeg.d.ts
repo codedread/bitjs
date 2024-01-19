@@ -208,14 +208,6 @@ export class JpegParser extends EventTarget {
     onStartOfScan(listener: (arg0: JpegStartOfScanEvent) => void): JpegParser;
     /** @returns {Promise<void>} A Promise that resolves when the parsing is complete. */
     start(): Promise<void>;
-    /**
-     * Reads an Image File Directory from stream.
-     * @param {ByteStream} stream The stream to extract the Exif value descriptor.
-     * @param {ByteStream} lookAheadStream The lookahead stream if the offset is used.
-     * @param {Map<number, ExifValue} exifValueMap This map to add the Exif values.
-     * @returns {number} The next IFD offset.
-     */
-    readExifIfd(stream: ByteStream, lookAheadStream: ByteStream, exifValueMap: Map<number, import("./exif.js").ExifValue>): number;
 }
 export type ExifValue = import('./exif.js').ExifValue;
 export type JpegApp0Marker = {
@@ -299,5 +291,4 @@ export type JpegStartOfScan = {
     successiveApproximationBitPosition: number;
     rawImageData: Uint8Array;
 };
-import { ByteStream } from "../../io/bytestream.js";
 //# sourceMappingURL=jpeg.d.ts.map

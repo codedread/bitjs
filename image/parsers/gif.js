@@ -10,6 +10,7 @@
 
 import { BitStream } from '../../io/bitstream.js';
 import { ByteStream } from '../../io/bytestream.js';
+import { createEvent } from './parsers.js';
 
 // https://www.w3.org/Graphics/GIF/spec-gif89a.txt
 
@@ -28,15 +29,6 @@ export const GifParseEventType = {
  * @typedef GifHeader
  * @property {string} version
  */
-
-export class GifHeaderEvent extends Event {
-  /** @param {GifHeader} header */
-  constructor(header) {
-    super(GifParseEventType.HEADER);
-    /** @type {GifHeader} */
-    this.header = header;
-  }
-}
 
 /**
  * @typedef GifColor
@@ -58,15 +50,6 @@ export class GifHeaderEvent extends Event {
  * @property {GifColor[]=} globalColorTable Only if globalColorTableFlag is true.
  */
 
-export class GifLogicalScreenEvent extends Event {
-  /** @param {GifLogicalScreen} */
-  constructor(logicalScreen) {
-    super(GifParseEventType.LOGICAL_SCREEN);
-    /** @type {GifLogicalScreen} */
-    this.logicalScreen = logicalScreen;
-  }
-}
-
 /**
  * @typedef GifTableBasedImage
  * @property {number} imageLeftPosition
@@ -82,15 +65,6 @@ export class GifLogicalScreenEvent extends Event {
  * @property {Uint8Array} imageData
  */
 
-export class GifTableBasedImageEvent extends Event {
-  /** @param {GifTableBasedImage} img */
-  constructor(img) {
-    super(GifParseEventType.TABLE_BASED_IMAGE);
-    /** @type {GifTableBasedImage} */
-    this.tableBasedImage = img;
-  }
-}
-
 /**
  * @typedef GifGraphicControlExtension
  * @property {number} disposalMethod
@@ -100,28 +74,10 @@ export class GifTableBasedImageEvent extends Event {
  * @property {number} transparentColorIndex
  */
 
-export class GifGraphicControlExtensionEvent extends Event {
-  /** @param {GifGraphicControlExtension} ext */
-  constructor(ext) {
-    super(GifParseEventType.GRAPHIC_CONTROL_EXTENSION);
-    /** @type {GifGraphicControlExtension} */
-    this.graphicControlExtension = ext;
-  }
-}
-
 /**
  * @typedef GifCommentExtension
  * @property {string} comment
  */
-
-export class GifCommentExtensionEvent extends Event {
-  /** @param {string} comment */
-  constructor(comment) {
-    super(GifParseEventType.COMMENT_EXTENSION);
-    /** @type {string} */
-    this.comment = comment;
-  }
-}
 
 /**
  * @typedef GifPlainTextExtension
@@ -136,36 +92,12 @@ export class GifCommentExtensionEvent extends Event {
  * @property {string} plainText
  */
 
-export class GifPlainTextExtensionEvent extends Event {
-  /** @param {GifPlainTextExtension} ext */
-  constructor(ext) {
-    super(GifParseEventType.PLAIN_TEXT_EXTENSION);
-    /** @type {GifPlainTextExtension} */
-    this.plainTextExtension = ext;
-  }
-}
-
 /**
  * @typedef GifApplicationExtension
  * @property {string} applicationIdentifier
  * @property {Uint8Array} applicationAuthenticationCode
  * @property {Uint8Array} applicationData
  */
-
-export class GifApplicationExtensionEvent extends Event {
-  /** @param {GifApplicationExtension} ext */
-  constructor(ext) {
-    super(GifParseEventType.APPLICATION_EXTENSION);
-    /** @type {GifApplicationExtension} */
-    this.applicationExtension = ext;
-  }
-}
-
-export class GifTrailerEvent extends Event {
-  constructor() {
-    super(GifParseEventType.TRAILER);
-  }
-}
 
 /**
  * The Grammar.
@@ -204,8 +136,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifApplicationExtensionEvent.
-   * @param {function(GifApplicationExtensionEvent): void} listener
+   * Type-safe way to bind a listener for a GifApplicationExtension.
+   * @param {function(CustomEvent<GifApplicationExtension>): void} listener
    * @returns {GifParser} for chaining
    */
   onApplicationExtension(listener) {
@@ -214,8 +146,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifCommentExtensionEvent.
-   * @param {function(GifCommentExtensionEvent): void} listener
+   * Type-safe way to bind a listener for a GifCommentExtension.
+   * @param {function(CustomEvent<GifCommentExtension>): void} listener
    * @returns {GifParser} for chaining
    */
   onCommentExtension(listener) {
@@ -224,8 +156,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifGraphicControlExtensionEvent.
-   * @param {function(GifGraphicControlExtensionEvent): void} listener
+   * Type-safe way to bind a listener for a GifGraphicControlExtension.
+   * @param {function(CustomEvent<GifGraphicControlExtension>): void} listener
    * @returns {GifParser} for chaining
    */
   onGraphicControlExtension(listener) {
@@ -234,8 +166,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifHeaderEvent.
-   * @param {function(GifHeaderEvent): void} listener
+   * Type-safe way to bind a listener for a GifHeader.
+   * @param {function(CustomEvent<GifHeader>): void} listener
    * @returns {GifParser} for chaining
    */
   onHeader(listener) {
@@ -244,8 +176,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifLogicalScreenEvent.
-   * @param {function(GifLogicalScreenEvent): void} listener
+   * Type-safe way to bind a listener for a GifLogicalScreen.
+   * @param {function(CustomEvent<GifLogicalScreen>): void} listener
    * @returns {GifParser} for chaining
    */
   onLogicalScreen(listener) {
@@ -254,8 +186,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifPlainTextExtensionEvent.
-   * @param {function(GifPlainTextExtensionEvent): void} listener
+   * Type-safe way to bind a listener for a GifPlainTextExtension.
+   * @param {function(CustomEvent<GifPlainTextExtension>): void} listener
    * @returns {GifParser} for chaining
    */
   onPlainTextExtension(listener) {
@@ -264,8 +196,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifTableBasedImageEvent.
-   * @param {function(GifTableBasedImageEvent): void} listener
+   * Type-safe way to bind a listener for a GifTableBasedImage.
+   * @param {function(CustomEvent<GifTableBasedImage>): void} listener
    * @returns {GifParser} for chaining
    */
   onTableBasedImage(listener) {
@@ -274,8 +206,8 @@ export class GifParser extends EventTarget {
   }
 
   /**
-   * Type-safe way to bind a listener for a GifTrailerEvent.
-   * @param {function(GifTrailerEvent): void} listener
+   * Type-safe way to bind a listener for the GifTrailer.
+   * @param {function(CustomEvent): void} listener
    * @returns {GifParser} for chaining
    */
   onTrailer(listener) {
@@ -294,9 +226,7 @@ export class GifParser extends EventTarget {
     const version = this.version = this.bstream.readString(3); // "87a" or "89a"
     if (!["87a", "89a"].includes(version)) throw `Bad version: ${version}`;
 
-    this.dispatchEvent(new GifHeaderEvent(
-      /** @type {GifHeader} */ ({ version })
-    ));
+    this.dispatchEvent(createEvent(GifParseEventType.HEADER, {version}));
 
     // Logical Screen Descriptor.
     const logicalScreenWidth = this.bstream.readNumber(2);
@@ -323,7 +253,7 @@ export class GifParser extends EventTarget {
         }));
       }
     }
-    this.dispatchEvent(new GifLogicalScreenEvent(
+    this.dispatchEvent(createEvent(GifParseEventType.LOGICAL_SCREEN,
       /** @type {GifLogicalScreen} */ ({
         logicalScreenWidth,
         logicalScreenHeight,
@@ -394,7 +324,7 @@ export class GifParser extends EventTarget {
         ptr += arr.byteLength;
       }
 
-      this.dispatchEvent(new GifTableBasedImageEvent(
+      this.dispatchEvent(createEvent(GifParseEventType.TABLE_BASED_IMAGE,
         /** @type {GifTableBasedImage} */ ({
           imageLeftPosition,
           imageTopPosition,
@@ -437,7 +367,7 @@ export class GifParser extends EventTarget {
         const blockTerminator = this.bstream.readNumber(1);
         if (blockTerminator !== 0) throw `GCE: Block terminator of ${blockTerminator}`;
 
-        this.dispatchEvent(new GifGraphicControlExtensionEvent(
+        this.dispatchEvent(createEvent(GifParseEventType.GRAPHIC_CONTROL_EXTENSION,
           /** @type {GifGraphicControlExtension} */ ({
             disposalMethod,
             userInputFlag,
@@ -456,7 +386,7 @@ export class GifParser extends EventTarget {
         while ((bytes = this.readSubBlock())) {
           comment += new TextDecoder().decode(bytes);
         }
-        this.dispatchEvent(new GifCommentExtensionEvent(comment));
+        this.dispatchEvent(createEvent(GifParseEventType.COMMENT_EXTENSION, comment));
         return true;
       }
 
@@ -479,7 +409,7 @@ export class GifParser extends EventTarget {
           plainText += new TextDecoder().decode(bytes);
         }
 
-        this.dispatchEvent(new GifPlainTextExtensionEvent(
+        this.dispatchEvent(createEvent(GifParseEventType.PLAIN_TEXT_EXTENSION,
           /** @type {GifPlainTextExtension} */ ({
             textGridLeftPosition,
             textGridTopPosition,
@@ -518,7 +448,7 @@ export class GifParser extends EventTarget {
           ptr += arr.byteLength;
         }
 
-        this.dispatchEvent(new GifApplicationExtensionEvent(
+        this.dispatchEvent(createEvent(GifParseEventType.APPLICATION_EXTENSION,
           /** {@type GifApplicationExtension} */ ({
             applicationIdentifier,
             applicationAuthenticationCode,
@@ -534,7 +464,7 @@ export class GifParser extends EventTarget {
       }
     }
     else if (nextByte === 0x3B) {
-      this.dispatchEvent(new GifTrailerEvent());
+      this.dispatchEvent(createEvent(GifParseEventType.TRAILER));
       // Read the trailer.
       return false;
     }
