@@ -118,12 +118,11 @@ import { GifParser } from './bitjs/image/parsers/gif.js'
 
 const parser = new GifParser(someArrayBuffer);
 parser.onApplicationExtension(evt => {
-  const appId = evt.applicationExtension.applicationIdentifier;
-  const appAuthCode = new TextDecoder().decode(
-      evt.applicationExtension.applicationAuthenticationCode);
+  const appId = evt.detail.applicationIdentifier;
+  const appAuthCode = new TextDecoder().decode(evt.detail.applicationAuthenticationCode);
   if (appId === 'XMP Data' && appAuthCode === 'XMP') {
     /** @type {Uint8Array} */
-    const appData = evt.applicationExtension.applicationData;
+    const appData = evt.detail.applicationData;
     // Do something with appData (parse the XMP).
   }
 });
@@ -137,7 +136,19 @@ import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
 
 const parser = new JpegParser(someArrayBuffer);
 parser.onApp1Exif(evt => {
-  console.log(evt.exifValueMap.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
+  console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
+});
+await parser.start();
+```
+
+#### PNG Parser
+```javascript
+import { PngParser } from './bitjs/image/parsers/png.js'
+import { ExifTagNumber } from './bitjs/image/parsers/exif.js';
+
+const parser = new PngParser(someArrayBuffer);
+parser.onExifProfile(evt => {
+  console.log(evt.detail.get(ExifTagNumber.IMAGE_DESCRIPTION).stringValue);
 });
 await parser.start();
 ```
