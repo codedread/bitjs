@@ -17,7 +17,7 @@ import { getExifProfile } from './exif.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks: hIST, sPLT.
+// TODO: Ancillary chunks: sPLT.
 
 // let DEBUG = true;
 let DEBUG = false;
@@ -35,6 +35,7 @@ export const PngParseEventType = {
   cHRM: 'chromaticities_white_point',
   eXIf: 'exif_profile',
   gAMA: 'image_gamma',
+  hIST: 'histogram',
   iTXt: 'intl_text_data',
   pHYs: 'physical_pixel_dims',
   sBIT: 'significant_bits',
@@ -300,6 +301,20 @@ export class PngExifProfileEvent extends Event {
 }
 
 /**
+ * @typedef PngHistogram
+ * @property {number[]} frequencies The # of frequencies matches the # of palette entries.
+ */
+
+export class PngHistogramEvent extends Event {
+  /** @param {PngHistogram} histogram */
+  constructor(histogram) {
+    super(PngParseEventType.hIST);
+    /** @type {PngHistogram} */
+    this.histogram = histogram;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -325,7 +340,6 @@ export class PngParser extends EventTarget {
    * @private
    */
   palette;
-
 
   /** @param {ArrayBuffer} ab */
   constructor(ab) {
@@ -381,6 +395,16 @@ export class PngParser extends EventTarget {
    */
   onGamma(listener) {
     super.addEventListener(PngParseEventType.gAMA, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngHistogramEvent.
+   * @param {function(PngHistogramEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onHistogram(listener) {
+    super.addEventListener(PngParseEventType.hIST, listener);
     return this;
   }
 
@@ -746,6 +770,20 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngExifProfileEvent(exifValueMap));
           break;
 
+        // https://www.w3.org/TR/png-3/#11hIST
+        case 'hIST':
+          if (!this.palette) throw `hIST before PLTE`;
+          if (length !== this.palette.entries.length * 2) throw `Bad # of hIST frequencies: ${length / 2}`;
+
+          /** @type {PngHistogram} */
+          const hist = { frequencies: [] };
+          for (let f = 0; f < this.palette.entries.length; ++f) {
+            hist.frequencies.push(chStream.readNumber(2));
+          }
+
+          this.dispatchEvent(new PngHistogramEvent(hist));
+          break;
+
         // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
@@ -835,6 +873,9 @@ async function main() {
     });
     parser.onExifProfile(evt => {
       // console.dir(evt.exifProfile);
+    });
+    parser.onHistogram(evt => {
+      // console.dir(evt.histogram);
     });
 
     try {
