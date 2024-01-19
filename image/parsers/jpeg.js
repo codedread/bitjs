@@ -9,11 +9,9 @@
  */
 
 import { ByteStream } from '../../io/bytestream.js';
-import { ExifTagNumber, getExifValue } from './exif.js';
+import { getExifProfile } from './exif.js';
 
-/**
- * @typedef {import('./exif.js').ExifValue} ExifValue
- */
+/** @typedef {import('./exif.js').ExifValue} ExifValue */
 
 // https://en.wikipedia.org/wiki/JPEG_File_Interchange_Format
 // https://www.media.mit.edu/pia/Research/deepview/exif.html
@@ -388,41 +386,7 @@ export class JpegParser extends EventTarget {
         }
         if (this.bstream.readNumber(2) !== 0) throw `No null byte termination`;
 
-        const lookAheadStream = this.bstream.tee();
-        const tiffByteAlign = this.bstream.readString(2);
-        if (tiffByteAlign === 'II') {
-          this.bstream.setLittleEndian();
-          lookAheadStream.setLittleEndian();
-        } else if (tiffByteAlign === 'MM') {
-          this.bstream.setBigEndian();
-          lookAheadStream.setBigEndian();
-        } else {
-          throw `Invalid TIFF byte align symbol: ${tiffByteAlign}`;
-        }
-
-        const tiffMarker = this.bstream.readNumber(2);
-        if (tiffMarker !== 0x002A) {
-          throw `Invalid marker, not 0x002a: 0x${tiffMarker.toString(16)}`;
-        }
-
-        /** @type {Map<number, ExifValue} */
-        const exifValueMap = new Map();
-
-        // The offset includes the tiffByteAlign (2), marker (2), and the offset field itself (4).
-        const ifdOffset = this.bstream.readNumber(4) - 8;
-
-        let ifdStream = this.bstream.tee();
-        let nextIfdOffset;
-        while (true) {
-          nextIfdOffset = this.readExifIfd(ifdStream, lookAheadStream, exifValueMap);
-
-          // No more IFDs, so stop the loop.
-          if (nextIfdOffset === 0) break;
-
-          // Else, we have another IFD to read, point the stream at it.
-          ifdStream = lookAheadStream.tee().skip(nextIfdOffset);
-        }
-
+        const exifValueMap = getExifProfile(this.bstream);
         this.dispatchEvent(new JpegApp1ExifEvent(exifValueMap));
 
         this.bstream = skipAheadStream;
@@ -581,32 +545,5 @@ export class JpegParser extends EventTarget {
         this.bstream.skip(length);
       }
     } while (jpegMarker !== JpegSegmentType.EOI);
-  }
-
-  /**
-   * Reads an Image File Directory from stream.
-   * @param {ByteStream} stream The stream to extract the Exif value descriptor.
-   * @param {ByteStream} lookAheadStream The lookahead stream if the offset is used.
-   * @param {Map<number, ExifValue} exifValueMap This map to add the Exif values.
-   * @returns {number} The next IFD offset.
-   */
-  readExifIfd(stream, lookAheadStream, exifValueMap) {
-    let exifOffsetStream;
-    const numDirectoryEntries = stream.readNumber(2);
-    for (let entry = 0; entry < numDirectoryEntries; ++entry) {
-      const exifValue = getExifValue(stream, lookAheadStream, DEBUG);
-      const exifTagNumber = exifValue.tagNumber;
-      exifValueMap.set(exifTagNumber, exifValue);
-      if (exifValue.tagNumber === ExifTagNumber.EXIF_OFFSET) {
-        exifOffsetStream = lookAheadStream.tee().skip(exifValue.numericalValue);
-      }
-    } // Loop over Directory Entries.
-
-    if (exifOffsetStream) {
-      this.readExifIfd(exifOffsetStream, lookAheadStream, exifValueMap);
-    }
-
-    const nextIfdOffset = stream.readNumber(4);
-    return nextIfdOffset;
   }
 }

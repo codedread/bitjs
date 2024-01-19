@@ -224,6 +224,78 @@ export function getExifValue(stream, lookAheadStream, DEBUG = false) {
 }
 
 /**
+ * Reads an Image File Directory from stream, populating the map.
+ * @param {ByteStream} stream The stream to extract the Exif value descriptors.
+ * @param {ByteStream} lookAheadStream The lookahead stream if the offset is used.
+ * @param {Map<number, ExifValue} exifValueMap This map to add the Exif values.
+ * @returns {number} The next IFD offset.
+ */
+function getExifIfd(stream, lookAheadStream, exifValueMap) {
+  let exifOffsetStream;
+  const numDirectoryEntries = stream.readNumber(2);
+  for (let entry = 0; entry < numDirectoryEntries; ++entry) {
+    const exifValue = getExifValue(stream, lookAheadStream);
+    const exifTagNumber = exifValue.tagNumber;
+    exifValueMap.set(exifTagNumber, exifValue);
+    if (exifValue.tagNumber === ExifTagNumber.EXIF_OFFSET) {
+      exifOffsetStream = lookAheadStream.tee().skip(exifValue.numericalValue);
+    }
+  } // Loop over Directory Entries.
+
+  if (exifOffsetStream) {
+    getExifIfd(exifOffsetStream, lookAheadStream, exifValueMap);
+  }
+
+  const nextIfdOffset = stream.readNumber(4);
+  return nextIfdOffset;
+}
+
+/**
+ * Reads the entire EXIF profile. The first 2 bytes in the stream must be the TIFF marker (II/MM).
+ * @param {ByteStream} stream
+ * @returns {Map<number, ExifValue} A map of all EXIF values found. The key is the EXIF tag number.
+ */
+export function getExifProfile(stream) {
+  const lookAheadStream = stream.tee();
+  const tiffByteAlign = stream.readString(2);
+  if (tiffByteAlign === 'II') {
+    stream.setLittleEndian();
+    lookAheadStream.setLittleEndian();
+  } else if (tiffByteAlign === 'MM') {
+    stream.setBigEndian();
+    lookAheadStream.setBigEndian();
+  } else {
+    throw `Invalid TIFF byte align symbol: ${tiffByteAlign}`;
+  }
+
+  const tiffMarker = stream.readNumber(2);
+  if (tiffMarker !== 0x002A) {
+    throw `Invalid marker, not 0x002a: 0x${tiffMarker.toString(16)}`;
+  }
+
+  /** @type {Map<number, ExifValue} */
+  const exifValueMap = new Map();
+
+  // The offset includes the tiffByteAlign (2), marker (2), and the offset field itself (4).
+  // It is usually 0x00000008, which means ifdOffsetSkip will almost always be zero.
+  const ifdOffsetSkip = stream.readNumber(4) - 8;
+
+  let ifdStream = stream.skip(ifdOffsetSkip).tee();
+  let nextIfdOffset;
+  while (true) {
+    nextIfdOffset = getExifIfd(ifdStream, lookAheadStream, exifValueMap);
+
+    // No more IFDs, so stop the loop.
+    if (nextIfdOffset === 0) break;
+
+    // Else, we have another IFD to read, point the stream at it.
+    ifdStream = lookAheadStream.tee().skip(nextIfdOffset);
+  }
+
+  return exifValueMap;
+}
+
+/**
  * @param {Object} obj A numeric enum.
  * @param {number} valToFind The value to find.
  * @returns {string|null}
