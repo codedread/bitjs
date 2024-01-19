@@ -9,6 +9,7 @@ import { ExifDataFormat, ExifTagNumber } from '../image/parsers/exif.js';
 /** @typedef {import('../image/parsers/png.js').PngBackgroundColor} PngBackgroundColor */
 /** @typedef {import('../image/parsers/png.js').PngChromaticies} PngChromaticies */
 /** @typedef {import('../image/parsers/png.js').PngCompressedTextualData} PngCompressedTextualData */
+/** @typedef {import('../image/parsers/png.js').PngHistogram} PngHistogram */
 /** @typedef {import('../image/parsers/png.js').PngImageData} PngImageData */
 /** @typedef {import('../image/parsers/png.js').PngImageGamma} PngImageGamma */
 /** @typedef {import('../image/parsers/png.js').PngImageHeader} PngImageHeader */
@@ -17,6 +18,7 @@ import { ExifDataFormat, ExifTagNumber } from '../image/parsers/exif.js';
 /** @typedef {import('../image/parsers/png.js').PngPalette} PngPalette */
 /** @typedef {import('../image/parsers/png.js').PngPhysicalPixelDimensions} PngPhysicalPixelDimensions */
 /** @typedef {import('../image/parsers/png.js').PngSignificantBits} PngSignificantBits */
+/** @typedef {import('../image/parsers/png.js').PngSuggestedPalette} PngSuggestedPalette */
 /** @typedef {import('../image/parsers/png.js').PngTextualData} PngTextualData */
 /** @typedef {import('../image/parsers/png.js').PngTransparency} PngTransparency */
 
@@ -274,5 +276,46 @@ describe('bitjs.image.parsers.PngParser', () => {
     const descVal = exif.get(ExifTagNumber.COPYRIGHT);
     expect(descVal.dataFormat).equals(ExifDataFormat.ASCII_STRING);
     expect(descVal.stringValue).equals('2017 Willem van Schaik');
+  });
+
+  it('extracts hIST', async () => {
+    /** @type {PngPalette} */
+    let palette;
+    /** @type {PngHistogram} */
+    let hist;
+    await getPngParser('tests/image-testfiles/ch1n3p04.png')
+        .onHistogram(evt => { hist = evt.histogram })
+        .onPalette(evt => { palette = evt.palette })
+        .start();
+
+    expect(hist.frequencies.length).equals(palette.entries.length);
+    expect(hist.frequencies[0]).equals(64);
+    expect(hist.frequencies[1]).equals(112);
+  });
+
+  it('extracts sPLT', async () => {
+    /** @type {PngSuggestedPalette} */
+    let sPalette;
+    await getPngParser('tests/image-testfiles/ps1n0g08.png')
+        .onSuggestedPalette(evt => { sPalette = evt.suggestedPalette })
+        .start();
+
+    expect(sPalette.entries.length).equals(216);
+    expect(sPalette.paletteName).equals('six-cube');
+    expect(sPalette.sampleDepth).equals(8);
+
+    const entry0 = sPalette.entries[0];
+    expect(entry0.red).equals(0);
+    expect(entry0.green).equals(0);
+    expect(entry0.blue).equals(0);
+    expect(entry0.alpha).equals(255);
+    expect(entry0.frequency).equals(0);
+
+    const entry1 = sPalette.entries[1];
+    expect(entry1.red).equals(0);
+    expect(entry1.green).equals(0);
+    expect(entry1.blue).equals(51);
+    expect(entry1.alpha).equals(255);
+    expect(entry1.frequency).equals(0);
   });
 });

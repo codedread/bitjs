@@ -8,7 +8,6 @@
  * Copyright(c) 2024 Google Inc.
  */
 
-import * as fs from 'node:fs'; // TODO: Remove.
 import { ByteStream } from '../../io/bytestream.js';
 import { getExifProfile } from './exif.js';
 
@@ -17,10 +16,6 @@ import { getExifProfile } from './exif.js';
 // https://www.w3.org/TR/png-3/
 // https://en.wikipedia.org/wiki/PNG#File_format
 
-// TODO: Ancillary chunks: sPLT.
-
-// let DEBUG = true;
-let DEBUG = false;
 const SIG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
 /** @enum {string} */
@@ -39,6 +34,7 @@ export const PngParseEventType = {
   iTXt: 'intl_text_data',
   pHYs: 'physical_pixel_dims',
   sBIT: 'significant_bits',
+  sPLT: 'suggested_palette',
   tEXt: 'textual_data',
   tIME: 'last_mod_time',
   tRNS: 'transparency',
@@ -315,6 +311,31 @@ export class PngHistogramEvent extends Event {
 }
 
 /**
+ * @typedef PngSuggestedPaletteEntry
+ * @property {number} red
+ * @property {number} green
+ * @property {number} blue
+ * @property {number} alpha
+ * @property {number} frequency
+ */
+
+/**
+ * @typedef PngSuggestedPalette
+ * @property {string} paletteName
+ * @property {number} sampleDepth Either 8 or 16.
+ * @property {PngSuggestedPaletteEntry[]} entries
+ */
+
+export class PngSuggestedPaletteEvent extends Event {
+  /** @param {PngSuggestedPalette} suggestedPalette */
+  constructor(suggestedPalette) {
+    super(PngParseEventType.sPLT);
+    /** @type {PngSuggestedPalette} */
+    this.suggestedPalette = suggestedPalette;
+  }
+}
+
+/**
  * @typedef PngChunk Internal use only.
  * @property {number} length
  * @property {string} chunkType
@@ -475,6 +496,16 @@ export class PngParser extends EventTarget {
    */
   onSignificantBits(listener) {
     super.addEventListener(PngParseEventType.sBIT, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to bind a listener for a PngSuggestedPaletteEvent.
+   * @param {function(PngSuggestedPaletteEvent): void} listener
+   * @returns {PngParser} for chaining
+   */
+  onSuggestedPalette(listener) {
+    super.addEventListener(PngParseEventType.sPLT, listener);
     return this;
   }
 
@@ -784,6 +815,42 @@ export class PngParser extends EventTarget {
           this.dispatchEvent(new PngHistogramEvent(hist));
           break;
 
+        // https://www.w3.org/TR/png-3/#11sPLT
+        case 'sPLT':
+          const spByteArr = chStream.peekBytes(length);
+          const spNameNullIndex = spByteArr.indexOf(0);
+
+          /** @type {PngSuggestedPalette} */
+          const sPalette = {
+            paletteName: chStream.readString(spNameNullIndex),
+            sampleDepth: chStream.skip(1).readNumber(1),
+            entries: [],
+          };
+
+          const sampleDepth = sPalette.sampleDepth;
+          if (![8, 16].includes(sampleDepth)) throw `Invalid sPLT sample depth: ${sampleDepth}`;
+
+          const remainingByteLength = length - spNameNullIndex - 1 - 1;
+          const compByteLength = sPalette.sampleDepth === 8 ? 1 : 2;
+          const entryByteLength = 4 * compByteLength + 2;
+          if (remainingByteLength % entryByteLength !== 0) {
+            throw `Invalid # of bytes left in sPLT: ${remainingByteLength}`;
+          }
+
+          const numEntries = remainingByteLength / entryByteLength;
+          for (let e = 0; e < numEntries; ++e) {
+            sPalette.entries.push({
+              red: chStream.readNumber(compByteLength),
+              green: chStream.readNumber(compByteLength),
+              blue: chStream.readNumber(compByteLength),
+              alpha: chStream.readNumber(compByteLength),
+              frequency: chStream.readNumber(2),
+            });
+          }
+
+          this.dispatchEvent(new PngSuggestedPaletteEvent(sPalette));
+          break;
+
         // https://www.w3.org/TR/png-3/#11IDAT
         case 'IDAT':
           /** @type {PngImageData} */
@@ -803,87 +870,3 @@ export class PngParser extends EventTarget {
     } while (chunk.chunkType !== 'IEND');
   }
 }
-
-const FILES = `PngSuite.png	basn0g04.png	bggn4a16.png	cs8n2c08.png	f03n2c08.png	g10n3p04.png	s01i3p01.png	s32i3p04.png	tbbn0g04.png	xd0n2c08.png
-basi0g01.png	basn0g08.png	bgwn6a08.png	cs8n3p08.png	f04n0g08.png	g25n0g16.png	s01n3p01.png	s32n3p04.png	tbbn2c16.png	xd3n2c08.png
-basi0g02.png	basn0g16.png	bgyn6a16.png	ct0n0g04.png	f04n2c08.png	g25n2c08.png	s02i3p01.png	s33i3p04.png	tbbn3p08.png	xd9n2c08.png
-basi0g04.png	basn2c08.png	ccwn2c08.png	ct1n0g04.png	f99n0g04.png	g25n3p04.png	s02n3p01.png	s33n3p04.png	tbgn2c16.png	xdtn0g01.png
-basi0g08.png	basn2c16.png	ccwn3p08.png	cten0g04.png	g03n0g16.png	oi1n0g16.png	s03i3p01.png	s34i3p04.png	tbgn3p08.png	xhdn0g08.png
-basi0g16.png	basn3p01.png	cdfn2c08.png	ctfn0g04.png	g03n2c08.png	oi1n2c16.png	s03n3p01.png	s34n3p04.png	tbrn2c08.png	xlfn0g04.png
-basi2c08.png	basn3p02.png	cdhn2c08.png	ctgn0g04.png	g03n3p04.png	oi2n0g16.png	s04i3p01.png	s35i3p04.png	tbwn0g16.png	xs1n0g01.png
-basi2c16.png	basn3p04.png	cdsn2c08.png	cthn0g04.png	g04n0g16.png	oi2n2c16.png	s04n3p01.png	s35n3p04.png	tbwn3p08.png	xs2n0g01.png
-basi3p01.png	basn3p08.png	cdun2c08.png	ctjn0g04.png	g04n2c08.png	oi4n0g16.png	s05i3p02.png	s36i3p04.png	tbyn3p08.png	xs4n0g01.png
-basi3p02.png	basn4a08.png	ch1n3p04.png	ctzn0g04.png	g04n3p04.png	oi4n2c16.png	s05n3p02.png	s36n3p04.png	tm3n3p02.png	xs7n0g01.png
-basi3p04.png	basn4a16.png	ch2n3p08.png	exif2c08.png	g05n0g16.png	oi9n0g16.png	s06i3p02.png	s37i3p04.png	tp0n0g08.png	z00n2c08.png
-basi3p08.png	basn6a08.png	cm0n0g04.png	f00n0g08.png	g05n2c08.png	oi9n2c16.png	s06n3p02.png	s37n3p04.png	tp0n2c08.png	z03n2c08.png
-basi4a08.png	basn6a16.png	cm7n0g04.png	f00n2c08.png	g05n3p04.png	pp0n2c16.png	s07i3p02.png	s38i3p04.png	tp0n3p08.png	z06n2c08.png
-basi4a16.png	bgai4a08.png	cm9n0g04.png	f01n0g08.png	g07n0g16.png	pp0n6a08.png	s07n3p02.png	s38n3p04.png	tp1n3p08.png	z09n2c08.png
-basi6a08.png	bgai4a16.png	cs3n2c16.png	f01n2c08.png	g07n2c08.png	ps1n0g08.png	s08i3p02.png	s39i3p04.png	xc1n0g08.png
-basi6a16.png	bgan6a08.png	cs3n3p08.png	f02n0g08.png	g07n3p04.png	ps1n2c16.png	s08n3p02.png	s39n3p04.png	xc9n2c08.png
-basn0g01.png	bgan6a16.png	cs5n2c08.png	f02n2c08.png	g10n0g16.png	ps2n0g08.png	s09i3p02.png	s40i3p04.png	xcrn0g04.png
-basn0g02.png	bgbn4a08.png	cs5n3p08.png	f03n0g08.png	g10n2c08.png	ps2n2c16.png	s09n3p02.png	s40n3p04.png	xcsn0g01.png`
-    .replace(/\s+/g, ' ')
-    .split(' ')
-    .map(fn => `tests/image-testfiles/${fn}`);
-
-async function main() {
-  for (const fileName of FILES) {
-    console.log(`file: ${fileName}`);
-    const nodeBuf = fs.readFileSync(fileName);
-    const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
-    const parser = new PngParser(ab);
-    parser.onImageHeader(evt => {
-      // console.dir(evt.imageHeader);
-    });
-    parser.onGamma(evt => {
-      // console.dir(evt.imageGamma);
-    });
-    parser.onSignificantBits(evt => {
-      // console.dir(evt.sigBits);
-    });
-    parser.onChromaticities(evt => {
-      // console.dir(evt.chromaticities);
-    });
-    parser.onPalette(evt => {
-      // console.dir(evt.palette);
-    });
-    parser.onTransparency(evt => {
-      // console.dir(evt.transparency);
-    });
-    parser.onImageData(evt => {
-      // console.dir(evt);
-    });
-    parser.onTextualData(evt => {
-      // console.dir(evt.textualData);
-    });
-    parser.onCompressedTextualData(evt => {
-      // console.dir(evt.compressedTextualData);
-    });
-    parser.onIntlTextualData(evt => {
-      // console.dir(evt.intlTextualdata);
-    });
-    parser.onBackgroundColor(evt => {
-      // console.dir(evt.backgroundColor);
-    });
-    parser.onLastModTime(evt => {
-      // console.dir(evt.lastModTime);
-    });
-    parser.onPhysicalPixelDimensions(evt => {
-      // console.dir(evt.physicalPixelDimensions);
-    });
-    parser.onExifProfile(evt => {
-      // console.dir(evt.exifProfile);
-    });
-    parser.onHistogram(evt => {
-      // console.dir(evt.histogram);
-    });
-
-    try {
-      await parser.start();
-    } catch (err) {
-      if (!fileName.startsWith('tests/image-testfiles/x')) throw err;
-    }
-  }
-}
-
-// main();
