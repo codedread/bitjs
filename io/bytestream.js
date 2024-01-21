@@ -1,7 +1,7 @@
 /*
  * bytestream.js
  *
- * Provides readers for byte streams.
+ * A pull stream for bytes.
  *
  * Licensed under the MIT License
  *
@@ -88,7 +88,7 @@ export class ByteStream {
   }
 
   /**
-   * Returns how many bytes have been read in the stream since the beginning of time.
+   * Returns how many bytes have been consumed (read or skipped) since the beginning of time.
    * @returns {number}
    */
   getNumBytesRead() {

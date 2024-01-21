@@ -1,7 +1,7 @@
 /*
  * bitstream.js
  *
- * Provides readers for bitstreams.
+ * A pull stream for binary bits.
  *
  * Licensed under the MIT License
  *
@@ -118,6 +118,8 @@ export class BitStream {
   peekBits_ltm(n, opt_movePointers) {
     const NUM = parseInt(n, 10);
     let num = NUM;
+
+    // TODO: Handle this consistently between ByteStream and BitStream. ByteStream throws an error.
     if (n !== num || num <= 0) {
       return 0;
     }
@@ -176,6 +178,8 @@ export class BitStream {
   peekBits_mtl(n, opt_movePointers) {
     const NUM = parseInt(n, 10);
     let num = NUM;
+
+    // TODO: Handle this consistently between ByteStream and BitStream. ByteStream throws an error.
     if (n !== num || num <= 0) {
       return 0;
     }
@@ -304,5 +308,31 @@ export class BitStream {
    */
   readBytes(n) {
     return this.peekBytes(n, true);
+  }
+
+  /**
+   * Skips n bits in the stream. Will throw an error if n is < 0 or greater than the number of
+   * bits left in the stream.
+   * @param {number} n The number of bits to skip. Must be a positive integer.
+   * @returns {BitStream} Returns this BitStream for chaining.
+   */
+  skip(n) {
+    const num = parseInt(n, 10);
+    if (n !== num || num < 0) throw `Error! Called skip(${n})`;
+    else if (num === 0) return this;
+
+    const totalBitsLeft = this.getNumBitsLeft();
+    if (n > totalBitsLeft) {
+      throw `Error! Overflowed the bit stream for skip(${n}), ptrs=${this.bytePtr}/${this.bitPtr}`;
+    }
+
+    this.bitsRead_ += num;
+    this.bitPtr += num;
+    if (this.bitPtr >= 8) {
+      this.bytePtr += Math.floor(this.bitPtr / 8);
+      this.bitPtr %= 8;
+    }
+
+    return this;
   }
 }
