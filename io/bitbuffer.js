@@ -65,6 +65,8 @@ export class BitBuffer {
     this.bitPtr = this.mtl ? 7 : 0;
   }
 
+  // TODO: Be consistent with naming across classes (big-endian and little-endian).
+
   /** @returns {boolean} */
   getPackingDirection() {
     return this.mtl;

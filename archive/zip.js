@@ -12,6 +12,10 @@
  */
 
 import { ByteBuffer } from '../io/bytebuffer.js';
+import { CENTRAL_FILE_HEADER_SIG, CRC32_MAGIC_NUMBER, END_OF_CENTRAL_DIR_SIG,
+  LOCAL_FILE_HEADER_SIG } from './common.js';
+
+/** @typedef {import('./common.js').FileInfo} FileInfo */
 
 /** @type {MessagePort} */
 let hostPort;
@@ -28,14 +32,6 @@ let hostPort;
  * The client should append the bytes to a single buffer in the order they were received.
  */
 
-// TODO(bitjs): De-dupe this typedef and the one in compress.js.
-/**
- * @typedef FileInfo An object that is sent by the client to represent a file.
- * @property {string} fileName The name of this file. TODO: Includes the path?
- * @property {number} lastModTime The number of ms since the Unix epoch (1970-01-01 at midnight).
- * @property {Uint8Array} fileData The raw bytes of the file.
- */
-
 // TODO(bitjs): Figure out where this typedef should live.
 /**
  * @typedef CompressFilesMessage A message the client sends to the implementation.
@@ -45,12 +41,6 @@ let hostPort;
 
 // TODO: Support DEFLATE.
 // TODO: Support options that can let client choose levels of compression/performance.
-
-// TODO(bitjs): These constants should be defined in a common isomorphic ES module.
-const zLocalFileHeaderSignature = 0x04034b50;
-const zCentralFileHeaderSignature = 0x02014b50;
-const zEndOfCentralDirSignature = 0x06054b50;
-const zCRC32MagicNumber = 0xedb88320; // 0xdebb20e3;
 
 /**
  * @typedef CentralDirectoryFileHeaderInfo An object to be used to construct the central directory.
@@ -93,7 +83,7 @@ function createCRC32Table() {
   for (let n = 0; n < 256; n++) {
     let c = n;
     for (let k = 0; k < 8; k++) {
-      c = ((c & 1) ? (zCRC32MagicNumber ^ (c >>> 1)) : (c >>> 1));
+      c = ((c & 1) ? (CRC32_MAGIC_NUMBER ^ (c >>> 1)) : (c >>> 1));
     }
     table[n] = c;
   }
@@ -157,7 +147,7 @@ function zipOneFile(file) {
   /** @type {ByteBuffer} */
   const buffer = new ByteBuffer(fileHeaderSize + file.fileData.byteLength);
 
-  buffer.writeNumber(zLocalFileHeaderSignature, 4); // Magic number.
+  buffer.writeNumber(LOCAL_FILE_HEADER_SIG, 4); // Magic number.
   buffer.writeNumber(0x0A, 2); // Version.
   buffer.writeNumber(0, 2); // General Purpose Flags.
   buffer.writeNumber(0, 2); // Compression Method. 0 = Store only.
@@ -201,7 +191,7 @@ function writeCentralFileDirectory() {
   const buffer = new ByteBuffer(cdsLength + 22);
 
   for (const cdInfo of centralDirectoryInfos) {
-    buffer.writeNumber(zCentralFileHeaderSignature, 4); // Magic number.
+    buffer.writeNumber(CENTRAL_FILE_HEADER_SIG, 4); // Magic number.
     buffer.writeNumber(0, 2); // Version made by. // 0x31e
     buffer.writeNumber(0, 2); // Version needed to extract (minimum). // 0x14
     buffer.writeNumber(0, 2); // General purpose bit flag
@@ -222,7 +212,7 @@ function writeCentralFileDirectory() {
   }
 
   // 22 more bytes.
-  buffer.writeNumber(zEndOfCentralDirSignature, 4); // Magic number.
+  buffer.writeNumber(END_OF_CENTRAL_DIR_SIG, 4); // Magic number.
   buffer.writeNumber(0, 2); // Number of this disk.
   buffer.writeNumber(0, 2); // Disk where central directory starts.
   buffer.writeNumber(filesCompressed.length, 2); // Number of central directory records on this disk.
@@ -287,7 +277,7 @@ export function connect(port) {
 
 export function disconnect() {
   if (!hostPort) {
-    throw `hostPort was not connected in unzip.js`;
+    throw `hostPort was not connected in zip.js`;
   }
 
   hostPort = null;

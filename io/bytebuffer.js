@@ -9,6 +9,8 @@
  * Copyright(c) 2011 antimatter15
  */
 
+// TODO: Allow big-endian and little-endian, with consistent naming.
+
 /**
  * A write-only Byte buffer which uses a Uint8 Typed Array as a backing store.
  */

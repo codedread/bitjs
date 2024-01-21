@@ -1,14 +1,19 @@
 /**
  * common.js
  *
- * Provides common functionality for compressing and decompressing.
+ * Provides common definitions or functionality needed by multiple modules.
  *
  * Licensed under the MIT License
  *
  * Copyright(c) 2023 Google Inc.
  */
 
-// Requires the following JavaScript features: MessageChannel, MessagePort, and dynamic imports.
+/**
+ * @typedef FileInfo An object that is sent to the implementation representing a file to compress.
+ * @property {string} fileName The name of the file. TODO: Includes the path?
+ * @property {number} lastModTime The number of ms since the Unix epoch (1970-01-01 at midnight).
+ * @property {Uint8Array} fileData The bytes of the file.
+ */
 
 /**
  * @typedef Implementation
@@ -51,3 +56,23 @@ export async function getConnectedPort(implFilename) {
     });
   });
 }
+
+// Zip-specific things.
+
+export const LOCAL_FILE_HEADER_SIG = 0x04034b50;
+export const CENTRAL_FILE_HEADER_SIG = 0x02014b50;
+export const END_OF_CENTRAL_DIR_SIG = 0x06054b50;
+export const CRC32_MAGIC_NUMBER = 0xedb88320;
+export const ARCHIVE_EXTRA_DATA_SIG = 0x08064b50;
+export const DIGITAL_SIGNATURE_SIG = 0x05054b50;
+export const END_OF_CENTRAL_DIR_LOCATOR_SIG = 0x07064b50;
+export const DATA_DESCRIPTOR_SIG = 0x08074b50;
+
+/**
+ * @readonly
+ * @enum {number}
+ */
+export const ZipCompressionMethod = {
+  STORE: 0,   // Default.
+  DEFLATE: 8, // As per http://tools.ietf.org/html/rfc1951.
+};

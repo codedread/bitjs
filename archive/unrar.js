@@ -28,6 +28,7 @@ let hostPort;
 
 // State - consider putting these into a class.
 let unarchiveState = UnarchiveState.NOT_STARTED;
+/** @type {ByteStream} */
 let bytestream = null;
 let allLocalFiles = null;
 let logToConsole = false;

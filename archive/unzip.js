@@ -15,6 +15,9 @@
 import { BitStream } from '../io/bitstream.js';
 import { ByteBuffer } from '../io/bytebuffer.js';
 import { ByteStream } from '../io/bytestream.js';
+import { ARCHIVE_EXTRA_DATA_SIG, CENTRAL_FILE_HEADER_SIG, CRC32_MAGIC_NUMBER,
+  DATA_DESCRIPTOR_SIG, DIGITAL_SIGNATURE_SIG, END_OF_CENTRAL_DIR_SIG,
+  LOCAL_FILE_HEADER_SIG } from './common.js';
 
 const UnarchiveState = {
   NOT_STARTED: 0,
@@ -28,6 +31,7 @@ let hostPort;
 
 // State - consider putting these into a class.
 let unarchiveState = UnarchiveState.NOT_STARTED;
+/** @type {ByteStream} */
 let bytestream = null;
 let allLocalFiles = null;
 let logToConsole = false;
@@ -60,14 +64,6 @@ const postProgress = function () {
   });
 };
 
-const zLocalFileHeaderSignature = 0x04034b50;
-const zArchiveExtraDataSignature = 0x08064b50;
-const zCentralFileHeaderSignature = 0x02014b50;
-const zDigitalSignatureSignature = 0x05054b50;
-const zEndOfCentralDirSignature = 0x06054b50;
-const zEndOfCentralDirLocatorSignature = 0x07064b50;
-const zDataDescriptorSignature = 0x08074b50;
-
 // mask for getting the Nth bit (zero-based)
 const BIT = [0x01, 0x02, 0x04, 0x08,
   0x10, 0x20, 0x40, 0x80,
@@ -75,9 +71,7 @@ const BIT = [0x01, 0x02, 0x04, 0x08,
   0x1000, 0x2000, 0x4000, 0x8000];
 
 class ZipLocalFile {
-  /**
-   * @param {ByteStream} bstream 
-   */
+  /** @param {ByteStream} bstream */
   constructor(bstream) {
     if (typeof bstream != typeof {} || !bstream.readNumber || typeof bstream.readNumber != typeof function () { }) {
       return null;
@@ -125,9 +119,9 @@ class ZipLocalFile {
       let foundDataDescriptor = false;
       let numBytesSeeked = 0;
       while (!foundDataDescriptor) {
-        while (bstream.peekNumber(4) !== zLocalFileHeaderSignature &&
-          bstream.peekNumber(4) !== zArchiveExtraDataSignature &&
-          bstream.peekNumber(4) !== zCentralFileHeaderSignature) {
+        while (bstream.peekNumber(4) !== LOCAL_FILE_HEADER_SIG &&
+          bstream.peekNumber(4) !== ARCHIVE_EXTRA_DATA_SIG &&
+          bstream.peekNumber(4) !== CENTRAL_FILE_HEADER_SIG) {
           numBytesSeeked++;
           bstream.readBytes(1);
         }
@@ -143,7 +137,7 @@ class ZipLocalFile {
 
         // From the PKZIP App Note: "The signature value 0x08074b50 is also used by some ZIP
         // implementations as a marker for the Data Descriptor record".
-        if (maybeDescriptorSig === zDataDescriptorSignature) {
+        if (maybeDescriptorSig === DATA_DESCRIPTOR_SIG) {
           if (maybeCompressedSize === (numBytesSeeked - 16)) {
             foundDataDescriptor = true;
             descriptorSize = 16;
@@ -606,7 +600,7 @@ function archiveUnzip() {
   let bstream = bytestream.tee();
 
   // loop until we don't see any more local files or we find a data descriptor.
-  while (bstream.peekNumber(4) == zLocalFileHeaderSignature) {
+  while (bstream.peekNumber(4) == LOCAL_FILE_HEADER_SIG) {
     // Note that this could throw an error if the bstream overflows, which is caught in the
     // message handler.
     const oneLocalFile = new ZipLocalFile(bstream);
@@ -636,7 +630,7 @@ function archiveUnzip() {
   totalFilesInArchive = allLocalFiles.length;
 
   // archive extra data record
-  if (bstream.peekNumber(4) == zArchiveExtraDataSignature) {
+  if (bstream.peekNumber(4) == ARCHIVE_EXTRA_DATA_SIG) {
     if (logToConsole) {
       info(' Found an Archive Extra Data Signature');
     }
@@ -649,13 +643,13 @@ function archiveUnzip() {
 
   // central directory structure
   // TODO: handle the rest of the structures (Zip64 stuff)
-  if (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
+  if (bstream.peekNumber(4) == CENTRAL_FILE_HEADER_SIG) {
     if (logToConsole) {
       info(' Found a Central File Header');
     }
 
     // read all file headers
-    while (bstream.peekNumber(4) == zCentralFileHeaderSignature) {
+    while (bstream.peekNumber(4) == CENTRAL_FILE_HEADER_SIG) {
       bstream.readNumber(4); // signature
       const cdfh = {
         versionMadeBy: bstream.readNumber(2),
@@ -688,7 +682,7 @@ function archiveUnzip() {
   }
 
   // digital signature
-  if (bstream.peekNumber(4) == zDigitalSignatureSignature) {
+  if (bstream.peekNumber(4) == DIGITAL_SIGNATURE_SIG) {
     if (logToConsole) {
       info(' Found a Digital Signature');
     }
@@ -699,7 +693,7 @@ function archiveUnzip() {
   }
 
   let metadata = {};
-  if (bstream.peekNumber(4) == zEndOfCentralDirSignature) {
+  if (bstream.peekNumber(4) == END_OF_CENTRAL_DIR_SIG) {
     bstream.readNumber(4); // signature
     const eocds = {
       numberOfThisDisk: bstream.readNumber(2),

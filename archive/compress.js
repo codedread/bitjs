@@ -8,7 +8,7 @@
  * Copyright(c) 2023 Google Inc.
  */
 
-import { getConnectedPort } from './common.js';
+import { ZipCompressionMethod, getConnectedPort } from './common.js';
 
 // NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
@@ -19,15 +19,6 @@ import { getConnectedPort } from './common.js';
  * @property {Uint8Array} fileData The bytes of the file.
  */
 
-/**
- * @readonly
- * @enum {number}
- */
-export const ZipCompressionMethod = {
-  STORE: 0, // Default.
-  // DEFLATE: 8,
-};
-
 // export const DeflateCompressionMethod = {
 //   NO_COMPRESSION: 0,
 //   COMPRESSION_FIXED_HUFFMAN: 1,
@@ -36,17 +27,15 @@ export const ZipCompressionMethod = {
 
 /**
  * Data elements are packed into bytes in order of increasing bit number within the byte,
-   i.e., starting with the least-significant bit of the byte.
+ * i.e., starting with the least-significant bit of the byte.
  * Data elements other than Huffman codes are packed starting with the least-significant bit of the
-   data element.
+ * data element.
  * Huffman codes are packed starting with the most-significant bit of the code.
  */
 
 /**
  * @typedef CompressorOptions
  * @property {ZipCompressionMethod} zipCompressionMethod
- * @property {DeflateCompressionMethod=} deflateCompressionMethod Only present if
- *     zipCompressionMethod is set to DEFLATE.
  */
 
 /**
@@ -91,6 +80,7 @@ export class Zipper {
      * @private
      */
     this.zipCompressionMethod = options.zipCompressionMethod || ZipCompressionMethod.STORE;
+    if (this.zipCompressionMethod === ZipCompressionMethod.DEFLATE) throw `DEFLATE not supported.`;
 
     /**
      * @type {CompressStatus}

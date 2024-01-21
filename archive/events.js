@@ -19,9 +19,9 @@ export const UnarchiveEventType = {
   ERROR: 'error'
 };
 
-/**
- * An unarchive event.
- */
+// TODO: Use CustomEvent and a @template and remove these boilerplate events.
+
+/** An unarchive event. */
 export class UnarchiveEvent extends Event {
   /**
    * @param {string} type The event type.
@@ -31,9 +31,7 @@ export class UnarchiveEvent extends Event {
   }
 }
 
-/**
- * Updates all Archiver listeners that an append has occurred.
- */
+/** Updates all Unarchiver listeners that an append has occurred. */
 export class UnarchiveAppendEvent extends UnarchiveEvent {
   /**
    * @param {number} numBytes The number of bytes appended.
@@ -49,9 +47,7 @@ export class UnarchiveAppendEvent extends UnarchiveEvent {
   }
 }
 
-/**
- * Useful for passing info up to the client (for debugging).
- */
+/** Useful for passing info up to the client (for debugging). */
 export class UnarchiveInfoEvent extends UnarchiveEvent {
   /**
    * @param {string} msg The info message.
@@ -67,9 +63,7 @@ export class UnarchiveInfoEvent extends UnarchiveEvent {
   }
 }
 
-/**
- * An unrecoverable error has occured.
- */
+/** An unrecoverable error has occured. */
 export class UnarchiveErrorEvent extends UnarchiveEvent {
   /**
    * @param {string} msg The error message.
@@ -85,18 +79,14 @@ export class UnarchiveErrorEvent extends UnarchiveEvent {
   }
 }
 
-/**
- * Start event.
- */
+/** Start event. */
 export class UnarchiveStartEvent extends UnarchiveEvent {
   constructor() {
     super(UnarchiveEventType.START);
   }
 }
 
-/**
- * Finish event.
- */
+/** Finish event. */
 export class UnarchiveFinishEvent extends UnarchiveEvent {
   /**
    * @param {Object} metadata A collection fo metadata about the archive file.
@@ -108,9 +98,7 @@ export class UnarchiveFinishEvent extends UnarchiveEvent {
 }
 
 // TODO(bitjs): Fully document these. They are confusing.
-/**
- * Progress event.
- */
+/** Progress event. */
 export class UnarchiveProgressEvent extends UnarchiveEvent {
   /**
    * @param {string} currentFilename
@@ -136,9 +124,7 @@ export class UnarchiveProgressEvent extends UnarchiveEvent {
   }
 }
 
-/**
- * Extract event.
- */
+/** Extract event. */
 export class UnarchiveExtractEvent extends UnarchiveEvent {
   /**
    * @param {UnarchivedFile} unarchivedFile

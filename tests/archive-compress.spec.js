@@ -1,8 +1,9 @@
 import * as fs from 'node:fs';
 import 'mocha';
 import { expect } from 'chai';
-import { Unarchiver, getUnarchiver } from '../archive/decompress.js';
-import { CompressStatus, Zipper, ZipCompressionMethod } from '../archive/compress.js';
+import { getUnarchiver } from '../archive/decompress.js';
+import { CompressStatus, Zipper } from '../archive/compress.js';
+import { ZipCompressionMethod } from '../archive/common.js';
 
 /**
  * @typedef {import('./archive/compress.js').FileInfo} FileInfo
