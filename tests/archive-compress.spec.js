@@ -62,9 +62,11 @@ describe('bitjs.archive.compress', () => {
     });
   });
 
-  it('zipper works for DEFLATE, where supported', async () => {
-    const files = new Map(inputFileInfos);
-    try {
+  try {
+    new CompressionStream('deflate-raw');
+
+    it('zipper works for DEFLATE, where deflate-raw is supported', async () => {
+      const files = new Map(inputFileInfos);
       const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.DEFLATE});
       const byteArray = await zipper.start(Array.from(files.values()), true);
 
@@ -82,8 +84,8 @@ describe('bitjs.archive.compress', () => {
         }
       });
       await unarchiver.start();
-    } catch (err) {
-      // Do nothing. This runtime did not support DEFLATE. (Node < 21.2.0)
-    }
-  });
+    });
+  } catch (err) {
+    // Do nothing. This runtime did not support DEFLATE. (Node < 21.2.0)
+  }
 });
