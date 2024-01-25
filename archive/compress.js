@@ -76,11 +76,24 @@ export class Zipper {
    */
   constructor(options) {
     /**
-     * @type {ZipCompressionMethod}
+     * @type {CompressorOptions}
      * @private
      */
+    this.zipOptions = options;
     this.zipCompressionMethod = options.zipCompressionMethod || ZipCompressionMethod.STORE;
-    if (this.zipCompressionMethod === ZipCompressionMethod.DEFLATE) throw `DEFLATE not supported.`;
+    if (!Object.values(ZipCompressionMethod).includes(this.zipCompressionMethod)) {
+      throw `Compression method ${this.zipCompressionMethod} not supported`;
+    }
+
+    if (this.zipCompressionMethod === ZipCompressionMethod.DEFLATE) {
+      // As per https://developer.mozilla.org/en-US/docs/Web/API/CompressionStream, NodeJS only
+      // supports deflate-raw from 21.2.0+ (Nov 2023). https://nodejs.org/en/blog/release/v21.2.0.
+      try {
+        new CompressionStream('deflate-raw');
+      } catch (err) {
+        throw `CompressionStream with deflate-raw not supported by JS runtime: ${err}`;
+      }
+    }
 
     /**
      * @type {CompressStatus}
@@ -155,7 +168,7 @@ export class Zipper {
       };
 
       this.compressState = CompressStatus.READY;
-      this.appendFiles(files, isLastFile);
+      this.port_.postMessage({ files, isLastFile, compressionMethod: this.zipCompressionMethod});
     });
   }
 

@@ -13,7 +13,7 @@
 
 import { ByteBuffer } from '../io/bytebuffer.js';
 import { CENTRAL_FILE_HEADER_SIG, CRC32_MAGIC_NUMBER, END_OF_CENTRAL_DIR_SIG,
-  LOCAL_FILE_HEADER_SIG } from './common.js';
+  LOCAL_FILE_HEADER_SIG, ZipCompressionMethod } from './common.js';
 
 /** @typedef {import('./common.js').FileInfo} FileInfo */
 
@@ -37,9 +37,10 @@ let hostPort;
  * @typedef CompressFilesMessage A message the client sends to the implementation.
  * @property {FileInfo[]} files A set of files to add to the zip file.
  * @property {boolean} isLastFile Indicates this is the last set of files to add to the zip file.
+ * @property {ZipCompressionMethod=} compressionMethod The compression method to use. Ignored except
+ *     for the first message sent.
  */
 
-// TODO: Support DEFLATE.
 // TODO: Support options that can let client choose levels of compression/performance.
 
 /**
@@ -53,6 +54,9 @@ let hostPort;
  * @property {number} uncompressedSize (4 bytes)
  * @property {number} byteOffset (4 bytes)
  */
+
+/** @type {ZipCompressionMethod} */
+let compressionMethod = ZipCompressionMethod.STORE;
 
 /** @type {FileInfo[]} */
 let filesCompressed = [];
@@ -138,30 +142,39 @@ function dateToDosTime(jsDate) {
 
 /**
  * @param {FileInfo} file
- * @returns {ByteBuffer}
+ * @returns {Promise<ByteBuffer>}
  */
-function zipOneFile(file) {
+async function zipOneFile(file) {
+  /** @type {Uint8Array} */
+  let compressedBytes;
+  if (compressionMethod === ZipCompressionMethod.STORE) {
+    compressedBytes = file.fileData;
+  } else if (compressionMethod === ZipCompressionMethod.DEFLATE) {
+    const blob = new Blob([file.fileData.buffer]);
+    const compressedStream = blob.stream().pipeThrough(new CompressionStream('deflate-raw'));
+    compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer());
+  }
+
   // Zip Local File Header has 30 bytes and then the filename and extrafields.
   const fileHeaderSize = 30 + file.fileName.length;
 
   /** @type {ByteBuffer} */
-  const buffer = new ByteBuffer(fileHeaderSize + file.fileData.byteLength);
+  const buffer = new ByteBuffer(fileHeaderSize + compressedBytes.byteLength);
 
   buffer.writeNumber(LOCAL_FILE_HEADER_SIG, 4); // Magic number.
   buffer.writeNumber(0x0A, 2); // Version.
   buffer.writeNumber(0, 2); // General Purpose Flags.
-  buffer.writeNumber(0, 2); // Compression Method. 0 = Store only.
+  buffer.writeNumber(compressionMethod, 2); // Compression Method.
 
   const jsDate = new Date(file.lastModTime);
 
   /** @type {CentralDirectoryFileHeaderInfo} */
   const centralDirectoryInfo = {
-    compressionMethod: 0,
+    compressionMethod,
     lastModFileTime: dateToDosTime(jsDate),
     lastModFileDate: dateToDosDate(jsDate),
     crc32: calculateCRC32(0, file.fileData),
-    // TODO: For now, this is easy. Later when we do DEFLATE, we will have to calculate.
-    compressedSize: file.fileData.byteLength,
+    compressedSize: compressedBytes.byteLength,
     uncompressedSize: file.fileData.byteLength,
     fileName: file.fileName,
     byteOffset: numBytesWritten,
@@ -176,7 +189,7 @@ function zipOneFile(file) {
   buffer.writeNumber(centralDirectoryInfo.fileName.length, 2); // Filename length.
   buffer.writeNumber(0, 2); // Extra field length.
   buffer.writeASCIIString(centralDirectoryInfo.fileName); // Filename. Assumes ASCII.
-  buffer.insertBytes(file.fileData); // File data.
+  buffer.insertBytes(compressedBytes);
 
   return buffer;
 }
@@ -195,7 +208,7 @@ function writeCentralFileDirectory() {
     buffer.writeNumber(0, 2); // Version made by. // 0x31e
     buffer.writeNumber(0, 2); // Version needed to extract (minimum). // 0x14
     buffer.writeNumber(0, 2); // General purpose bit flag
-    buffer.writeNumber(0, 2); // Compression method.
+    buffer.writeNumber(compressionMethod, 2); // Compression method.
     buffer.writeNumber(cdInfo.lastModFileTime, 2); // Last Mod File Time.
     buffer.writeNumber(cdInfo.lastModFileDate, 2); // Last Mod Date.
     buffer.writeNumber(cdInfo.crc32, 4); // crc32.
@@ -228,7 +241,7 @@ function writeCentralFileDirectory() {
  * @param {{data: CompressFilesMessage}} evt The event for the implementation to process. It is an
  *     error to send any more events after a previous event had isLastFile is set to true.
  */
-const onmessage = function(evt) {
+const onmessage = async function(evt) {
   if (state === CompressorState.FINISHED) {
     throw `The zip implementation was sent a message after last file received.`;
   }
@@ -239,11 +252,19 @@ const onmessage = function(evt) {
 
   state = CompressorState.COMPRESSING;
 
+  if (filesCompressed.length === 0 && evt.data.compressionMethod !== undefined) {
+    if (!Object.values(ZipCompressionMethod).includes(evt.data.compressionMethod)) {
+      throw `Do not support compression method ${evt.data.compressionMethod}`;
+    }
+
+    compressionMethod = evt.data.compressionMethod;
+  }
+
   const msg = evt.data;
   const filesToCompress = msg.files;
   while (filesToCompress.length > 0) {
     const fileInfo = filesToCompress.shift();
-    const fileBuffer = zipOneFile(fileInfo);
+    const fileBuffer = await zipOneFile(fileInfo);
     filesCompressed.push(fileInfo);
     numBytesWritten += fileBuffer.data.byteLength;
     hostPort.postMessage({ type: 'compress', bytes: fileBuffer.data }, [ fileBuffer.data.buffer ]);

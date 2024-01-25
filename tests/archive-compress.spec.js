@@ -36,7 +36,11 @@ describe('bitjs.archive.compress', () => {
     }
   });
 
-  it('zipper works', (done) => {
+  it('zipper throws for invalid compression method', async () => {
+    expect(() => new Zipper({zipCompressionMethod: 42})).throws();
+  });
+
+  it('zipper works for STORE', (done) => {
     const files = new Map(inputFileInfos);
     const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.STORE});
     zipper.start(Array.from(files.values()), true).then(byteArray => {
@@ -56,5 +60,30 @@ describe('bitjs.archive.compress', () => {
       unarchiver.addEventListener('finish', evt => done());
       unarchiver.start();
     });
+  });
+
+  it('zipper works for DEFLATE, where supported', async () => {
+    const files = new Map(inputFileInfos);
+    try {
+      const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.DEFLATE});
+      const byteArray = await zipper.start(Array.from(files.values()), true);
+
+      expect(zipper.compressState).equals(CompressStatus.COMPLETE);
+      expect(byteArray.byteLength < decompressedFileSize).equals(true);
+
+      const unarchiver = getUnarchiver(byteArray.buffer);
+      unarchiver.addEventListener('extract', evt => {
+        const {filename, fileData} = evt.unarchivedFile;
+        expect(files.has(filename)).equals(true);
+        const inputFile = files.get(filename).fileData;
+        expect(inputFile.byteLength).equals(fileData.byteLength);
+        for (let b = 0; b < inputFile.byteLength; ++b) {
+          expect(inputFile[b]).equals(fileData[b]);
+        }
+      });
+      await unarchiver.start();
+    } catch (err) {
+      // Do nothing. This runtime did not support DEFLATE. (Node < 21.2.0)
+    }
   });
 });

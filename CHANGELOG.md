@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2024-01-??
+
+### Added
+
+- archive: Support DEFLATE in Zipper where JS implementations support it in CompressionStream.
+- io: Added a skip() method to BitStream to match ByteStream.
+
 ## [1.2.1] - 2024-01-19
 
 ### Added
