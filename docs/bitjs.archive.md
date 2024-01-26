@@ -4,8 +4,11 @@ This package includes objects for unarchiving binary data in popular archive for
 providing unzip, unrar and untar capabilities via JavaScript in the browser or various JavaScript
 runtimes (node, deno, bun).
 
-A prototype version of a compressor that creates Zip files is also present. The decompression /
-compression happens inside a Web Worker, if the runtime supports it (browsers, deno).
+A prototype version of a compressor that creates Zip files is also present.
+
+The decompression / compression happens inside a Web Worker, if the runtime supports it (browsers,
+deno). The library uses native decompression, if supported by the browser
+(via [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream/DecompressionStream)), and falls back to JavaScript implementations otherwise.
 
 The API is event-based, you will want to subscribe to some of these events:
   * 'progress': Periodic updates on the progress (bytes processed).

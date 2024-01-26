@@ -48,8 +48,8 @@ const { getFullMIMEString } = await import('@codedread/bitjs');
 
 ### bitjs.archive
 
-This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar).
-Here is a simple example of unrar:
+This package includes objects for decompressing binary data in popular archive formats (zip, rar,
+tar). Here is a simple example of unrar:
 
 #### Decompressing
 
