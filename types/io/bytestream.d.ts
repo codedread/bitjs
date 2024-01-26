@@ -55,7 +55,7 @@ export class ByteStream {
      */
     setLittleEndian(val?: boolean | undefined): void;
     /**
-     * Returns how many bytes have been read in the stream since the beginning of time.
+     * Returns how many bytes have been consumed (read or skipped) since the beginning of time.
      * @returns {number}
      */
     getNumBytesRead(): number;

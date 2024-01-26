@@ -170,10 +170,10 @@ export class PngParser extends EventTarget {
     onSuggestedPalette(listener: (arg0: CustomEvent<PngSuggestedPalette>) => void): PngParser;
     /**
      * Type-safe way to bind a listener for a PngTextualData.
-     * @param {function(PngTextualData): void} listener
+     * @param {function(CustomEvent<PngTextualData>): void} listener
      * @returns {PngParser} for chaining
      */
-    onTextualData(listener: (arg0: PngTextualData) => void): PngParser;
+    onTextualData(listener: (arg0: CustomEvent<PngTextualData>) => void): PngParser;
     /**
      * Type-safe way to bind a listener for a PngTransparency.
      * @param {function(CustomEvent<PngTransparency>): void} listener

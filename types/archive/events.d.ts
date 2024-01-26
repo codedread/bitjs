@@ -7,18 +7,14 @@ export namespace UnarchiveEventType {
     const INFO: string;
     const ERROR: string;
 }
-/**
- * An unarchive event.
- */
+/** An unarchive event. */
 export class UnarchiveEvent extends Event {
     /**
      * @param {string} type The event type.
      */
     constructor(type: string);
 }
-/**
- * Updates all Archiver listeners that an append has occurred.
- */
+/** Updates all Unarchiver listeners that an append has occurred. */
 export class UnarchiveAppendEvent extends UnarchiveEvent {
     /**
      * @param {number} numBytes The number of bytes appended.
@@ -30,9 +26,7 @@ export class UnarchiveAppendEvent extends UnarchiveEvent {
      */
     numBytes: number;
 }
-/**
- * Useful for passing info up to the client (for debugging).
- */
+/** Useful for passing info up to the client (for debugging). */
 export class UnarchiveInfoEvent extends UnarchiveEvent {
     /**
      * The information message.
@@ -40,9 +34,7 @@ export class UnarchiveInfoEvent extends UnarchiveEvent {
      */
     msg: string;
 }
-/**
- * An unrecoverable error has occured.
- */
+/** An unrecoverable error has occured. */
 export class UnarchiveErrorEvent extends UnarchiveEvent {
     /**
      * The information message.
@@ -50,15 +42,11 @@ export class UnarchiveErrorEvent extends UnarchiveEvent {
      */
     msg: string;
 }
-/**
- * Start event.
- */
+/** Start event. */
 export class UnarchiveStartEvent extends UnarchiveEvent {
     constructor();
 }
-/**
- * Finish event.
- */
+/** Finish event. */
 export class UnarchiveFinishEvent extends UnarchiveEvent {
     /**
      * @param {Object} metadata A collection fo metadata about the archive file.
@@ -66,9 +54,7 @@ export class UnarchiveFinishEvent extends UnarchiveEvent {
     constructor(metadata?: any);
     metadata: any;
 }
-/**
- * Progress event.
- */
+/** Progress event. */
 export class UnarchiveProgressEvent extends UnarchiveEvent {
     /**
      * @param {string} currentFilename
@@ -88,9 +74,7 @@ export class UnarchiveProgressEvent extends UnarchiveEvent {
     totalUncompressedBytesInArchive: number;
     totalCompressedBytesRead: number;
 }
-/**
- * Extract event.
- */
+/** Extract event. */
 export class UnarchiveExtractEvent extends UnarchiveEvent {
     /**
      * @param {UnarchivedFile} unarchivedFile

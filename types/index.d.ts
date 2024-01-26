@@ -23,6 +23,7 @@ export type JpegStartOfFrame = import('./image/parsers/jpeg.js').JpegStartOfFram
 export type JpegStartOfScan = import('./image/parsers/jpeg.js').JpegStartOfScan;
 export type PngBackgroundColor = import('./image/parsers/png.js').PngBackgroundColor;
 export type PngChromaticies = import('./image/parsers/png.js').PngChromaticities;
+export type PngColor = import('./image/parsers/png.js').PngColor;
 export type PngCompressedTextualData = import('./image/parsers/png.js').PngCompressedTextualData;
 export type PngHistogram = import('./image/parsers/png.js').PngHistogram;
 export type PngImageData = import('./image/parsers/png.js').PngImageData;
@@ -34,12 +35,13 @@ export type PngPalette = import('./image/parsers/png.js').PngPalette;
 export type PngPhysicalPixelDimensions = import('./image/parsers/png.js').PngPhysicalPixelDimensions;
 export type PngSignificantBits = import('./image/parsers/png.js').PngSignificantBits;
 export type PngSuggestedPalette = import('./image/parsers/png.js').PngSuggestedPalette;
+export type PngSuggestedPaletteEntry = import('./image/parsers/png.js').PngSuggestedPaletteEntry;
 export type PngTextualData = import('./image/parsers/png.js').PngTextualData;
 export type PngTransparency = import('./image/parsers/png.js').PngTransparency;
 export { UnarchiveEvent, UnarchiveEventType, UnarchiveInfoEvent, UnarchiveErrorEvent, UnarchiveStartEvent, UnarchiveFinishEvent, UnarchiveProgressEvent, UnarchiveExtractEvent, Unarchiver, Unzipper, Unrarrer, Untarrer, getUnarchiver } from "./archive/decompress.js";
 export { getFullMIMEString, getShortMIMEString } from "./codecs/codecs.js";
 export { GifParseEventType, GifParser } from "./image/parsers/gif.js";
 export { JpegComponentType, JpegDctType, JpegDensityUnits, JpegExtensionThumbnailFormat, JpegHuffmanTableType, JpegParseEventType, JpegParser, JpegSegmentType } from "./image/parsers/jpeg.js";
-export { PngParseEventType, PngParser } from "./image/parsers/png.js";
+export { PngColorType, PngInterlaceMethod, PngParseEventType, PngParser, PngUnitSpecifier } from "./image/parsers/png.js";
 export { convertWebPtoPNG, convertWebPtoJPG } from "./image/webp-shim/webp-shim.js";
 //# sourceMappingURL=index.d.ts.map

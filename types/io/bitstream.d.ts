@@ -121,5 +121,12 @@ export class BitStream {
      * @returns {Uint8Array} The subarray.
      */
     readBytes(n: number): Uint8Array;
+    /**
+     * Skips n bits in the stream. Will throw an error if n is < 0 or greater than the number of
+     * bits left in the stream.
+     * @param {number} n The number of bits to skip. Must be a positive integer.
+     * @returns {BitStream} Returns this BitStream for chaining.
+     */
+    skip(n: number): BitStream;
 }
 //# sourceMappingURL=bitstream.d.ts.map
