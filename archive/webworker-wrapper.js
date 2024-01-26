@@ -15,9 +15,11 @@
 /** @type {MessagePort} */
 let implPort;
 
+let module;
+
 onmessage = async (evt) => {
   if (evt.data.implSrc) {
-    const module = await import(evt.data.implSrc);
+    module = await import(evt.data.implSrc);
     module.connect(evt.ports[0]);
   } else if (evt.data.disconnect) {
     module.disconnect();
