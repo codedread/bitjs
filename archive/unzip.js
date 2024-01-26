@@ -178,7 +178,7 @@ class ZipLocalFile {
   }
 
   // determine what kind of compressed data we have and decompress
-  unzip() {
+  async unzip() {
     if (!this.fileData) {
       err('unzip() called on a file with out compressed file data');
     }
@@ -196,7 +196,7 @@ class ZipLocalFile {
       if (logToConsole) {
         info(`ZIP v2.0, DEFLATE: ${this.filename} (${this.compressedSize} bytes)`);
       }
-      this.fileData = inflate(this.fileData, this.uncompressedSize);
+      this.fileData = await inflate(this.fileData, this.uncompressedSize);
     }
     else {
       err(`UNSUPPORTED VERSION/FORMAT: ZIP v${this.version}, ` +
@@ -483,9 +483,18 @@ function inflateBlockData(bstream, hcLiteralTable, hcDistanceTable, buffer) {
  * Compression method 8. Deflate: http://tools.ietf.org/html/rfc1951
  * @param {Uint8Array} compressedData A Uint8Array of the compressed file data.
  * @param {number} numDecompressedBytes
- * @returns {Uint8Array} The decompressed array.
+ * @returns {Promise<Uint8Array>} The decompressed array.
  */
-function inflate(compressedData, numDecompressedBytes) {
+async function inflate(compressedData, numDecompressedBytes) {
+  // Try to use native implementation of DEFLATE if it exists.
+  try {
+    const blob = new Blob([compressedData.buffer]);
+    const decompressedStream = blob.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
+  } catch (err) {
+    // Fall through to non-native implementation of DEFLATE.
+  }
+  
   // Bit stream representing the compressed data.
   /** @type {BitStream} */
   const bstream = new BitStream(compressedData.buffer,
@@ -596,7 +605,7 @@ function inflate(compressedData, numDecompressedBytes) {
   return buffer.data;
 }
 
-function archiveUnzip() {
+async function archiveUnzip() {
   let bstream = bytestream.tee();
 
   // loop until we don't see any more local files or we find a data descriptor.
@@ -619,7 +628,7 @@ function archiveUnzip() {
       currentBytesUnarchivedInFile = 0;
 
       // Actually do the unzipping.
-      oneLocalFile.unzip();
+      await oneLocalFile.unzip();
 
       if (oneLocalFile.fileData != null) {
         hostPort.postMessage({ type: 'extract', unarchivedFile: oneLocalFile }, [oneLocalFile.fileData.buffer]);
@@ -724,7 +733,7 @@ function archiveUnzip() {
 
 // event.data.file has the first ArrayBuffer.
 // event.data.bytes has all subsequent ArrayBuffers.
-const onmessage = function (event) {
+const onmessage = async function (event) {
   const bytes = event.data.file || event.data.bytes;
   logToConsole = !!event.data.logToConsole;
 
@@ -755,7 +764,7 @@ const onmessage = function (event) {
   if (unarchiveState === UnarchiveState.UNARCHIVING ||
     unarchiveState === UnarchiveState.WAITING) {
     try {
-      archiveUnzip();
+      await archiveUnzip();
     } catch (e) {
       if (typeof e === 'string' && e.startsWith('Error!  Overflowed')) {
         // Overrun the buffer.

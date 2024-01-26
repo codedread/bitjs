@@ -7,8 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - archive: Support DEFLATE in Zipper where JS implementations support it in CompressionStream.
+  [Issue #40](https://github.com/codedread/bitjs/issues/40)
+- archive: Support DEFLATE in Unzipper where JS implementations support it in DecompressionStream.
+  [Issue #38](https://github.com/codedread/bitjs/issues/38)
 - file: Added detection of GZIP files.
 - io: Added a skip() method to BitStream to match ByteStream.
+
+### Fixed
+
+- Fixed a benign JS error in the Web Worker wrapper
 
 ## [1.2.1] - 2024-01-19
 

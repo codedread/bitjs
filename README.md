@@ -8,15 +8,13 @@ A set of dependency-free JavaScript modules to handle binary data in JS (using
 [Typed Arrays](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray)).
 Includes:
 
-  * bitjs/archive: Unarchiving files (unzip, unrar, untar) in JavaScript,
-    implemented as Web Workers where supported, and allowing progressive
-    unarchiving while streaming.
-  * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381
-    MIME type string
+  * bitjs/archive: Decompressing files (unzip, unrar, untar) in JavaScript, implemented as Web
+    Workers where supported, and allowing progressive unarchiving while streaming.
+  * bitjs/codecs: Get the codec info of media containers in a ISO RFC6381 MIME type string.
   * bitjs/file: Detect the type of file from its binary signature.
   * bitjs/image: Parsing GIF, JPEG, PNG. Conversion of WebP to PNG or JPEG.
-  * bitjs/io: Low-level classes for interpreting binary data (BitStream
-    ByteStream).  For example, reading or peeking at N bits at a time.
+  * bitjs/io: Low-level classes for interpreting binary data (BitStream, ByteStream). For example,
+    reading or peeking at N bits at a time.
 
 ## Installation
 

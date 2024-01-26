@@ -316,3 +316,22 @@ export function getUnarchiver(ab, options = {}) {
   }
   return unarchiver;
 }
+
+// import * as fs from 'node:fs';
+// async function main() {
+//   const nodeBuf = fs.readFileSync(`./action-1.cbz`);
+//   const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
+//   const then = Date.now();
+//   const zipper = new Unzipper(ab, {debug: true});
+//   zipper.addEventListener('extract', evt => {
+//     const f = evt.unarchivedFile;
+//     fs.writeFileSync(f.filename, Buffer.from(f.fileData));
+//   });
+//   zipper.addEventListener('finish', evt => {
+//     console.dir(evt);
+//     console.log(`Took ${(Date.now() - then)}ms`);
+//   });
+//   await zipper.start();
+// }
+
+// main();
