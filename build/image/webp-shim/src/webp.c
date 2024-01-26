@@ -9,6 +9,8 @@
  * Copyright(c) 2020 Google Inc.
  */
 
+// TODO(2.0): Remove this. It seems unnecessary given WebP is universally supported now.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "emscripten.h"

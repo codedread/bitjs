@@ -20,3 +20,5 @@ Assuming you have cloned the repository in /path/to/bitjs:
 Various library files will be output to /path/to/bitjs/.  For example, the
 /path/to/bitjs/image/webp-shim/ directory will now contain update webp-shim-module.js and
 webp-shim-module.wasm files.
+
+# TODO(2.0): Remove this.

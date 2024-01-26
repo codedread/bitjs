@@ -15,7 +15,7 @@ import { getConnectedPort } from './common.js';
 import { findMimeType } from '../file/sniffer.js';
 
 // Exported as a convenience (and also because this module used to contain these).
-// TODO(bitjs): Remove this export in a future release?
+// TODO(2.0): Remove this export, since they have moved to events.js.
 export {
   UnarchiveAppendEvent,
   UnarchiveErrorEvent,
@@ -287,6 +287,8 @@ export class Untarrer extends Unarchiver {
   getMIMEType() { return 'application/x-tar'; }
   getScriptFileName() { return './untar.js'; };
 }
+
+// TODO(2.0): When up-revving to a major new version, remove the string type for options.
 
 /**
  * Factory method that creates an unarchiver based on the byte signature found

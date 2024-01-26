@@ -6,6 +6,8 @@
  * Copyright(c) 2020 Google Inc.
  */
 
+// TODO(2.0): Remove this. It seems unnecessary given WebP is universally supported now.
+
 const url = import.meta.url;
 if (!url.endsWith('/webp-shim.js')) {
   throw 'webp-shim must be loaded as webp-shim.js';

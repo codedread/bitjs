@@ -10,7 +10,8 @@
 
 import { ZipCompressionMethod, getConnectedPort } from './common.js';
 
-// NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
+// TODO(2.0): Remove this comment.
+// NOTE: THIS IS A WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
 
 /**
  * @typedef FileInfo An object that is sent to the implementation to represent a file to zip.
@@ -52,8 +53,8 @@ export const CompressStatus = {
 
 /**
  * A thing that zips files.
- * NOTE: THIS IS A VERY HACKY WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
- * TODO: Make a streaming / event-driven API.
+ * NOTE: THIS IS A WORK-IN-PROGRESS! THE API IS NOT FROZEN! USE AT YOUR OWN RISK!
+ * TODO(2.0): Add semantic onXXX methods for an event-driven API. 
  */
 export class Zipper {
   /**

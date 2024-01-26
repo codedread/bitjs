@@ -6,6 +6,12 @@
  * Copyright(c) 2023 Google Inc.
  */
 
+// TODO(2.0): Consider deprecating the Event subclasses here and:
+//     1) Make @typedef structures in jsdoc for all the payloads
+//     2) Use CustomEvent for payload event propagation
+//     3) Add semantic methods to the archivers (onExtract, onProgress) like the image parsers.
+//     4) Move everything into common.js ?
+
 /**
  * The UnarchiveEvent types.
  */

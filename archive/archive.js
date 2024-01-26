@@ -9,7 +9,7 @@
  * Copyright(c) 2011 Google Inc.
  */
 
-// TODO: When up-revving to a major new version, remove this module.
+// TODO(2.0): When up-revving to a major new version, remove this module.
 
 import { UnarchiveAppendEvent, UnarchiveErrorEvent, UnarchiveEvent, UnarchiveEventType,
          UnarchiveExtractEvent, UnarchiveFinishEvent, UnarchiveInfoEvent,
