@@ -3,7 +3,7 @@ console.warn(`This is not even an alpha-level API. Do not use.`);
 // A Container Format is a file that embeds multiple data streams into a single file.
 // Examples:
 //   - the ZIP family (ZIP, JAR, CBZ, EPUB, ODF, OOXML)
-//   - the ISO-BMFF family (MP4, HEVC, AVIF, MOV/QT, etc)
+//   - the ISO-BMFF family (MP4, HEVC, HEIC, AVIF, MOV/QT, etc)
 //   - the Matroska family (MKV, WebM)
 //   - the RIFF family (WAV, AVI, WebP)
 //   - the OGG family (OGV, OPUS)

@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - archive: Support DEFLATE in Zipper where JS implementations support it in CompressionStream.
+- file: Added detection of GZIP files.
 - io: Added a skip() method to BitStream to match ByteStream.
 
 ## [1.2.1] - 2024-01-19
