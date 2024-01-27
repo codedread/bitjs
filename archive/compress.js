@@ -20,12 +20,6 @@ import { ZipCompressionMethod, getConnectedPort } from './common.js';
  * @property {Uint8Array} fileData The bytes of the file.
  */
 
-// export const DeflateCompressionMethod = {
-//   NO_COMPRESSION: 0,
-//   COMPRESSION_FIXED_HUFFMAN: 1,
-//   COMPRESSION_DYNAMIC_HUFFMAN: 2,
-// }
-
 /**
  * Data elements are packed into bytes in order of increasing bit number within the byte,
  * i.e., starting with the least-significant bit of the byte.
@@ -50,6 +44,10 @@ export const CompressStatus = {
   COMPLETE: 'complete',
   ERROR: 'error',
 };
+
+// TODO: Extend EventTarget and introduce subscribe methods (onProgress, onInsert, onFinish, etc).
+// TODO: I think appendFiles() is still a good idea so that all files do not have to live in memory
+//     at once, but the API is wonky here... re-think it. Maybe something more like a builder?
 
 /**
  * A thing that zips files.

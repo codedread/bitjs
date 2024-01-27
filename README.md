@@ -4,7 +4,7 @@
 
 ## Introduction
 
-A set of dependency-free JavaScript modules to handle binary data in JS (using
+A set of dependency-free JavaScript modules to work with binary data in JS (using
 [Typed Arrays](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray)).
 Includes:
 
@@ -29,10 +29,10 @@ yarn add @codedread/bitjs
 
 ### CommonJS/ESM in Node
 
-This module is an ES Module, which should work as expected in other projects using ES Modules.
-However, if you are using CommonJS modules, it's a little trickier to use. One example of this is
-if a TypeScript project compiles to CommonJS, it will try to turn imports into require() statements,
-which will break. The fix for this (unfortunately) is to update your tsconfig.json:
+This module is an ES Module. If your project uses CommonJS modules, it's a little trickier to use.
+One example of this is if a TypeScript project compiles to CommonJS, it will try to turn imports
+into require() statements, which will break. The fix for this (unfortunately) is to update your
+tsconfig.json:
 
 ```json
  "moduleResolution": "Node16",
@@ -48,8 +48,8 @@ const { getFullMIMEString } = await import('@codedread/bitjs');
 
 ### bitjs.archive
 
-This package includes objects for decompressing binary data in popular archive formats (zip, rar,
-tar). Here is a simple example of unrar:
+This package includes objects for decompressing and compressing binary data in popular archive
+formats (zip, rar, tar). Here is a simple example of unrar:
 
 #### Decompressing
 
@@ -65,7 +65,7 @@ unrar.addEventListener('finish', () => console.log('Done'));
 unrar.start();
 ```
 
-More explanation and examples are located on [the API page](./docs/bitjs.archive.md).
+More details and examples are located on [the API page](./docs/bitjs.archive.md).
 
 ### bitjs.codecs
 
@@ -105,8 +105,10 @@ const mimeType = findMimeType(someArrayBuffer);
 
 ### bitjs.image
 
-This package includes code for dealing with binary images.  It includes low-level, event-based
-parsers for GIF, JPEG, and PNG images. It also includes a module for converting WebP images into
+This package includes code for dealing with image files.  It includes low-level, event-based
+parsers for GIF, JPEG, and PNG images.
+
+It also includes a module for converting WebP images into
 alternative raster graphics formats (PNG/JPG), though this latter module is deprecated, now that
 WebP images are well-supported in all browsers.
 
@@ -172,7 +174,7 @@ const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the point
 const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
 ```
 
-More explanation and examples are located on [the API page](./docs/bitjs.io.md).
+More details and examples are located on [the API page](./docs/bitjs.io.md).
 
 ## Reference
 
@@ -182,7 +184,6 @@ RAR file format.
 ## History
 
 This project grew out of another project of mine, [kthoom](https://github.com/codedread/kthoom) (a
-comic book reader implemented in the browser).  This repository was automatically exported from
+comic book reader implemented in the browser). This repository was automatically exported from
 [my original repository on GoogleCode](https://code.google.com/p/bitjs) and has undergone
-considerable changes and improvements since then, including adding streaming support, starter RarVM
-support, tests, many bug fixes, and updating the code to modern JavaScript and supported features.
+considerable changes and improvements since then.
