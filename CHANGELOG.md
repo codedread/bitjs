@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 
 - archive: Support semantic methods for subscribing to unarchive events (onExtract), [Issue #47](https://github.com/codedread/bitjs/issues/47).
 
+### Changed
+
+- archive: Error on RAR5 files.
 
 ## [1.2.2] - 2024-01-26
 

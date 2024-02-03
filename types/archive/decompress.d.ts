@@ -13,6 +13,7 @@ export function getUnarchiver(ab: ArrayBuffer, options?: UnarchiverOptions | str
 /**
  * All extracted files returned by an Unarchiver will implement
  * the following interface:
+ * TODO: Move this interface into common.js?
  */
 /**
  * @typedef UnarchivedFile
@@ -37,7 +38,7 @@ export class Unarchiver extends EventTarget {
      */
     constructor(arrayBuffer: ArrayBuffer, options?: UnarchiverOptions | string);
     /**
-     * The client-side port that sends messages to, and receives messages from the
+     * The client-side port that sends messages to, and receives messages from, the
      * decompressor implementation.
      * @type {MessagePort}
      * @private
@@ -61,12 +62,30 @@ export class Unarchiver extends EventTarget {
      */
     debugMode_: boolean;
     /**
-     * Overridden so that the type hints for eventType are specific.
+     * Overridden so that the type hints for eventType are specific. Prefer onExtract(), etc.
      * @param {'progress'|'extract'|'finish'} eventType
      * @param {EventListenerOrEventListenerObject} listener
      * @override
      */
     override addEventListener(eventType: 'progress' | 'extract' | 'finish', listener: EventListenerOrEventListenerObject): void;
+    /**
+     * Type-safe way to subscribe to an UnarchiveExtractEvent.
+     * @param {function(UnarchiveExtractEvent)} listener
+     * @returns {Unarchiver} for chaining.
+     */
+    onExtract(listener: (arg0: UnarchiveExtractEvent) => any): Unarchiver;
+    /**
+     * Type-safe way to subscribe to an UnarchiveFinishEvent.
+     * @param {function(UnarchiveFinishEvent)} listener
+     * @returns {Unarchiver} for chaining.
+     */
+    onFinish(listener: (arg0: UnarchiveFinishEvent) => any): Unarchiver;
+    /**
+     * Type-safe way to subscribe to an UnarchiveProgressEvent.
+     * @param {function(UnarchiveProgressEvent)} listener
+     * @returns {Unarchiver} for chaining.
+     */
+    onProgress(listener: (arg0: UnarchiveProgressEvent) => any): Unarchiver;
     /**
      * This method must be overridden by the subclass to return the script filename.
      * @returns {string} The MIME type of the archive.
@@ -88,7 +107,6 @@ export class Unarchiver extends EventTarget {
     private createUnarchiveEvent_;
     /**
      * Receive an event and pass it to the listener functions.
-     *
      * @param {Object} obj
      * @returns {boolean} Returns true if the decompression is finished.
      * @private
