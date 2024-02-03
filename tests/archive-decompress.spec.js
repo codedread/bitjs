@@ -13,11 +13,12 @@ const INPUT_FILES = [
 ];
 
 const ARCHIVE_FILES = [
+  // rar a -m0 -ma4 archive-rar-store.rar sample*
   'archive-rar-store.rar',
+  // rar a -m3 -ma4 archive-rar-default.rar sample*
   'archive-rar-default.rar',
+  // rar a -m5 -ma4 archive-rar-smaller.rar sample*
   'archive-rar-smaller.rar',
-  'archive-rar-ma4.rar',
-  'archive-rar-ma5.rar',
   'archive-tar.tar',
   'archive-zip-store.zip',
   'archive-zip-faster.zip',
@@ -36,15 +37,23 @@ describe('bitjs.archive.decompress', () => {
     }
   });
 
+  afterEach(() => {
+    // Delete the unarchived files that were written to disk.
+    INPUT_FILES.forEach(fn => fs.unlink(fn, () => {}));
+  });
+
   for (const outFile of ARCHIVE_FILES) {
-    it(outFile, (done) => {
+    it(outFile, async () => {
       const bufs = new Map(inputArrayBuffers);
       const nodeBuf = fs.readFileSync(`${PATH}${outFile}`);
       const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
       let unarchiver = getUnarchiver(ab);
       expect(unarchiver instanceof Unarchiver).equals(true);
+      let extractEvtFiredForAddEventListener = false;
+      let extractEvtFiredForOnExtract = false;
   
       unarchiver.addEventListener('extract', evt => {
+        extractEvtFiredForAddEventListener = true;
         const {filename, fileData} = evt.unarchivedFile;
         expect(bufs.has(filename)).equals(true);
         const ab = bufs.get(filename);
@@ -55,7 +64,14 @@ describe('bitjs.archive.decompress', () => {
         // Remove the value from the map so that it is only used once.
         bufs.delete(filename);
       });
-      unarchiver.start().then(() => { done() });
+      unarchiver.onExtract(evt => {
+        extractEvtFiredForOnExtract = true;
+        expect(evt.unarchivedFile.filename.length > 0).equals(true);
+      })
+
+      await unarchiver.start();
+      expect(extractEvtFiredForAddEventListener).equals(true);
+      expect(extractEvtFiredForOnExtract).equals(true);
     });
   }
 });

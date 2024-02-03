@@ -352,19 +352,20 @@ export function getUnarchiver(ab, options = {}) {
 
 // import * as fs from 'node:fs';
 // async function main() {
-//   const nodeBuf = fs.readFileSync(`./action-1.cbz`);
+//   const nodeBuf = fs.readFileSync(`./tests/archive-testfiles/archive-rar-store.rar`);
 //   const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
 //   const then = Date.now();
-//   const zipper = new Unzipper(ab, {debug: true});
-//   zipper.addEventListener('extract', evt => {
+//   const unarchiver = getUnarchiver(ab, {debug: true})
+//   unarchiver.addEventListener('extract', evt => {
+//     console.dir(evt);
 //     const f = evt.unarchivedFile;
 //     fs.writeFileSync(f.filename, Buffer.from(f.fileData));
 //   });
-//   zipper.addEventListener('finish', evt => {
+//   unarchiver.addEventListener('finish', evt => {
 //     console.dir(evt);
 //     console.log(`Took ${(Date.now() - then)}ms`);
 //   });
-//   await zipper.start();
+//   await unarchiver.start();
 // }
 
 // main();
