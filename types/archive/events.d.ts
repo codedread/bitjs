@@ -49,7 +49,7 @@ export class UnarchiveStartEvent extends UnarchiveEvent {
 /** Finish event. */
 export class UnarchiveFinishEvent extends UnarchiveEvent {
     /**
-     * @param {Object} metadata A collection fo metadata about the archive file.
+     * @param {Object} metadata A collection of metadata about the archive file.
      */
     constructor(metadata?: any);
     metadata: any;
