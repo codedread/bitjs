@@ -37,11 +37,6 @@ describe('bitjs.archive.decompress', () => {
     }
   });
 
-  afterEach(() => {
-    // Delete the unarchived files that were written to disk.
-    INPUT_FILES.forEach(fn => fs.unlink(fn, () => {}));
-  });
-
   for (const outFile of ARCHIVE_FILES) {
     it(outFile, async () => {
       const bufs = new Map(inputArrayBuffers);
