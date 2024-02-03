@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2024-02-??
+
+### Added
+
+- archive: Support semantic methods for subscribing to unarchive events (onExtract), [Issue #47](https://github.com/codedread/bitjs/issues/47).
+
+
 ## [1.2.2] - 2024-01-26
 
 ### Added

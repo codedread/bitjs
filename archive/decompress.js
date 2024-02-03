@@ -15,7 +15,7 @@ import { getConnectedPort } from './common.js';
 import { findMimeType } from '../file/sniffer.js';
 
 // Exported as a convenience (and also because this module used to contain these).
-// TODO(2.0): Remove this export, since they have moved to events.js.
+// TODO(2.0): Remove this export, since they have moved to events.js?
 export {
   UnarchiveAppendEvent,
   UnarchiveErrorEvent,
@@ -31,6 +31,7 @@ export {
 /**
  * All extracted files returned by an Unarchiver will implement
  * the following interface:
+ * TODO: Move this interface into common.js?
  */
 
 /**
@@ -49,7 +50,7 @@ export {
  */
 export class Unarchiver extends EventTarget {
   /**
-   * The client-side port that sends messages to, and receives messages from the
+   * The client-side port that sends messages to, and receives messages from, the
    * decompressor implementation.
    * @type {MessagePort}
    * @private
@@ -74,6 +75,7 @@ export class Unarchiver extends EventTarget {
   constructor(arrayBuffer, options = {}) {
     super();
 
+    // TODO(2.0): Remove this.
     if (typeof options === 'string') {
       console.warn(`Deprecated: Don't send a raw string to Unarchiver()`);
       console.warn(`            send UnarchiverOptions instead.`);
@@ -95,13 +97,43 @@ export class Unarchiver extends EventTarget {
   }
 
   /**
-   * Overridden so that the type hints for eventType are specific.
+   * Overridden so that the type hints for eventType are specific. Prefer onExtract(), etc.
    * @param {'progress'|'extract'|'finish'} eventType 
    * @param {EventListenerOrEventListenerObject} listener 
    * @override
    */
   addEventListener(eventType, listener) {
     super.addEventListener(eventType, listener);
+  }
+
+  /**
+   * Type-safe way to subscribe to an UnarchiveExtractEvent.
+   * @param {function(UnarchiveExtractEvent)} listener 
+   * @returns {Unarchiver} for chaining.
+   */
+  onExtract(listener) {
+    super.addEventListener(UnarchiveEventType.EXTRACT, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to subscribe to an UnarchiveFinishEvent.
+   * @param {function(UnarchiveFinishEvent)} listener 
+   * @returns {Unarchiver} for chaining.
+   */
+  onFinish(listener) {
+    super.addEventListener(UnarchiveEventType.FINISH, listener);
+    return this;
+  }
+
+  /**
+   * Type-safe way to subscribe to an UnarchiveProgressEvent.
+   * @param {function(UnarchiveProgressEvent)} listener 
+   * @returns {Unarchiver} for chaining.
+   */
+  onProgress(listener) {
+    super.addEventListener(UnarchiveEventType.PROGRESS, listener);
+    return this;
   }
 
   /**
@@ -154,7 +186,6 @@ export class Unarchiver extends EventTarget {
 
   /**
    * Receive an event and pass it to the listener functions.
-   *
    * @param {Object} obj
    * @returns {boolean} Returns true if the decompression is finished. 
    * @private
