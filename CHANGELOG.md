@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - archive: Support semantic methods for subscribing to unarchive events (onExtract), [Issue #47](https://github.com/codedread/bitjs/issues/47).
+- io: Added a getData() method to ByteBuffer to retrieve a copy of the bytes that have been written.
 
 ### Changed
 

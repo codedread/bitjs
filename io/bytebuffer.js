@@ -30,17 +30,31 @@ export class ByteBuffer {
     this.data = new Uint8Array(numBytes);
 
     /**
+     * Points to the byte that will next be written.
      * @type {number}
      * @public
      */
     this.ptr = 0;
   }
 
+  /**
+   * Returns an exact copy of all the data that has been written to the ByteBuffer.
+   * @returns {Uint8Array}
+   */
+  getData() {
+    const dataCopy = new Uint8Array(this.ptr);
+    dataCopy.set(this.data.subarray(0, this.ptr));
+    return dataCopy;
+  }
 
   /**
    * @param {number} b The byte to insert.
    */
   insertByte(b) {
+    if (this.ptr + 1 > this.data.byteLength) {
+      throw `Cannot insert a byte, the buffer is full.`;
+    }
+
     // TODO: throw if byte is invalid?
     this.data[this.ptr++] = b;
   }
@@ -49,6 +63,10 @@ export class ByteBuffer {
    * @param {Array.<number>|Uint8Array|Int8Array} bytes The bytes to insert.
    */
   insertBytes(bytes) {
+    if (this.ptr + bytes.length > this.data.byteLength) {
+      throw `Cannot insert ${bytes.length} bytes, the buffer is full.`;
+    }
+
     // TODO: throw if bytes is invalid?
     this.data.set(bytes, this.ptr);
     this.ptr += bytes.length;

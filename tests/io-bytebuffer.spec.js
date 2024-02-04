@@ -18,8 +18,33 @@ describe('bitjs.io.ByteBuffer', () => {
     buffer = new ByteBuffer(4);
   });
 
+  describe('getData()', () => {
+    it('returns an empty array when nothing has been written', () => {
+      expect(buffer.getData().byteLength).equals(0);
+    });
+
+    it('is sized correctly', () => {
+      buffer.insertByte(42);
+      buffer.insertByte(81);
+      const data = buffer.getData();
+      expect(data.byteLength).equals(2);
+      expect(data[0]).equals(42);
+      expect(data[1]).equals(81);  
+    });
+  });
+
   it('throws when initialized incorrectly', () => {
     expect(() => new ByteBuffer()).throws();
+  });
+
+  describe('Buffer overflow', () => {
+    it('insertByte() throws when buffer exceeded', () => {
+      buffer.insertBytes([0, 2, 4, 6]);
+      expect(() => buffer.insertByte(1)).throws();
+    });  
+    it('insertBytes() throws when buffer exceeded', () => {
+      expect(() => buffer.insertBytes([0, 2, 4, 6, 8])).throws();
+    });  
   });
 
   it('insertByte()', () => {

@@ -66,13 +66,13 @@ export class ByteStream {
     this.littleEndian_ = true;
   }
 
-  /** @returns {boolean} Whether the stream is little-endian. */
+  /** @returns {boolean} Whether the stream is little-endian (least significant byte is first). */
   isLittleEndian() {
     return this.littleEndian_;
   }
 
   /**
-   * Big-Endian is sometimes called Motorola-style.
+   * Big-Endian means the most significant byte is first. it is sometimes called Motorola-style.
    * @param {boolean=} val The value to set. If not present, the stream is set to big-endian.
    */
   setBigEndian(val = true) {
@@ -80,7 +80,7 @@ export class ByteStream {
   }
 
   /**
-   * Little-Endian is sometimes called Intel-style.
+   * Little-Endian means the least significant byte is ifrst. is sometimes called Intel-style.
    * @param {boolean=} val The value to set. If not present, the stream is set to little-endian.
    */
   setLittleEndian(val = true) {
