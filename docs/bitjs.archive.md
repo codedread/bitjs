@@ -1,14 +1,15 @@
 # bitjs.archive
 
-This package includes objects for unarchiving binary data in popular archive formats (zip, rar, tar)
-providing unzip, unrar and untar capabilities via JavaScript in the browser or various JavaScript
-runtimes (node, deno, bun).
+This package includes objects for unarchiving binary data in popular archive formats (zip, rar,
+tar, gzip) providing unzip, unrar, untar, gunzip capabilities via JavaScript in the browser or
+various JavaScript runtimes (node, deno, bun).
 
-A prototype version of a compressor that creates Zip files is also present.
+A compressor that creates Zip files is also present.
 
 The decompression / compression happens inside a Web Worker, if the runtime supports it (browsers,
 deno). The library uses native decompression, if supported by the browser
-(via [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream/DecompressionStream)), and falls back to JavaScript implementations otherwise.
+(via [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream/DecompressionStream)),
+and falls back to JavaScript implementations otherwise.
 
 The API is event-based, you will want to subscribe to some of these events:
   * 'progress': Periodic updates on the progress (bytes processed).
@@ -31,7 +32,7 @@ etc.
 ```javascript
   import { Unzipper } from './bitjs/archive/decompress.js';
   const unzipper = new Unzipper(zipFileArrayBuffer);
-  unzipper.addEventListener('extract', (evt) => {
+  unzipper.onExtract(evt => {
     const {filename, fileData} = evt.unarchivedFile;
     console.log(`unzipped ${filename} (${fileData.byteLength} bytes)`);
     // Do something with fileData...
@@ -40,7 +41,7 @@ etc.
   unzipper.start();
 ```
 
-`start()` is an async method that resolves a `Promise` when the unzipping is complete, so you can
+`start()` is an async method that resolves a `Promise` when the decompression is complete, so you can
 `await` on it, if you need to.
 
 ### Progressive unzipping
@@ -65,14 +66,14 @@ constructor, and send subsequent `ArrayBuffers` using the `update()` method.
 
 ### getUnarchiver()
 
-If you don't want to bother with figuring out if you have a zip, rar, or tar file, you can use the
-convenience method `getUnarchiver()`, which sniffs the bytes for you and creates the appropriate
+If you don't want to bother with figuring out if you have a zip, rar, tar, or gz file, you can use
+the convenience method `getUnarchiver()`, which sniffs the bytes for you and creates the appropriate
 unarchiver.
 
 ```javascript
   import { getUnarchiver } from './bitjs/archive/decompress.js';
   const unarchiver = getUnarchiver(anArrayBuffer);
-  unarchive.addEventListener('extract', () => {...});
+  unarchiver.onExtract(evt => {...});
   // etc...
   unarchiver.start();
 ```
