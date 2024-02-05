@@ -22,19 +22,17 @@ describe('bitjs.archive.compress', () => {
   let inputFileInfos = new Map();
   let decompressedFileSize = 0;
 
-  before(() => {
-    for (const fileName of INPUT_FILENAMES) {
-      const fullFilename = `${PATH}${fileName}`;
-      const fd = fs.openSync(fullFilename, 'r');
-      const lastModTime = fs.fstatSync(fd).mtimeMs;
-      const nodeBuf = fs.readFileSync(fullFilename);
-      const fileData = new Uint8Array(
-          nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length));
-      inputFileInfos.set(fileName, {fileName, lastModTime, fileData});
-      decompressedFileSize += fileData.byteLength;
-      fs.closeSync(fd);
-    }
-  });
+  for (const fileName of INPUT_FILENAMES) {
+    const fullFilename = `${PATH}${fileName}`;
+    const fd = fs.openSync(fullFilename, 'r');
+    const lastModTime = fs.fstatSync(fd).mtimeMs;
+    const nodeBuf = fs.readFileSync(fullFilename);
+    const fileData = new Uint8Array(
+        nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length));
+    inputFileInfos.set(fileName, {fileName, lastModTime, fileData});
+    decompressedFileSize += fileData.byteLength;
+    fs.closeSync(fd);
+  }
 
   it('zipper throws for invalid compression method', async () => {
     expect(() => new Zipper({zipCompressionMethod: 42})).throws();

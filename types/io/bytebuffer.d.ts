@@ -12,10 +12,16 @@ export class ByteBuffer {
      */
     public data: Uint8Array;
     /**
+     * Points to the byte that will next be written.
      * @type {number}
      * @public
      */
     public ptr: number;
+    /**
+     * Returns an exact copy of all the data that has been written to the ByteBuffer.
+     * @returns {Uint8Array}
+     */
+    getData(): Uint8Array;
     /**
      * @param {number} b The byte to insert.
      */

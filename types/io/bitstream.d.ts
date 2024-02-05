@@ -6,7 +6,7 @@
  *
  * Bit reading always proceeds from the first byte in the buffer, to the
  * second byte, and so on. The MTL flag controls which bit is considered
- * first *inside* the byte.
+ * first *inside* the byte. The default is least-to-most direction.
  *
  * An Example for how Most-To-Least vs Least-to-Most mode works:
  *

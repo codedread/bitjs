@@ -29,13 +29,11 @@ describe('bitjs.archive.decompress', () => {
   /** @type {Map<string, ArrayBuffer>} */
   let inputArrayBuffers = new Map();
 
-  before(() => {
-    for (const inputFile of INPUT_FILES) {
-      const nodeBuf = fs.readFileSync(`${PATH}${inputFile}`);
-      const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
-      inputArrayBuffers.set(inputFile, ab);
-    }
-  });
+  for (const inputFile of INPUT_FILES) {
+    const nodeBuf = fs.readFileSync(`${PATH}${inputFile}`);
+    const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
+    inputArrayBuffers.set(inputFile, ab);
+  }
 
   for (const outFile of ARCHIVE_FILES) {
     it(outFile, async () => {
@@ -71,7 +69,7 @@ describe('bitjs.archive.decompress', () => {
   }
 
   describe('gunzip', () => {
-    it('can unzip a file', async () => {
+    it('can gunzip a file', async () => {
       const bufs = new Map(inputArrayBuffers);
       const nodeBuf = fs.readFileSync(`${PATH}sample-1-slowest.txt.gz`);
       const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
