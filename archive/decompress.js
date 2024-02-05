@@ -319,6 +319,31 @@ export class Untarrer extends Unarchiver {
   getScriptFileName() { return './untar.js'; };
 }
 
+/**
+ * IMPORTANT NOTES for Gunzipper:
+ * 1) A Gunzipper will only ever emit one EXTRACT event, because a gzipped file only ever contains
+ *    a single file.
+ * 2) If the gzipped file does not include the original filename as a FNAME block, then the
+ *    UnarchivedFile in the UnarchiveExtractEvent will not include a filename. It will be up to the
+ *    client to re-assemble the filename (if needed).
+ * 3) update() is not supported on a Gunzipper, since the current implementation relies on runtime
+ *    support for DecompressionStream('gzip') which can throw hard-to-detect errors reading only
+ *    only part of a file.
+ * 4) PROGRESS events are not yet supported in Gunzipper.
+ */
+export class Gunzipper extends Unarchiver {
+  /**
+   * @param {ArrayBuffer} ab 
+   * @param {UnarchiverOptions} options 
+   */
+  constructor(ab, options = {}) {
+    super(ab, options);
+  }
+
+  getMIMEType() { return 'application/gzip'; }
+  getScriptFileName() { return './gunzip.js'; }
+}
+
 // TODO(2.0): When up-revving to a major new version, remove the string type for options.
 
 /**
@@ -344,6 +369,8 @@ export function getUnarchiver(ab, options = {}) {
     unarchiver = new Unrarrer(ab, options);
   } else if (mimeType === 'application/zip') { // PK (Zip)
     unarchiver = new Unzipper(ab, options);
+  } else if (mimeType === 'application/gzip') { // GZIP
+    unarchiver = new Gunzipper(ab, options);
   } else { // Try with tar
     unarchiver = new Untarrer(ab, options);
   }

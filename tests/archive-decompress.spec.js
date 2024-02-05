@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import 'mocha';
 import { expect } from 'chai';
 
-import { Unarchiver, Unrarrer, Untarrer, Unzipper, getUnarchiver } from '../archive/decompress.js';
+import { Gunzipper, Unarchiver, getUnarchiver } from '../archive/decompress.js';
 
 const PATH = `tests/archive-testfiles/`;
 
@@ -69,4 +69,30 @@ describe('bitjs.archive.decompress', () => {
       expect(extractEvtFiredForOnExtract).equals(true);
     });
   }
+
+  describe('gunzip', () => {
+    it('can unzip a file', async () => {
+      const bufs = new Map(inputArrayBuffers);
+      const nodeBuf = fs.readFileSync(`${PATH}sample-1-slowest.txt.gz`);
+      const ab = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.length);
+      let gunzipper = getUnarchiver(ab, {debug: true});
+      expect(gunzipper instanceof Gunzipper).equals(true);
+      let extractEvtFiredForOnExtract = false;
+
+      gunzipper.onExtract(evt => {
+        extractEvtFiredForOnExtract = true;
+        const {filename, fileData} = evt.unarchivedFile;
+        expect(filename).equals('sample-1.txt');
+
+        const ab = bufs.get('sample-1.txt');
+        expect(fileData.byteLength).equals(ab.byteLength);
+        for (let b = 0; b < fileData.byteLength; ++b) {
+          expect(fileData[b] === ab[b]);
+        }
+      });
+
+      await gunzipper.start();
+      expect(extractEvtFiredForOnExtract).equals(true);
+    });
+  });
 });
