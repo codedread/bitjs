@@ -2,16 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.3] - 2024-02-??
+## [1.2.3] - 2024-02-04
 
 ### Added
 
 - archive: Support semantic methods for subscribing to unarchive events (onExtract), [Issue #47](https://github.com/codedread/bitjs/issues/47).
+- archive: Added Gunzipper to decompress gzip files. Only supported on runtimes that supported
+  DecompressionStream('gzip') for now. [Issue #48](https://github.com/codedread/bitjs/issues/48).
 - io: Added a getData() method to ByteBuffer to retrieve a copy of the bytes that have been written.
 
 ### Changed
 
-- archive: Error on RAR5 files.
+- archive: Unrarrer throws an explicit error when encountering RAR5 files.
+- io: ByteBuffer.insertXXX() now throws an error if trying to write past the end of the buffer.
 
 ## [1.2.2] - 2024-01-26
 
