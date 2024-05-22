@@ -80,7 +80,7 @@ export class ByteStream {
   }
 
   /**
-   * Little-Endian means the least significant byte is ifrst. is sometimes called Intel-style.
+   * Little-Endian means the least significant byte is first. is sometimes called Intel-style.
    * @param {boolean=} val The value to set. If not present, the stream is set to little-endian.
    */
   setLittleEndian(val = true) {

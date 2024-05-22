@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- archive: Support semantic methods for subscribing to unarchive events (onExtract), [Issue #47](https://github.com/codedread/bitjs/issues/47).
+- archive: Support semantic methods for subscribing to unarchive events (onExtract),
+ [Issue #47](https://github.com/codedread/bitjs/issues/47).
 - archive: Added Gunzipper to decompress gzip files. Only supported on runtimes that supported
   DecompressionStream('gzip') for now. [Issue #48](https://github.com/codedread/bitjs/issues/48).
 - io: Added a getData() method to ByteBuffer to retrieve a copy of the bytes that have been written.
