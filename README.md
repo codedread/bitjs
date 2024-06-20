@@ -169,9 +169,9 @@ BitStream, ByteStream.
 
 ```javascript
 import { BitStream } from './bitjs/io/bitstream.js';
-const bstream = new BitStream(someArrayBuffer, true, offset, length);
-const crc = bstream.readBits(12); // read in 12 bits as CRC, advancing the pointer
-const flagbits = bstream.peekBits(6); // look ahead at next 6 bits, but do not advance the pointer
+const bstream = new BitStream(someArrayBuffer, true /** most-significant-bit-to-least */ );
+const crc = bstream.readBits(12); // Read in 12 bits as CRC. Advance pointer.
+const flagbits = bstream.peekBits(6); // Look ahead at next 6 bits. Do not advance pointer.
 ```
 
 More details and examples are located on [the API page](./docs/bitjs.io.md).
