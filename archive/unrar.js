@@ -509,6 +509,7 @@ function Unpack15(bstream, Solid) {
 function Unpack20(bstream, Solid) {
   const destUnpSize = rBuffer.data.length;
   let oldDistPtr = 0;
+  let Bits;
 
   if (!Solid) {
     RarReadTables20(bstream);
