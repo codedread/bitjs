@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2024-12-08
+
+### Fixed
+
+- Fixed import error in unrar/rarvm.
+
 ## [1.2.3] - 2024-02-04
 
 ### Added
