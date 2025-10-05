@@ -157,7 +157,7 @@ export class Zipper {
    * @returns {Promise<Uint8Array>} A Promise that will resolve once the final file has been sent.
    *     The Promise resolves to an array of bytes of the entire zipped archive.
    */
-  async start(files, isLastFile = false) {
+  async start(files = [], isLastFile = false) {
     if (this.compressStatus_ !== CompressStatus.NOT_STARTED) {
       throw `start() called, but Zipper already started.`;
     }

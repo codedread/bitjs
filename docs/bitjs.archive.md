@@ -152,6 +152,23 @@ is pretty straightforward and there is no event-based / streaming API.
     true /* isLastFile */);
 ```
 
+If you don't want to have all files in memory at once, you can zip progressively:
+
+```javascript
+  import { Zipper } from './bitjs/archive/compress.js';
+  const zipper = new Zipper();
+  const zipPromise = zipper.start();
+  // ... some time later
+  zipper.appendFiles([file1]);
+  // ... more time later
+  zipper.appendFiles([file2]);
+  // ... now we add the last file
+  zipper.appendFiles([file3], true /* isLastFile */);
+
+  const zippedArrayBuffer = await zipPromise;
+  ...
+```
+
 ## Implementation Details
 
 All you generally need to worry about is calling getUnarchiver(), listen for events, and then `start()`. However, if you are interested in how it works under the covers, read on...
