@@ -39,6 +39,7 @@ describe('bitjs.archive.compress', () => {
   });
 
   it('zipper works for STORE', (done) => {
+    let extractCalled = false;
     const files = new Map(inputFileInfos);
     const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.STORE});
     zipper.start(Array.from(files.values()), true).then(byteArray => {
@@ -47,6 +48,7 @@ describe('bitjs.archive.compress', () => {
 
       const unarchiver = getUnarchiver(byteArray.buffer);
       unarchiver.addEventListener('extract', evt => {
+        extractCalled = true;
         const {filename, fileData} = evt.unarchivedFile;
         expect(files.has(filename)).equals(true);
         const inputFile = files.get(filename).fileData;
@@ -57,6 +59,7 @@ describe('bitjs.archive.compress', () => {
       });
       unarchiver.addEventListener('finish', evt => done());
       unarchiver.start();
+      expect(extractCalled).equals(true);
     });
   });
 
@@ -86,4 +89,42 @@ describe('bitjs.archive.compress', () => {
   } catch (err) {
     // Do nothing. This runtime did not support DEFLATE. (Node < 21.2.0)
   }
+
+  it('zipper.start([file1]) and appendFiles(otherFiles, true) works', (done) => {
+    let extractCalled = false;
+    const files = new Map(inputFileInfos);
+    const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.STORE});
+    const fileArr = Array.from(files.values());
+    zipper.start([fileArr.shift()]).then(byteArray => {
+      expect(zipper.compressState).equals(CompressStatus.COMPLETE);
+      expect(byteArray.byteLength > decompressedFileSize).equals(true);
+
+      const unarchiver = getUnarchiver(byteArray.buffer);
+      unarchiver.addEventListener('extract', evt => {
+        extractCalled = true;
+        const {filename, fileData} = evt.unarchivedFile;
+        expect(files.has(filename)).equals(true);
+        const inputFile = files.get(filename).fileData;
+        expect(inputFile.byteLength).equals(fileData.byteLength);
+        for (let b = 0; b < inputFile.byteLength; ++b) {
+          expect(inputFile[b]).equals(fileData[b]);
+        }
+      });
+      unarchiver.addEventListener('finish', evt => {
+        done();
+      });
+      unarchiver.start();
+      expect(extractCalled).equals(true);
+    });
+    zipper.appendFiles(fileArr, true);
+  });
+
+  it('appendFiles() throws an error if after last file', (done) => {
+    const files = new Map(inputFileInfos);
+    const zipper = new Zipper({zipCompressionMethod: ZipCompressionMethod.STORE});
+    zipper.start(Array.from(files.values()), true);
+    expect(() => zipper.appendFiles(Array.from(files.values()), true)).throws();
+    done();
+  });
+
 });
