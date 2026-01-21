@@ -271,6 +271,32 @@ describe('codecs test suite', () => {
             .to.be.a('string')
             .and.satisfy(s => s.startsWith('video/mp4; codecs="avc1.4D00'));
       });
+
+      describe('extradata tests', () => {
+        it('prefers extradata for codec string', () => {
+          info.streams[0].extradata = '00000000: 014d 4028 ffe1 001a 674d 4028 9a66 0140 .M@(...gM@(.f.@';
+          expect(getFullMIMEString(info))
+              .equals('video/mp4; codecs="avc1.4D4028"');
+        });
+
+        it('handles multiline extradata', () => {
+          info.streams[0].extradata =
+              '00000000: 0164 0029 ffe1 001b 6764 0029 ac2b 4028 .d.)....gd.).+@(\n' +
+              '00000010: 2f82 1801 1000 0003 0010 0000 0303 20f1 /............. .';
+          expect(getFullMIMEString(info))
+              .equals('video/mp4; codecs="avc1.640029"');
+        });
+
+        it('does not use extradata if codec_tag_string is not avc1', () => {
+          info.streams[0].codec_tag_string = 'not-avc1';
+          info.streams[0].codec_name = 'h264';
+          info.streams[0].profile = 'Main';
+          info.streams[0].level = 20;
+          info.streams[0].extradata = '00000000: 014d 4028 ffe1 001a 674d 4028 9a66 0140 .M@(...gM@(.f.@';
+          expect(getFullMIMEString(info))
+              .equals('video/mp4; codecs="avc1.4D0014"');
+        });
+      });
     });
   });
 

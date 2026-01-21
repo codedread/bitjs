@@ -197,6 +197,17 @@ export function getFullMIMEString(info) {
 
 // TODO: Consider whether any of these should be exported.
 
+function getCleanHex(extradata) {
+  // 1. Split into lines
+  // 2. Extract only the middle hex section (after ':' and before '  ')
+  // 3. Remove all spaces
+  return extradata.split('\n')
+    .map(line => line.split(':')[1]?.split('  ')[0])
+    .filter(Boolean)
+    .join('')
+    .replace(/\s/g, '');
+}
+
 /**
  * AVC1 is the same thing as H264.
  * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter#iso_base_media_file_format_mp4_quicktime_and_3gp
@@ -204,6 +215,15 @@ export function getFullMIMEString(info) {
  * @returns {string}
  */
 function getAVC1CodecString(stream) {
+  if (stream.extradata && stream.codec_tag_string === 'avc1') {
+    const hex = getCleanHex(stream.extradata); // results in "014d4028..."
+
+    // Bytes 1, 2, and 3 are the Profile, Constraints, and Level.
+    // In the hex string, these are characters at index 2 through 8.
+    const codecPart = hex.substring(2, 8).toUpperCase();
+    return `avc1.${codecPart}`;
+  }
+
   if (!stream.profile) throw `No profile found in AVC1 stream`;
 
   let frag = 'avc1';
