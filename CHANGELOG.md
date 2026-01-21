@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.6] - 2026-??-??
+
+- codecs: Add support for ffprobe's "extradata"
+
 ## [1.2.5] - 2025-10-05
 
 ### Fixed
